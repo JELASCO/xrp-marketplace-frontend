@@ -36,9 +36,30 @@ export default function ListingDetailPage({ params }) {
 
   async function handleConfirm() {
     try {
-      await api.orders.confirm(order.id);
-      setEscrowStep(4);
-    } catch(e) { alert(e.message); }
+      // Try Xumm escrow finish first
+      const payload = await api.orders.xummPayload(order.id);
+      if (payload && payload.mobileUrl) {
+        window.open(payload.mobileUrl, '_blank');
+        setEscrowStep(3);
+        // Poll for order completion
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          try {
+            const o = await api.orders.get(order.id);
+            if (o.status === 'completed') { clearInterval(poll); setEscrowStep(4); }
+          } catch {}
+          if (attempts > 30) clearInterval(poll);
+        }, 3000);
+      } else {
+        await api.orders.confirm(order.id);
+        setEscrowStep(4);
+      }
+    } catch(e) {
+      // Fallback: direct confirm
+      try { await api.orders.confirm(order.id); setEscrowStep(4); }
+      catch(e2) { alert(e2.message); }
+    }
   }
 
   if (loading) return <div className="animate-pulse space-y-4"><div className="h-64 bg-gray-100 rounded-2xl"/><div className="h-8 bg-gray-100 rounded w-2/3"/></div>;
