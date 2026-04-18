@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
-const IMGBB_KEY = '5e9a8e2e2a5d3a9a6c9e9a2f3e9a8e2e'; // free public demo key — replace with your own from imgbb.com
+const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key — replace with your own from imgbb.com
 const CATS  = [{key:'skin',label:'Skins',emoji:'🎨'},{key:'coin',label:'Coins',emoji:'💰'},{key:'bp',label:'Battle Pass',emoji:'🏆'},{key:'account',label:'Accounts',emoji:'👤'},{key:'physical',label:'Physical',emoji:'📦'},{key:'nft',label:'NFT',emoji:'💎'}];
 const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
 
