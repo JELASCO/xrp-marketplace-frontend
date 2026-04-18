@@ -9,24 +9,25 @@ import ListingCard from '../../../components/ListingCard';
 export default function ProfilePage() {
   const { id } = useParams();
   const currentUser = useAuthStore(s => s.user);
-  const [user,     setUser]     = useState(null);
+  const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    Promise.all([
-      api.users.get(id),
-      api.listings.list({ limit: 20 })
-    ])
-      .then(([u, all]) => {
+    setError('');
+
+    api.users.get(id)
+      .then(u => {
         setUser(u);
-        setListings(all.filter(function(l) { return String(l.seller_id) === String(id); }));
+        return api.listings.list({ seller_id: id, limit: 48 })
+          .then(data => setListings(Array.isArray(data) ? data.filter(l => String(l.seller_id) === String(id)) : []))
+          .catch(() => setListings([]));
       })
-      .catch(function(e) { setError(e.message); })
-      .finally(function() { setLoading(false); });
+      .catch(e => setError(e.message || 'User not found'))
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return (
