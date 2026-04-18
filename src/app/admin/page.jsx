@@ -5,16 +5,19 @@ import { api } from '../../lib/api';
 
 export default function AdminPage() {
   const user = useAuthStore(s => s.user);
+  const loading = useAuthStore(s => s.loading);
   const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
   const [tab, setTab] = useState('dashboard');
 
   useEffect(() => {
+    if (loading) return;
     if (user?.role !== 'admin') return;
     api.admin.stats().then(setStats).catch(()=>{});
     api.admin.disputes().then(setDisputes).catch(()=>{});
-  }, [user]);
+  }, [user, loading]);
 
+  if (loading) return <div style={{textAlign:'center',padding:'60px 20px',color:'#4a5568'}}>Loading...</div>;
   if (!user) return <div style={{textAlign:'center',padding:'60px 20px',color:'#4a5568'}}>Sign in required</div>;
   if (user.role !== 'admin') return <div style={{textAlign:'center',padding:'60px 20px',color:'#f87171'}}>Admin only</div>;
 
@@ -31,6 +34,7 @@ export default function AdminPage() {
           ))}
         </div>
       </div>
+
       {tab==='dashboard' && stats && (
         <div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:10,marginBottom:24}}>
@@ -46,6 +50,10 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+      {tab==='dashboard' && !stats && (
+        <div style={{textAlign:'center',padding:'40px',color:'#4a5568',fontSize:13}}>Loading stats...</div>
+      )}
+
       {tab==='disputes' && (
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           {disputes.length===0 && <div style={{textAlign:'center',padding:'40px',color:'#4a5568',fontSize:13}}>No open disputes 🎉</div>}
