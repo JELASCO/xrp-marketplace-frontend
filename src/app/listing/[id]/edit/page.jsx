@@ -52,7 +52,7 @@ export default function EditListingPage() {
         </div>
         <div>
           <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>PRICE (XRP)</label>
-          <input value={priceXrp} onChange={e => setPriceXrp(e.target.value)} type="number" style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
+          <input value={priceXrp} onChange={e => setPriceXrp(e.target.value)} type='number' style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
         </div>
         <div>
           <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>DESCRIPTION</label>
