@@ -1,17 +1,21 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../lib/store';
 import { api } from '../../lib/api';
 
+const AVATAR_STYLES = ['avataaars', 'bottts', 'fun-emoji', 'lorelei', 'micah', 'notionists', 'personas', 'pixel-art'];
+const AVATAR_SEEDS = ['Felix', 'Aneka', 'Mittens', 'Zoe', 'Kira', 'Max', 'Luna', 'Buddy'];
+
+function buildAvatarUrl(style, seed) {
+  return 'https://api.dicebear.com/7.x/' + style + '/svg?seed=' + seed;
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
   const loading = useAuthStore(s => s.loading);
-  const setAuth = useAuthStore(s => s.setAuth);
-  const token = useAuthStore(s => s.token);
-
+  const fetchMe = useAuthStore(s => s.fetchMe);
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -24,19 +28,23 @@ export default function SettingsPage() {
     if (!user) { router.push('/'); return; }
     setUsername(user.username || '');
     setBio(user.bio || '');
-    setAvatarUrl(user.avatar_url || '');
+    setAvatarUrl(user.avatar_url || user.avatarUrl || '');
   }, [user, loading]);
 
   const handleSave = async () => {
     setError('');
     setSuccess(false);
-    if (!username.trim()) { setError('Username cannot be empty'); return; }
+    if (!username.trim()) { setError('Username required'); return; }
     setSaving(true);
     try {
-      const updated = await api.users.update({ username: username.trim(), bio: bio.trim(), avatar_url: avatarUrl.trim() || null });
-      setAuth(token, { ...user, username: updated.username, bio: updated.bio, avatar_url: updated.avatar_url });
+      await api.users.update({
+        username: username.trim(),
+        bio: bio.trim() || null,
+        avatar_url: avatarUrl.trim() || null,
+      });
       setSuccess(true);
-      setTimeout(() => router.push('/profile/' + user.id), 1000);
+      if (fetchMe) await fetchMe();
+      setTimeout(() => setSuccess(false), 2000);
     } catch (e) {
       setError(e.message || 'Failed to save');
     } finally {
@@ -44,89 +52,46 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
-      <div style={{ width: 32, height: 32, border: '2px solid #3b82f6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
-    </div>
-  );
+  if (loading) return null;
   if (!user) return null;
 
-  const avatarPreview = avatarUrl.trim();
-  const initials = username ? username.slice(0, 2).toUpperCase() : '??';
+  const avatars = AVATAR_STYLES.map((style, i) => buildAvatarUrl(style, AVATAR_SEEDS[i] || 'User'));
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => router.push('/profile/' + user.id)}
-          style={{ background: 'none', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 20, padding: 0, lineHeight: 1 }}>←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#e8eaf0', margin: 0 }}>Edit Profile</h1>
-      </div>
+    <div style={{maxWidth:520,margin:'40px auto',padding:'20px'}}>
+      <h1 style={{color:'#e8eaf0',marginBottom:24,fontSize:28}}>Settings</h1>
+      <div style={{display:'flex',flexDirection:'column',gap:20}}>
 
-      <div style={{ background: '#111620', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:8,letterSpacing:1}}>USERNAME</label>
+          <input value={username} onChange={e => setUsername(e.target.value)} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'10px 12px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
+        </div>
 
-        {/* Avatar preview */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-            {avatarPreview
-              ? <img src={avatarPreview} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none'; }} />
-              : initials}
+        <div>
+          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:8,letterSpacing:1}}>BIO</label>
+          <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell others about yourself..." style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'10px 12px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box',resize:'vertical',fontFamily:'inherit'}} />
+        </div>
+
+        <div>
+          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:8,letterSpacing:1}}>PICK AN AVATAR</label>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4, 1fr)',gap:10,marginBottom:12}}>
+            {avatars.map((url, i) => {
+              const isSelected = avatarUrl === url;
+              return (
+                <button key={i} type="button" onClick={() => setAvatarUrl(url)} style={{background:'#0a0e1a',border: isSelected ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:8,cursor:'pointer',transition:'all 0.15s',aspectRatio:'1'}}>
+                  <img src={url} alt="avatar" style={{width:'100%',height:'100%',borderRadius:8,display:'block'}} />
+                </button>
+              );
+            })}
           </div>
-          <div style={{ fontSize: 12, color: '#4a5568' }}>Paste an image URL below to set your photo</div>
+          <label style={{color:'#8892a4',fontSize:11,display:'block',marginBottom:6}}>OR ENTER A CUSTOM URL</label>
+          <input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="https://..." style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'10px 12px',color:'#e8eaf0',fontSize:13,boxSizing:'border-box'}} />
         </div>
 
-        {/* Avatar URL */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#8892a4', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Photo URL</label>
-          <input
-            value={avatarUrl}
-            onChange={e => setAvatarUrl(e.target.value)}
-            placeholder="https://example.com/photo.jpg"
-            style={{ background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', color: '#e8eaf0', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
-          />
-        </div>
+        {error && <div style={{color:'#f87171',fontSize:13,padding:'8px 12px',background:'rgba(248,113,113,0.1)',borderRadius:6}}>{error}</div>}
+        {success && <div style={{color:'#34d399',fontSize:13,padding:'8px 12px',background:'rgba(52,211,153,0.1)',borderRadius:6}}>Saved successfully!</div>}
 
-        {/* Username */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#8892a4', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Username</label>
-          <input
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            maxLength={40}
-            placeholder="your_username"
-            style={{ background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', color: '#e8eaf0', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
-          />
-        </div>
-
-        {/* Bio */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#8892a4', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Bio</label>
-          <textarea
-            value={bio}
-            onChange={e => setBio(e.target.value)}
-            rows={3}
-            maxLength={300}
-            placeholder="Tell people about yourself..."
-            style={{ background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', color: '#e8eaf0', fontSize: 14, fontFamily: 'inherit', outline: 'none', resize: 'vertical' }}
-          />
-          <div style={{ fontSize: 11, color: '#4a5568', textAlign: 'right' }}>{bio.length}/300</div>
-        </div>
-
-        {error && (
-          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: 13 }}>
-            {error}
-          </div>
-        )}
-        {success && (
-          <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8, padding: '10px 14px', color: '#34d399', fontSize: 13 }}>
-            Saved! Redirecting...
-          </div>
-        )}
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{ background: saving ? '#1a2030' : '#3b82f6', color: saving ? '#4a5568' : '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
+        <button onClick={handleSave} disabled={saving} style={{background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'12px',fontSize:14,fontWeight:600,cursor: saving ? 'wait' : 'pointer',opacity: saving ? 0.6 : 1}}>
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
