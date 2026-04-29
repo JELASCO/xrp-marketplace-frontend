@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
       <body className={dmSans.className} style={{background:'#080a0e',minHeight:'100vh'}}>
         <Providers>
           <Navbar />
-          <main style={{maxWidth:1200,margin:'0 auto',padding:'24px 16px'}}>
+          <div style={{background:"rgba(245,158,11,0.15)",borderBottom:"1px solid rgba(245,158,11,0.3)",padding:"8px 16px",fontSize:12,color:"#fbbf24",textAlign:"center"}}><strong>Demo Mode:</strong> Bu uygulama testnet uzerinde simulation modunda calisir. Gercek deger transferi yapilmaz.</div><main style={{maxWidth:1200,margin:'0 auto',padding:'24px 16px'}}>
             {children}
           </main>
         </Providers>
