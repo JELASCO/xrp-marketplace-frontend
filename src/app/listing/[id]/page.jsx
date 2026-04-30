@@ -41,6 +41,13 @@ export default function ListingDetailPage({ params }) {
     finally { setBuying(false); }
   }
 
+  async function handleReview() {
+    try {
+      await api.orders.review(order.id, { rating, comment });
+      setReviewSent(true);
+    } catch(e) { setReviewError(e.message); }
+  }
+
   if (loading) return <div style={{padding:32,color:'#8892a4'}}>Loading...</div>;
   if (!listing) return <div style={{padding:32,color:'#8892a4'}}>Listing not found</div>;
 
@@ -70,7 +77,11 @@ export default function ListingDetailPage({ params }) {
             <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff',fontSize:14}}>{listing.username?.slice(0,2).toUpperCase()}</div>
             <div><div style={{color:'#e8eaf0',fontWeight:600,fontSize:14}}>{listing.username}</div><div style={{color:'#4a5568',fontSize:12}}>{listing.views} views</div></div>
           </div>
-          {isSeller ? (
+          {listing.status === 'sold' && !order ? (
+            <div style={{padding:'14px',borderRadius:10,background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',textAlign:'center',color:'#f87171',fontWeight:700,fontSize:16}}>
+              🏷️ This item has been sold
+            </div>
+          ) : isSeller ? (
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               <span style={{color:'#8892a4',fontSize:13}}>This is your listing</span>
               <Link href={`/listing/${id}/edit`} style={{color:'#a78bfa',fontSize:13,textDecoration:'none'}}>✏️ Edit</Link>
@@ -90,6 +101,20 @@ export default function ListingDetailPage({ params }) {
               ))}
               {escrowStep===2 && <button onClick={handleConfirm} disabled={buying} style={{marginTop:8,width:'100%',padding:10,borderRadius:8,border:'none',background:buying?'#065f46':'#10b981',color:'#fff',fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>{buying?'Confirming...':'Confirm Receipt'}</button>}
               {escrowStep>=4 && <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'#10b981',fontWeight:600,textAlign:'center'}}>✅ Order Completed!</div>}
+              {escrowStep>=4 && !reviewSent && (
+                <div style={{marginTop:16,background:'#0d1117',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:16}}>
+                  <div style={{color:'#e8eaf0',fontWeight:600,marginBottom:10,fontSize:14}}>Rate this seller</div>
+                  <div style={{display:'flex',gap:6,marginBottom:10}}>
+                    {[1,2,3,4,5].map(s=>(
+                      <button key={s} onClick={()=>setRating(s)} style={{background:'none',border:'none',cursor:'pointer',fontSize:24,opacity:s<=rating?1:0.3,transition:'opacity .15s'}}>★</button>
+                    ))}
+                  </div>
+                  <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="Leave a comment (optional)" rows={3} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,padding:'8px 10px',color:'#e8eaf0',fontSize:13,resize:'vertical',boxSizing:'border-box'}}/>
+                  {reviewError && <div style={{color:'#f87171',fontSize:12,marginTop:6}}>{reviewError}</div>}
+                  <button onClick={handleReview} style={{marginTop:10,width:'100%',padding:'10px',borderRadius:8,border:'none',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',color:'#fff',fontWeight:700,cursor:'pointer',fontSize:14}}>Submit Review</button>
+                </div>
+              )}
+              {reviewSent && <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'#10b981',fontSize:13,textAlign:'center'}}>⭐ Thanks for your review!</div>}
             </div>
           )}
           {buyError && <div style={{marginTop:12,padding:'10px 12px',background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,color:'#f87171',fontSize:13}}>{buyError}</div>}
