@@ -35,8 +35,10 @@ export default function ListingDetailPage({ params }) {
   }
 
   async function handleConfirm() {
+    setBuying(true);
     try { await api.orders.confirm(order.id); setEscrowStep(4); }
     catch(e) { setBuyError(e.message); }
+    finally { setBuying(false); }
   }
 
   if (loading) return <div style={{padding:32,color:'#8892a4'}}>Loading...</div>;
@@ -86,7 +88,8 @@ export default function ListingDetailPage({ params }) {
                   <span style={{color:i<escrowStep?'#10b981':i===escrowStep?'#3b82f6':'#4a5568',fontSize:13}}>{step}</span>
                 </div>
               ))}
-              {escrowStep===2 && <button onClick={handleConfirm} style={{marginTop:8,width:'100%',padding:10,borderRadius:8,border:'none',background:'#10b981',color:'#fff',fontWeight:700,cursor:'pointer'}}>Confirm Receipt</button>}
+              {escrowStep===2 && <button onClick={handleConfirm} disabled={buying} style={{marginTop:8,width:'100%',padding:10,borderRadius:8,border:'none',background:buying?'#065f46':'#10b981',color:'#fff',fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>{buying?'Confirming...':'Confirm Receipt'}</button>}
+              {escrowStep>=4 && <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'#10b981',fontWeight:600,textAlign:'center'}}>✅ Order Completed!</div>}
             </div>
           )}
           {buyError && <div style={{marginTop:12,padding:'10px 12px',background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,color:'#f87171',fontSize:13}}>{buyError}</div>}
