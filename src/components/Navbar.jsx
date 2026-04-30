@@ -54,7 +54,7 @@ export default function Navbar() {
               </button>
               {showMenu && (
                 <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
-                  {[{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Order,{href:'/settings',label:'Settings'}].map(i=>(
+                  {[{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Orders'},{href:'/settings',label:'Settings'}].map(i=>(
                     <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
                       style={{display:'block',padding:'9px 16px',fontSize:13,color:'#8892a4',textDecoration:'none',transition:'all 0.15s'}}
                       onMouseEnter={e=>{e.currentTarget.style.color='#e8eaf0';e.currentTarget.style.background='#161c28'}}
