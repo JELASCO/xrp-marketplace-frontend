@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../lib/store';
 import { api } from '../../lib/api';
-
+ 
 const AVATAR_STYLES = ['avataaars', 'bottts', 'fun-emoji', 'lorelei', 'micah', 'notionists', 'personas', 'pixel-art'];
 const AVATAR_SEEDS = ['Felix', 'Aneka', 'Mittens', 'Zoe', 'Kira', 'Max', 'Luna', 'Buddy'];
 
