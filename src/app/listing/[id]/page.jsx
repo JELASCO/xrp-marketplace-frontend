@@ -9,16 +9,6 @@ const CAT_LABELS = { skin:'Skin', coin:'Coin', bp:'Battle Pass', account:'Accoun
 const GAME_EMOJIS = { 'CS2':'🔫','Valorant':'⚡','Fortnite':'🏗️','Roblox':'🎮','Minecraft':'⛏️','Apex Legends':'💀','Call of Duty':'💣' };
 const STEPS = ['Awaiting payment','In escrow','Delivered','Completed'];
 
-function useIsMobile() {
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const fn = () => setMobile(window.innerWidth < 640);
-    window.addEventListener('resize', fn);
-    return () => window.removeEventListener('resize', fn);
-  }, []);
-  return mobile;
-}
-
 export default function ListingDetailPage({ params }) {
   const { id } = params;
   const user = useAuthStore(s => s.user);
@@ -80,13 +70,12 @@ export default function ListingDetailPage({ params }) {
   const cat = CAT_COLORS[listing.category] || CAT_COLORS.account;
   const emoji = GAME_EMOJIS[listing.game] || '🎮';
   const img = listing.images?.[0];
-  const isMobile = useIsMobile();
   const isSold = listing.status === 'sold';
 
   return (
-    <div style={{maxWidth:960,margin:'0 auto',padding:isMobile?'16px 12px':'24px 16px'}}>
+    <div style={{maxWidth:960,margin:'0 auto',padding:'24px 16px'}}>
       <Link href="/" style={{color:'#a78bfa',textDecoration:'none',fontSize:14}}>← Back to marketplace</Link>
-      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:isMobile?16:32,marginTop:24}}>
+      <div className="listing-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,marginTop:24}}>
         <div>
           <div style={{background:'#111620',borderRadius:12,overflow:'hidden',aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid rgba(255,255,255,0.06)',position:'relative'}}>
             {img ? <img src={img} alt={listing.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:80}}>{emoji}</span>}
