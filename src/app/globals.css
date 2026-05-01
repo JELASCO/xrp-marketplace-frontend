@@ -71,3 +71,14 @@ body {
 .stagger-2 { animation-delay: 0.1s;  opacity: 0; }
 .stagger-3 { animation-delay: 0.15s; opacity: 0; }
 .stagger-4 { animation-delay: 0.2s;  opacity: 0; }
+
+
+@media (max-width: 639px) {
+  .listing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .listing-detail-wrap {
+    padding: 16px 12px !important;
+  }
+}
