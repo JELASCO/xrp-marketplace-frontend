@@ -19,6 +19,7 @@ export default function Navbar() {
 
   return (
     <>
+      <style>{`@media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}`}</style>
       <nav style={{background:'rgba(8,10,14,0.9)',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(255,255,255,0.06)',position:'sticky',top:0,zIndex:50}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{fontWeight:800,fontSize:18,color:'#e8eaf0',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0}}>
@@ -31,7 +32,7 @@ export default function Navbar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </form>
-          <div style={{display:'flex',alignItems:'center',gap:2,marginLeft:'auto'}}>
+          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:2,marginLeft:'auto'}}>
             {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
               <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#8892a4',padding:'6px 10px',borderRadius:8,textDecoration:'none',transition:'all 0.15s'}}
                 onMouseEnter={e=>{e.currentTarget.style.color='#e8eaf0';e.currentTarget.style.background='#161c28'}}
@@ -40,7 +41,7 @@ export default function Navbar() {
               </Link>
             ))}
           </div>
-          <div style={{fontSize:12,fontFamily:'monospace',color:'#4a5568',background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
+          <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#4a5568',background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
             XRP <span style={{color:'#10b981'}}>$2.18</span>
           </div>
           {user ? (
