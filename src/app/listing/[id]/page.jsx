@@ -10,7 +10,7 @@ const GAME_EMOJIS = { 'CS2':'🔫','Valorant':'⚡','Fortnite':'🏗️','Roblox
 const STEPS = ['Awaiting payment','In escrow','Delivered','Completed'];
 
 function useIsMobile() {
-  const [mobile, setMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 640);
+  const [mobile, setMobile] = useState(false);
   useEffect(() => {
     const fn = () => setMobile(window.innerWidth < 640);
     window.addEventListener('resize', fn);
