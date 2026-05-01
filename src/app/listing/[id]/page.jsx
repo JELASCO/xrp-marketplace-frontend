@@ -143,7 +143,30 @@ export default function ListingDetailPage({ params }) {
                   )}
                 </div>
               )}
-              {escrowStep>=4 && (
+              {escrowStep > 0 && escrowStep < 4 && !disputeSubmitted && (
+                <div style={{marginTop:12}}>
+                  {!showDispute ? (
+                    <button onClick={()=>setShowDispute(true)} style={{width:'100%',padding:'8px',borderRadius:8,border:'1px solid rgba(239,68,68,0.3)',background:'transparent',color:'#f87171',fontSize:13,cursor:'pointer'}}>
+                      ⚠️ Report an Issue
+                    </button>
+                  ) : (
+                    <div style={{background:'rgba(239,68,68,0.05)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:10,padding:14}}>
+                      <div style={{color:'#f87171',fontWeight:600,marginBottom:10,fontSize:14}}>⚠️ Report Issue</div>
+                      <textarea value={disputeReason} onChange={e=>setDisputeReason(e.target.value)} placeholder="Describe the problem..." rows={3} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
+                      <div style={{display:'flex',gap:8,marginTop:8}}>
+                        <button onClick={()=>setShowDispute(false)} style={{flex:1,padding:'8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button>
+                        <button onClick={handleDispute} disabled={!disputeReason.trim()} style={{flex:2,padding:'8px',borderRadius:8,border:'none',background:disputeReason.trim()?'#dc2626':'#1e293b',color:'#fff',fontWeight:700,fontSize:13,cursor:disputeReason.trim()?'pointer':'not-allowed'}}>Submit Report</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {disputeSubmitted && (
+                <div style={{marginTop:12,padding:'10px 12px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,color:'#f87171',fontWeight:600,textAlign:'center'}}>
+                  ✅ Dispute submitted. Admin will review shortly.
+                </div>
+              )}
+                            {escrowStep>=4 && (
                 <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'#10b981',fontWeight:600,textAlign:'center'}}>
                   ✅ Order Completed!
                 </div>
