@@ -21,6 +21,9 @@ export default function ListingDetailPage({ params }) {
   const [rating, setRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [showDispute, setShowDispute] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeSubmitted, setDisputeSubmitted] = useState(false);
 
   useEffect(() => {
     api.listings.get(id).then(setListing).catch(()=>{}).finally(()=>setLoading(false));
@@ -48,6 +51,15 @@ export default function ListingDetailPage({ params }) {
     try {
       await api.orders.review(order.id, { rating, comment: reviewComment });
       setReviewSubmitted(true);
+    } catch(e) { setBuyError(e.message); }
+  }
+
+  async function handleDispute() {
+    if (!disputeReason.trim()) return;
+    try {
+      await api.orders.dispute(order.id, { reason: disputeReason });
+      setDisputeSubmitted(true);
+      setShowDispute(false);
     } catch(e) { setBuyError(e.message); }
   }
 
@@ -106,9 +118,30 @@ export default function ListingDetailPage({ params }) {
                 </div>
               ))}
               {escrowStep===2 && (
-                <button onClick={handleConfirm} disabled={buying} style={{marginTop:8,width:'100%',padding:10,borderRadius:8,border:'none',background:buying?'#065f46':'#10b981',color:'#fff',fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>
-                  {buying?'Confirming...':'Confirm Receipt'}
-                </button>
+                <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:8}}>
+                  <button onClick={handleConfirm} disabled={buying} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:buying?'#065f46':'#10b981',color:'#fff',fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>
+                    {buying?'Confirming...':'Confirm Receipt'}
+                  </button>
+                  {!disputeSubmitted && (
+                    <button onClick={()=>setShowDispute(v=>!v)} style={{width:'100%',padding:'8px',borderRadius:8,border:'1px solid rgba(239,68,68,0.4)',background:'transparent',color:'#f87171',fontWeight:600,cursor:'pointer',fontSize:13}}>
+                      ⚠️ Report a problem
+                    </button>
+                  )}
+                  {showDispute && !disputeSubmitted && (
+                    <div style={{background:'#0d1117',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,padding:12}}>
+                      <div style={{color:'#f87171',fontWeight:600,fontSize:13,marginBottom:8}}>Describe the issue</div>
+                      <textarea value={disputeReason} onChange={e=>setDisputeReason(e.target.value)} placeholder="e.g. Item not delivered, wrong item received..." rows={3} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,color:'#e8eaf0',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
+                      <button onClick={handleDispute} disabled={!disputeReason.trim()} style={{marginTop:8,width:'100%',padding:'8px',borderRadius:6,border:'none',background:disputeReason.trim()?'#dc2626':'#1e293b',color:'#fff',fontWeight:700,cursor:disputeReason.trim()?'pointer':'not-allowed',fontSize:13}}>
+                        Submit Dispute
+                      </button>
+                    </div>
+                  )}
+                  {disputeSubmitted && (
+                    <div style={{padding:'8px 12px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,color:'#f87171',fontWeight:600,fontSize:13,textAlign:'center'}}>
+                      ❗ Dispute submitted — admin will review
+                    </div>
+                  )}
+                </div>
               )}
               {escrowStep>=4 && (
                 <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'#10b981',fontWeight:600,textAlign:'center'}}>
