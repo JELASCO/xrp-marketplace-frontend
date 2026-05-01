@@ -37,7 +37,7 @@ export default function ListingsPage() {
     <style>{`@media(max-width:640px){.lst-sidebar{display:none!important}.lst-sidebar.open{display:flex!important}.lst-toggle{display:flex!important}}`}</style>
       <div style={{display:'flex',gap:24}}>
       <button className="lst-toggle" onClick={()=>setShowSidebar(v=>!v)} style={{display:'none',alignItems:'center',gap:6,background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 14px',fontSize:13,cursor:'pointer',marginBottom:12}}>
-        🔍 {showSidebar?'Hide':'Filters'}
+        {showSidebar?'Hide':'Filters'}
       </button>
       <aside className={`lst-sidebar${showSidebar?' open':''}`} style={{width:190,flexShrink:0,display:'flex',flexDirection:'column',gap:20}}>
         <div>
