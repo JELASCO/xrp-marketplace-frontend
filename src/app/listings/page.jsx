@@ -13,6 +13,7 @@ export default function ListingsPage() {
   const [game,setGame]=useState('');
   const [sort,setSort]=useState('created_at');
   const [q,setQ]=useState('');
+  const [showSidebar,setShowSidebar]=useState(false);
 
   useEffect(()=>{
     if(typeof window!=='undefined'){
@@ -35,7 +36,10 @@ export default function ListingsPage() {
     <>
     <style>{`@media(max-width:640px){.lst-sidebar{display:none!important}.lst-sidebar.open{display:flex!important}.lst-toggle{display:flex!important}}`}</style>
       <div style={{display:'flex',gap:24}}>
-      <aside className="lst-sidebar" style={{width:190,flexShrink:0,display:'flex',flexDirection:'column',gap:20}}>
+      <button className="lst-toggle" onClick={()=>setShowSidebar(v=>!v)} style={{display:'none',alignItems:'center',gap:6,background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 14px',fontSize:13,cursor:'pointer',marginBottom:12}}>
+        🔍 {showSidebar?'Hide':'Filters'}
+      </button>
+      <aside className={`lst-sidebar${showSidebar?' open':''}`} style={{width:190,flexShrink:0,display:'flex',flexDirection:'column',gap:20}}>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Category</div>
           {CATS.map(c=>(
