@@ -32,8 +32,10 @@ export default function ListingsPage() {
   },[category,game,sort,q]);
 
   return (
-    <div style={{display:'flex',gap:24}}>
-      <aside style={{width:190,flexShrink:0,display:'flex',flexDirection:'column',gap:20}}>
+    <>
+    <style>{`@media(max-width:640px){.lst-sidebar{display:none!important}.lst-sidebar.open{display:flex!important}.lst-toggle{display:flex!important}}`}</style>
+      <div style={{display:'flex',gap:24}}>
+      <aside className="lst-sidebar" style={{width:190,flexShrink:0,display:'flex',flexDirection:'column',gap:20}}>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Category</div>
           {CATS.map(c=>(
@@ -91,5 +93,5 @@ export default function ListingsPage() {
       </div>
       <style>{`@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
+    </>
   );
-}
