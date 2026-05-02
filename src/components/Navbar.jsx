@@ -70,6 +70,7 @@ export default function Navbar() {
                   </button>
                 </div>
               )}
+              </div>
             </div>
           ) : (
             <button onClick={()=>setShowLogin(true)}
@@ -81,5 +82,79 @@ export default function Navbar() {
       </nav>
       {showLogin && <XummLoginModal onClose={()=>setShowLogin(false)}/>}
     </>
+  );
+}
+
+
+function NotificationsBell() {
+  const items = useNotificationsStore(s => s.items);
+  const unread = useNotificationsStore(s => s.unread);
+  const markRead = useNotificationsStore(s => s.markRead);
+  const markAllRead = useNotificationsStore(s => s.markAllRead);
+  const [open, setOpen] = useState(false);
+
+  function labelFor(n) {
+    const t = n.type;
+    const p = n.payload || {};
+    if (t === 'new_order') return 'New order on "' + (p.listingTitle || 'listing') + '"';
+    if (t === 'order_completed') return 'Order completed';
+    if (t === 'dispute_opened') return 'Dispute opened on your order';
+    if (t === 'dispute_resolved') return 'Dispute resolved' + (p.favorBuyer ? ' (refunded)' : ' (released)');
+    if (t === 'new_review') return 'New review (' + (p.rating || '') + '★)';
+    return t;
+  }
+  function timeAgo(d) {
+    if (!d) return '';
+    const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.floor(s/60) + 'm';
+    if (s < 86400) return Math.floor(s/3600) + 'h';
+    return Math.floor(s/86400) + 'd';
+  }
+
+  return (
+    <div style={{position:'relative'}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,cursor:'pointer',color:'#8892a4',position:'relative',padding:0}}>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
+        {unread > 0 && (
+          <span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',color:'#fff',fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px',border:'2px solid #0a0d13'}}>{unread > 9 ? '9+' : unread}</span>
+        )}
+      </button>
+      {open && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{position:'fixed',inset:0,zIndex:99}}/>
+          <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:340,maxWidth:'90vw',maxHeight:440,overflow:'hidden',display:'flex',flexDirection:'column',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+              <span style={{fontSize:13,fontWeight:600,color:'#e8eaf0'}}>Notifications</span>
+              {unread > 0 && (
+                <button onClick={markAllRead} style={{background:'none',border:'none',color:'#60a5fa',fontSize:11,cursor:'pointer',padding:0}}>Mark all read</button>
+              )}
+            </div>
+            <div style={{overflowY:'auto',flex:1}}>
+              {items.length === 0 ? (
+                <div style={{padding:'30px 16px',textAlign:'center',color:'#4a5568',fontSize:12}}>No notifications yet</div>
+              ) : items.map(n => {
+                const orderId = n.payload && n.payload.orderId;
+                const inner = (
+                  <div style={{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.04)',background:n.is_read?'transparent':'rgba(59,130,246,0.06)',display:'flex',alignItems:'flex-start',gap:8,cursor:orderId?'pointer':'default'}}>
+                    {!n.is_read && <span style={{width:6,height:6,borderRadius:'50%',background:'#3b82f6',marginTop:6,flexShrink:0}}/>}
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,color:'#e8eaf0',lineHeight:1.4}}>{labelFor(n)}</div>
+                      <div style={{fontSize:10,color:'#4a5568',marginTop:2}}>{timeAgo(n.created_at)} ago</div>
+                    </div>
+                  </div>
+                );
+                const onClick = () => { if (!n.is_read) markRead(n.id); setOpen(false); };
+                return orderId ? (
+                  <Link key={n.id} href={'/orders/' + orderId} onClick={onClick} style={{textDecoration:'none'}}>{inner}</Link>
+                ) : (
+                  <div key={n.id} onClick={onClick}>{inner}</div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
