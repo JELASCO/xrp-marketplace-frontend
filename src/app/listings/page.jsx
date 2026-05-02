@@ -14,6 +14,10 @@ export default function ListingsPage() {
   const [sort,setSort]=useState('created_at');
   const [q,setQ]=useState('');
   const [showSidebar,setShowSidebar]=useState(false);
+  const [offset,setOffset]=useState(0);
+  const [hasMore,setHasMore]=useState(true);
+  const [loadingMore,setLoadingMore]=useState(false);
+  const PAGE=24;
 
   useEffect(()=>{
     if(typeof window!=='undefined'){
@@ -24,13 +28,33 @@ export default function ListingsPage() {
 
   useEffect(()=>{
     setLoading(true);
-    const params={sort,limit:48};
+    setOffset(0);
+    setHasMore(true);
+    const params={sort,limit:PAGE,offset:0};
     if(category) params.category=category;
     if(game) params.game=game;
     api.listings.list(params)
-      .then(data=>{const f=q?data.filter(l=>l.title.toLowerCase().includes(q.toLowerCase())):data;setListings(f);})
-      .catch(()=>setListings([])).finally(()=>setLoading(false));
-  },[category,game,sort,q]);
+      .then(data=>{ setListings(data); setHasMore(data.length===PAGE); setOffset(PAGE); })
+      .catch(()=>setListings([]))
+      .finally(()=>setLoading(false));
+  },[category,game,sort]);
+
+  function loadMore(){
+    if(loadingMore||!hasMore) return;
+    setLoadingMore(true);
+    const params={sort,limit:PAGE,offset};
+    if(category) params.category=category;
+    if(game) params.game=game;
+    api.listings.list(params)
+      .then(data=>{
+        setListings(prev=>[...prev,...data]);
+        setHasMore(data.length===PAGE);
+        setOffset(o=>o+PAGE);
+      })
+      .finally(()=>setLoadingMore(false));
+  }
+
+  const visibleListings = q ? listings.filter(l=>l.title.toLowerCase().includes(q.toLowerCase())) : listings;
 
   return (
     <>
@@ -66,7 +90,7 @@ export default function ListingsPage() {
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontSize:16,fontWeight:700,color:'#e8eaf0'}}>Listings</span>
-            <span style={{fontSize:12,color:'#4a5568'}}>{listings.length} results</span>
+            <span style={{fontSize:12,color:'#4a5568'}}>{visibleListings.length} results</span>
           </div>
           <select style={{background:'#111620',border:'1px solid rgba(255,255,255,0.08)',color:'#8892a4',borderRadius:8,padding:'6px 12px',fontSize:13,cursor:'pointer',outline:'none'}}
             value={sort} onChange={e=>setSort(e.target.value)}>
@@ -87,13 +111,22 @@ export default function ListingsPage() {
               <div key={i} style={{background:'#111620',borderRadius:12,border:'1px solid rgba(255,255,255,0.06)',height:210,animation:'pulse2 1.5s ease-in-out infinite'}}/>
             ))}
           </div>
-        ):listings.length===0?(
-          <div style={{textAlign:'center',padding:'60px 20px',color:'#4a5568'}}>No listings found</div>
-        ):(
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
-            {listings.map(l=><ListingCard key={l.id} listing={l}/>)}
-          </div>
-        )}
+        ):visibleListings.length===0?(
+            <div style={{textAlign:'center',padding:'60px 20px',color:'#4a5568'}}>No listings found</div>
+          ):(
+            <>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
+                {visibleListings.map(l=><ListingCard key={l.id} listing={l}/>)}
+              </div>
+              {hasMore && !q && (
+                <div style={{display:'flex',justifyContent:'center',marginTop:24}}>
+                  <button onClick={loadMore} disabled={loadingMore} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.08)',color:'#e8eaf0',borderRadius:8,padding:'10px 24px',fontSize:13,fontWeight:500,cursor:loadingMore?'wait':'pointer',opacity:loadingMore?0.6:1}}>
+                    {loadingMore?'Loading...':'Load more'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
       </div>
       <style>{`@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
