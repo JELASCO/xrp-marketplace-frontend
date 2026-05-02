@@ -33,11 +33,12 @@ export default function ListingsPage() {
     const params={sort,limit:PAGE,offset:0};
     if(category) params.category=category;
     if(game) params.game=game;
+    if(q) params.q=q;
     api.listings.list(params)
       .then(data=>{ setListings(data); setHasMore(data.length===PAGE); setOffset(PAGE); })
       .catch(()=>setListings([]))
       .finally(()=>setLoading(false));
-  },[category,game,sort]);
+  },[category,game,sort,q]);
 
   function loadMore(){
     if(loadingMore||!hasMore) return;
@@ -45,6 +46,7 @@ export default function ListingsPage() {
     const params={sort,limit:PAGE,offset};
     if(category) params.category=category;
     if(game) params.game=game;
+    if(q) params.q=q;
     api.listings.list(params)
       .then(data=>{
         setListings(prev=>[...prev,...data]);
@@ -54,7 +56,7 @@ export default function ListingsPage() {
       .finally(()=>setLoadingMore(false));
   }
 
-  const visibleListings = q ? listings.filter(l=>l.title.toLowerCase().includes(q.toLowerCase())) : listings;
+  const visibleListings = listings;
 
   return (
     <>
@@ -118,7 +120,7 @@ export default function ListingsPage() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
                 {visibleListings.map(l=><ListingCard key={l.id} listing={l}/>)}
               </div>
-              {hasMore && !q && (
+              {hasMore && (
                 <div style={{display:'flex',justifyContent:'center',marginTop:24}}>
                   <button onClick={loadMore} disabled={loadingMore} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.08)',color:'#e8eaf0',borderRadius:8,padding:'10px 24px',fontSize:13,fontWeight:500,cursor:loadingMore?'wait':'pointer',opacity:loadingMore?0.6:1}}>
                     {loadingMore?'Loading...':'Load more'}
