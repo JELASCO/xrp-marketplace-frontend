@@ -84,7 +84,6 @@ export default function EditListingPage() {
         <textarea value={description} maxLength={DESC_MAX+50} onChange={e => {setDescription(e.target.value);if(fieldErrors.description)setFieldErrors(fe=>({...fe,description:null}));}} rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.description?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box',resize:'vertical'}} />
         {fieldErrors.description && <div style={{fontSize:11,color:'#f87171',marginTop:4}}>{fieldErrors.description}</div>}
       </div>
-        </div>
         {error && <div style={{color:'#f87171',fontSize:13}}>{error}</div>}
         <button onClick={handleSave} disabled={saving} style={{background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'12px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
           {saving ? 'Saving...' : 'Save Changes'}
