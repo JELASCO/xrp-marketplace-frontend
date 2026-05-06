@@ -71,7 +71,6 @@ export default function Navbar() {
                 </div>
               )}
               </div>
-            </div>
           ) : (
             <button onClick={()=>setShowLogin(true)}
               style={{display:'flex',alignItems:'center',gap:6,background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
