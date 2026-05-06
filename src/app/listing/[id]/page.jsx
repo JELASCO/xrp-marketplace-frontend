@@ -202,4 +202,16 @@ export default function ListingDetailPage({ params }) {
       </div>
     </div>
   );
+}export async function generateMetadata({ params }) {
+  try {
+    const listing = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/listings/${params.id}`).then(r => r.json());
+    return {
+      title: listing.title + ' - XRP Marketplace',
+      description: listing.description?.slice(0, 160) || 'View this listing on XRP Marketplace'
+    };
+  } catch {
+    return { title: 'Listing - XRP Marketplace' };
+  }
 }
+
+
