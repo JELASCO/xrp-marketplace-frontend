@@ -6,6 +6,11 @@ import ListingCard from '../../components/ListingCard';
 const GAMES=['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty'];
 const CATS=[{key:'',label:'All'},{key:'skin',label:'Skins'},{key:'coin',label:'Coins'},{key:'bp',label:'Battle Pass'},{key:'account',label:'Accounts'},{key:'physical',label:'Physical'},{key:'nft',label:'NFT'}];
 
+export const metadata = {
+  title: 'Browse Listings - XRP Marketplace',
+  description: 'Discover game items, skins, and digital assets for sale with XRP.'
+};
+
 export default function ListingsPage() {
   const [listings,setListings]=useState([]);
   const [loading,setLoading]=useState(true);
