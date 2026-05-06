@@ -32,19 +32,7 @@ export default function EditListingPage() {
 
   const handleSave = async () => {
     setError('');
-    const errs = {};
-    const titleTrim = title.trim();
-    if (!titleTrim) errs.title = 'Title is required';
-    else if (titleTrim.length < 4) errs.title = 'Title must be at least 4 characters';
-    else if (titleTrim.length > TITLE_MAX) errs.title = 'Title cannot exceed ' + TITLE_MAX + ' characters';
-    const descTrim = description.trim();
-    if (descTrim.length > DESC_MAX) errs.description = 'Description cannot exceed ' + DESC_MAX + ' characters';
-    const price = Number(priceXrp);
-    if (!priceXrp || isNaN(price)) errs.priceXrp = 'Enter a price';
-    else if (price < 0.01) errs.priceXrp = 'Price must be at least 0.01 XRP';
-    else if (price > 1000000) errs.priceXrp = 'Price seems too high';
-    setFieldErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    if (!title.trim()) { setError('Title required'); return; }
     setSaving(true);
     try {
       await api.listings.update(id, { title: title.trim(), description: description.trim() || null, price_xrp: Number(priceXrp) });
@@ -63,27 +51,22 @@ export default function EditListingPage() {
       <h1 style={{color:'#e8eaf0',marginBottom:24}}>Edit Listing</h1>
       <div style={{display:'flex',flexDirection:'column',gap:16}}>
         <div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
-          <label style={{color:'#8892a4',fontSize:12}}>TITLE</label>
-          <span style={{fontSize:11,color:title.length>TITLE_MAX?'#f87171':'#4a5568'}}>{title.length}/{TITLE_MAX}</span>
-        </div>
-        <input value={title} maxLength={TITLE_MAX+10} onChange={e => {setTitle(e.target.value);if(fieldErrors.title)setFieldErrors(fe=>({...fe,title:null}));}} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.title?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
-        {fieldErrors.title && <div style={{fontSize:11,color:'#f87171',marginTop:4}}>{fieldErrors.title}</div>}
-      </div>
+          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>TITLE</label>
+          <input value={title} maxLength={TITLE_MAX+10} onChange={e=>{setTitle(e.target.value);setFieldErrors(fe=>({...fe,title:null}));}} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.title?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
+        {fieldErrors.title && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.title}</div>}
+        <div style={{textAlign:'right',fontSize:11,color:title.length>TITLE_MAX?'#f87171':'#4a5568'}}>{title.length}/{TITLE_MAX}</div>
         </div>
         <div>
           <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>PRICE (XRP)</label>
-          <input value={priceXrp} onChange={e => {setPriceXrp(e.target.value);if(fieldErrors.priceXrp)setFieldErrors(fe=>({...fe,priceXrp:null}));}} type='number' style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.priceXrp?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
-        {fieldErrors.priceXrp && <div style={{fontSize:11,color:'#f87171',marginTop:4}}>{fieldErrors.priceXrp}</div>}
+          <input value={priceXrp} onChange={e=>{setPriceXrp(e.target.value);setFieldErrors(fe=>({...fe,priceXrp:null}));}} type='number' style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.priceXrp?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
+        {fieldErrors.priceXrp && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.priceXrp}</div>}
         </div>
         <div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
-          <label style={{color:'#8892a4',fontSize:12}}>DESCRIPTION</label>
-          <span style={{fontSize:11,color:description.length>DESC_MAX?'#f87171':'#4a5568'}}>{description.length}/{DESC_MAX}</span>
+          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>DESCRIPTION</label>
+          <textarea value={description} maxLength={DESC_MAX+50} onChange={e=>{setDescription(e.target.value);setFieldErrors(fe=>({...fe,description:null}));}} rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.description?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box',resize:'vertical'}} />
+        {fieldErrors.description && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.description}</div>}
+        <div style={{textAlign:'right',fontSize:11,color:description.length>DESC_MAX?'#f87171':'#4a5568'}}>{description.length}/{DESC_MAX}</div>
         </div>
-        <textarea value={description} maxLength={DESC_MAX+50} onChange={e => {setDescription(e.target.value);if(fieldErrors.description)setFieldErrors(fe=>({...fe,description:null}));}} rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.description?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box',resize:'vertical'}} />
-        {fieldErrors.description && <div style={{fontSize:11,color:'#f87171',marginTop:4}}>{fieldErrors.description}</div>}
-      </div>
         {error && <div style={{color:'#f87171',fontSize:13}}>{error}</div>}
         <button onClick={handleSave} disabled={saving} style={{background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'12px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
           {saving ? 'Saving...' : 'Save Changes'}
