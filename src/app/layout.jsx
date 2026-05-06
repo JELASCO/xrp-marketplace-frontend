@@ -10,6 +10,12 @@ export const metadata = {
   description: 'Buy and sell game skins, coins, battle passes and more. Secured by XRP Ledger escrow.',
 };
 
+export const metadata = {
+  title: 'XRP Marketplace - Buy & Sell Game Items with XRP',
+  description: 'Secure marketplace for trading CS2, Valorant, Fortnite items with XRP cryptocurrency. Escrow protection, instant payouts.',
+  keywords: 'XRP marketplace, game items, CS2 skins, Valorant, crypto trading'
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
