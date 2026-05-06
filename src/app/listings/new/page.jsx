@@ -1,4 +1,5 @@
 'use client';
+  const [fieldErrors, setFieldErrors] = useState({});
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,6 +9,8 @@ import { useAuthStore } from '../../../lib/store';
 const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key — replace with your own from imgbb.com
 const CATS  = [{key:'skin',label:'Skins',emoji:'🎨'},{key:'coin',label:'Coins',emoji:'💰'},{key:'bp',label:'Battle Pass',emoji:'🏆'},{key:'account',label:'Accounts',emoji:'👤'},{key:'physical',label:'Physical',emoji:'📦'},{key:'nft',label:'NFT',emoji:'💎'}];
 const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
+const TITLE_MAX = 120;
+const DESC_MAX = 2000;
 
 async function uploadToImgbb(file) {
   const fd = new FormData();
@@ -57,8 +60,20 @@ export default function NewListingPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.title.trim()) return setError('Title is required');
-    if (!form.priceXrp || parseFloat(form.priceXrp) <= 0) return setError('Enter a valid price');
+    setError('');
+    const errs = {};
+    const title = form.title.trim();
+    if (!title) errs.title = 'Title is required';
+    else if (title.length < 4) errs.title = 'Title must be at least 4 characters';
+    else if (title.length > TITLE_MAX) errs.title = 'Title cannot exceed ' + TITLE_MAX + ' characters';
+    const desc = form.description.trim();
+    if (desc.length > DESC_MAX) errs.description = 'Description cannot exceed ' + DESC_MAX + ' characters';
+    const price = parseFloat(form.priceXrp);
+    if (!form.priceXrp || isNaN(price)) errs.priceXrp = 'Enter a price';
+    else if (price < 0.01) errs.priceXrp = 'Price must be at least 0.01 XRP';
+    else if (price > 1000000) errs.priceXrp = 'Price seems too high';
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setLoading(true); setError('');
     try {
       const l = await api.listings.create({ ...form, priceXrp: parseFloat(form.priceXrp) });
@@ -91,9 +106,14 @@ export default function NewListingPage() {
             </div>
           </div>
 
-          <div><label className="label">Title *</label>
-            <input className="input" placeholder="e.g. AWP Dragon Lore Factory New" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
-          </div>
+          <div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
+                <label className="label" style={{margin:0}}>Title *</label>
+                <span style={{fontSize:11,color:form.title.length>TITLE_MAX?'#f87171':'#4a5568'}}>{form.title.length}/{TITLE_MAX}</span>
+              </div>
+              <input className="input" maxLength={TITLE_MAX+10} placeholder="e.g. AWP Dragon Lore Factory New" value={form.title} onChange={e=>{setForm(f=>({...f,title:e.target.value}));if(fieldErrors.title)setFieldErrors(fe=>({...fe,title:null}));}} style={{borderColor:fieldErrors.title?'rgba(248,113,113,0.5)':undefined}}/>
+              {fieldErrors.title && <div style={{fontSize:11,color:'#f87171',marginTop:4}}>{fieldErrors.title}</div>}
+            </div>
 
           <div><label className="label">Game / Platform</label>
             <select className="input" value={form.game} onChange={e=>setForm(f=>({...f,game:e.target.value}))}>
@@ -101,17 +121,23 @@ export default function NewListingPage() {
             </select>
           </div>
 
-          <div><label className="label">Description</label>
-            <textarea className="input" rows={3} placeholder="Describe your item..." value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} style={{resize:'vertical'}}/>
-          </div>
+          <div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
+                <label className="label" style={{margin:0}}>Description</label>
+                <span style={{fontSize:11,color:form.description.length>DESC_MAX?'#f87171':'#4a5568'}}>{form.description.length}/{DESC_MAX}</span>
+              </div>
+              <textarea className="input" rows={3} maxLength={DESC_MAX+50} placeholder="Describe your item..." value={form.description} onChange={e=>{setForm(f=>({...f,description:e.target.value}));if(fieldErrors.description)setFieldErrors(fe=>({...fe,description:null}));}} style={{resize:'vertical',borderColor:fieldErrors.description?'rgba(248,113,113,0.5)':undefined}}/>
+              {fieldErrors.description && <div style={{fontSize:11,color:'#f87171',marginTop:4}}>{fieldErrors.description}</div>}
+            </div>
 
           <div>
             <label className="label">Price (XRP) *</label>
             <div style={{position:'relative'}}>
-              <input className="input" type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e=>setForm(f=>({...f,priceXrp:e.target.value}))} style={{paddingRight:50}}/>
+              <input className="input" type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e=>{setForm(f=>({...f,priceXrp:e.target.value}));if(fieldErrors.priceXrp)setFieldErrors(fe=>({...fe,priceXrp:null}));}} style={{paddingRight:50,borderColor:fieldErrors.priceXrp?'rgba(248,113,113,0.5)':undefined}}/>
               <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'#4a5568',fontWeight:600}}>XRP</span>
             </div>
             {commission && <div style={{fontSize:12,color:'#4a5568',marginTop:5}}>~<span style={{color:'#10b981'}}>{commission} XRP</span> after 3% fee</div>}
+              {fieldErrors.priceXrp && <div style={{fontSize:11,color:'#f87171',marginTop:4}}>{fieldErrors.priceXrp}</div>}
           </div>
 
           <div>
