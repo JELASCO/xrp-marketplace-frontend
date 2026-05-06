@@ -1,137 +1,192 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '../../lib/api';
 import ListingCard from '../../components/ListingCard';
 
-const GAMES=['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty'];
-const CATS=[{key:'',label:'All'},{key:'skin',label:'Skins'},{key:'coin',label:'Coins'},{key:'bp',label:'Battle Pass'},{key:'account',label:'Accounts'},{key:'physical',label:'Physical'},{key:'nft',label:'NFT'}];
+const CATS = [
+  { key: '', label: 'All', emoji: '🌐' },
+  { key: 'skin', label: 'Skins & Cosmetics', emoji: '🎨' },
+  { key: 'coin', label: 'Coins & Currency', emoji: '💰' },
+  { key: 'bp', label: 'Battle Pass', emoji: '🎖' },
+  { key: 'account', label: 'Accounts', emoji: '🤖' },
+  { key: 'nft', label: 'NFTs', emoji: '💎' },
+  { key: 'key', label: 'CD Keys & Gift Cards', emoji: '🔑' },
+  { key: 'item', label: 'In-Game Items', emoji: '🛡' },
+  { key: 'bundle', label: 'Bundles', emoji: '📦' },
+  { key: 'template', label: 'Templates & Tools', emoji: '📄' },
+  { key: 'art', label: 'Digital Art', emoji: '🖼' },
+  { key: 'ebook', label: 'Ebooks & Guides', emoji: '📚' },
+  { key: 'audio', label: 'Music & Audio', emoji: '🎵' },
+  { key: 'software', label: 'Software & Scripts', emoji: '💻' },
+];
+
+const SORTS = [
+  { key: 'newest', label: 'Newest' },
+  { key: 'price_asc', label: 'Price: Low → High' },
+  { key: 'price_desc', label: 'Price: High → Low' },
+  { key: 'popular', label: 'Popular' },
+];
 
 export default function ListingsPage() {
-  const [listings,setListings]=useState([]);
-  const [loading,setLoading]=useState(true);
-  const [category,setCategory]=useState('');
-  const [game,setGame]=useState('');
-  const [sort,setSort]=useState('created_at');
-  const [q,setQ]=useState('');
-  const [showSidebar,setShowSidebar]=useState(false);
-  const [offset,setOffset]=useState(0);
-  const [hasMore,setHasMore]=useState(true);
-  const [loadingMore,setLoadingMore]=useState(false);
-  const PAGE=24;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cat, setCat] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [q, setQ] = useState('');
+  const [inputQ, setInputQ] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const searchRef = useRef(null);
 
-  useEffect(()=>{
-    if(typeof window!=='undefined'){
-      const p=new URLSearchParams(window.location.search);
-      if(p.get('q')) setQ(p.get('q'));
-    }
-  },[]);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('q')) { setQ(p.get('q')); setInputQ(p.get('q')); }
+    if (p.get('cat')) setCat(p.get('cat'));
+  }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     setLoading(true);
     setOffset(0);
-    setHasMore(true);
-    const params={sort,limit:PAGE,offset:0};
-    if(category) params.category=category;
-    if(game) params.game=game;
-    if(q) params.q=q;
+    setHasMore(false);
+    const params = { sort, limit: 24, offset: 0 };
+    if (cat) params.category = cat;
+    if (q) params.search = q;
+    if (minPrice) params.minPrice = minPrice;
+    if (maxPrice) params.maxPrice = maxPrice;
     api.listings.list(params)
-      .then(data=>{ setListings(data); setHasMore(data.length===PAGE); setOffset(PAGE); })
-      .catch(()=>setListings([]))
-      .finally(()=>setLoading(false));
-  },[category,game,sort,q]);
-
-  function loadMore(){
-    if(loadingMore||!hasMore) return;
-    setLoadingMore(true);
-    const params={sort,limit:PAGE,offset};
-    if(category) params.category=category;
-    if(game) params.game=game;
-    if(q) params.q=q;
-    api.listings.list(params)
-      .then(data=>{
-        setListings(prev=>[...prev,...data]);
-        setHasMore(data.length===PAGE);
-        setOffset(o=>o+PAGE);
+      .then(data => {
+        setListings(data || []);
+        setHasMore((data || []).length === 24);
       })
-      .finally(()=>setLoadingMore(false));
-  }
+      .catch(() => setListings([]))
+      .finally(() => setLoading(false));
+  }, [cat, sort, q, minPrice, maxPrice]);
 
-  const visibleListings = listings;
+  const loadMore = () => {
+    const next = offset + 24;
+    const params = { sort, limit: 24, offset: next };
+    if (cat) params.category = cat;
+    if (q) params.search = q;
+    if (minPrice) params.minPrice = minPrice;
+    if (maxPrice) params.maxPrice = maxPrice;
+    api.listings.list(params).then(data => {
+      setListings(l => [...l, ...(data || [])]);
+      setOffset(next);
+      setHasMore((data || []).length === 24);
+    });
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setQ(inputQ.trim());
+  };
+
+  const clearFilters = () => {
+    setCat(''); setSort('newest'); setQ(''); setInputQ(''); setMinPrice(''); setMaxPrice('');
+  };
+
+  const hasActiveFilters = cat || q || minPrice || maxPrice || sort !== 'newest';
 
   return (
-    <>
-    <style>{`@media(max-width:640px){.lst-sidebar{display:none!important}.lst-sidebar.open{display:flex!important}.lst-toggle{display:flex!important}}`}</style>
-      <div style={{display:'flex',gap:24}}>
-      <button className="lst-toggle" onClick={()=>setShowSidebar(v=>!v)} style={{display:'none',alignItems:'center',gap:6,background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 14px',fontSize:13,cursor:'pointer',marginBottom:12}}>
-        {showSidebar?'Hide':'Filters'}
-      </button>
-      <aside className={`lst-sidebar${showSidebar?' open':''}`} style={{width:190,flexShrink:0,display:'flex',flexDirection:'column',gap:20}}>
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Category</div>
-          {CATS.map(c=>(
-            <button key={c.key} onClick={()=>setCategory(c.key)} style={{
-              width:'100%',textAlign:'left',padding:'7px 10px',borderRadius:8,fontSize:13,cursor:'pointer',border:'none',marginBottom:2,transition:'all 0.15s',
-              background:category===c.key?'rgba(59,130,246,0.12)':'transparent',
-              color:category===c.key?'#60a5fa':'#8892a4',
-            }}
-              onMouseEnter={e=>{if(category!==c.key){e.currentTarget.style.background='#161c28';e.currentTarget.style.color='#e8eaf0';}}}
-              onMouseLeave={e=>{if(category!==c.key){e.currentTarget.style.background='transparent';e.currentTarget.style.color='#8892a4';}}}>
-              {c.label}
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      {/* Search bar */}
+      <form onSubmit={handleSearch} style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+        <input
+          ref={searchRef}
+          value={inputQ}
+          onChange={e => setInputQ(e.target.value)}
+          placeholder="Search listings..."
+          style={{ flex: 1, background: '#111620', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px', color: '#e8eaf0', fontSize: 14, outline: 'none' }}
+        />
+        <button type="submit" style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+          Search
+        </button>
+        <button type="button" onClick={() => setShowFilters(f => !f)} style={{ background: showFilters ? '#1e293b' : '#111620', border: '1px solid rgba(255,255,255,0.08)', color: '#8892a4', borderRadius: 10, padding: '10px 14px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          ⚙ Filters {hasActiveFilters && <span style={{ background: '#3b82f6', color: '#fff', borderRadius: 10, fontSize: 10, padding: '1px 6px' }}>ON</span>}
+        </button>
+      </form>
+
+      {/* Filter panel */}
+      {showFilters && (
+        <div style={{ background: '#111620', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#4a5568', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sort</div>
+            <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.1)', color: '#e8eaf0', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}>
+              {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: '#4a5568', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Min Price (XRP)</div>
+            <input type="number" min="0" step="0.01" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="0" style={{ width: 90, background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.1)', color: '#e8eaf0', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: '#4a5568', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Max Price (XRP)</div>
+            <input type="number" min="0" step="0.01" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="∞" style={{ width: 90, background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.1)', color: '#e8eaf0', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
+          </div>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>
+              Clear all
             </button>
-          ))}
-        </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Game</div>
-          <select className="input" style={{fontSize:12}} value={game} onChange={e=>setGame(e.target.value)}>
-            <option value="">All games</option>
-            {GAMES.map(g=><option key={g}>{g}</option>)}
-          </select>
-        </div>
-      </aside>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:16,fontWeight:700,color:'#e8eaf0'}}>Listings</span>
-            <span style={{fontSize:12,color:'#4a5568'}}>{visibleListings.length} results</span>
-          </div>
-          <select style={{background:'#111620',border:'1px solid rgba(255,255,255,0.08)',color:'#8892a4',borderRadius:8,padding:'6px 12px',fontSize:13,cursor:'pointer',outline:'none'}}
-            value={sort} onChange={e=>setSort(e.target.value)}>
-            <option value="created_at">Newest</option>
-            <option value="price_asc">Cheapest</option>
-            <option value="price_desc">Most expensive</option>
-          </select>
-        </div>
-        {q&&(
-          <div style={{marginBottom:12,display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#8892a4'}}>
-            Search: <strong style={{color:'#e8eaf0'}}>{q}</strong>
-            <button onClick={()=>setQ('')} style={{background:'none',border:'none',color:'#4a5568',cursor:'pointer',fontSize:12}}>✕ Clear</button>
-          </div>
-        )}
-        {loading?(
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
-            {Array.from({length:12}).map((_,i)=>(
-              <div key={i} style={{background:'#111620',borderRadius:12,border:'1px solid rgba(255,255,255,0.06)',height:210,animation:'pulse2 1.5s ease-in-out infinite'}}/>
-            ))}
-          </div>
-        ):visibleListings.length===0?(
-            <div style={{textAlign:'center',padding:'60px 20px',color:'#4a5568'}}>No listings found</div>
-          ):(
-            <>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
-                {visibleListings.map(l=><ListingCard key={l.id} listing={l}/>)}
-              </div>
-              {hasMore && (
-                <div style={{display:'flex',justifyContent:'center',marginTop:24}}>
-                  <button onClick={loadMore} disabled={loadingMore} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.08)',color:'#e8eaf0',borderRadius:8,padding:'10px 24px',fontSize:13,fontWeight:500,cursor:loadingMore?'wait':'pointer',opacity:loadingMore?0.6:1}}>
-                    {loadingMore?'Loading...':'Load more'}
-                  </button>
-                </div>
-              )}
-            </>
           )}
+        </div>
+      )}
+
+      {/* Category tabs - horizontal scroll */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 20, scrollbarWidth: 'none' }}>
+        {CATS.map(c => (
+          <button key={c.key} onClick={() => setCat(c.key)} style={{ flexShrink: 0, background: cat === c.key ? '#3b82f6' : '#111620', color: cat === c.key ? '#fff' : '#8892a4', border: '1px solid ' + (cat === c.key ? '#3b82f6' : 'rgba(255,255,255,0.06)'), borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: cat === c.key ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
+            {c.emoji} {c.label}
+          </button>
+        ))}
       </div>
-      <style>{`@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
+
+      {/* Results header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span style={{ fontSize: 13, color: '#4a5568' }}>
+          {loading ? 'Loading...' : listings.length === 0 ? 'No listings found' : listings.length + (hasMore ? '+' : '') + ' listings'}
+          {q && <span style={{ color: '#8892a4' }}> for "<b style={{ color: '#e8eaf0' }}>{q}</b>"</span>}
+        </span>
+        {!showFilters && (
+          <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: '#111620', border: '1px solid rgba(255,255,255,0.06)', color: '#8892a4', borderRadius: 8, padding: '5px 10px', fontSize: 12, cursor: 'pointer' }}>
+            {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+        )}
+      </div>
+
+      {/* Grid */}
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 12 }}>
+          {[...Array(12)].map((_, i) => (
+            <div key={i} style={{ background: '#111620', borderRadius: 12, height: 220, animation: 'pulse2 1.5s infinite' }} />
+          ))}
+          <style>{'@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
+        </div>
+      ) : listings.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#111620', borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#e8eaf0', marginBottom: 6 }}>No listings found</div>
+          <div style={{ fontSize: 13, color: '#4a5568', marginBottom: 16 }}>Try different search terms or filters</div>
+          {hasActiveFilters && <button onClick={clearFilters} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}>Clear filters</button>}
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 12 }}>
+            {listings.map(l => <ListingCard key={l.id} listing={l} />)}
+          </div>
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: 24 }}>
+              <button onClick={loadMore} style={{ background: '#111620', border: '1px solid rgba(255,255,255,0.08)', color: '#8892a4', borderRadius: 10, padding: '10px 28px', fontSize: 13, cursor: 'pointer' }}>Load more</button>
+            </div>
+          )}
+        </>
+      )}
     </div>
-    </>
   );
 }
