@@ -30,4 +30,9 @@ export const api = {
     add: (listingId) => request('/favorites/' + listingId, { method: 'POST' }),
     remove: (listingId) => request('/favorites/' + listingId, { method: 'DELETE' }),
   },
+  messages: {
+    list: () => request('/messages'),
+    get: (orderId) => request('/messages/' + orderId),
+    send: (orderId, content) => request('/messages/' + orderId, { method: 'POST', body: { content } }),
+  },
 };
