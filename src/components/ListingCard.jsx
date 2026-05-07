@@ -9,10 +9,10 @@ const CAT_COLORS = {
   physical:{bg:'rgba(255,255,255,0.06)',color:'#8892a4'},
   nft:     {bg:'rgba(16,185,129,0.12)',color:'#34d399'},
 };
-const CAT_LABELS = {skin:'Skin',coin:'Coin',bp:'Battle Pass',account:'Account',physical:'Physical',nft:'NFT'};
+const CAT_LABELS = {skin:'Skin',coin:'Coin',bp:'Battle Pass',account:'Account',physical:'Physical',nft:'NFT',key:'Key',item:'Item',bundle:'Bundle',template:'Template',art:'Art',ebook:'Ebook',audio:'Audio',software:'Software'};
 const GAME_EMOJIS = {'CS2':'🔫','Valorant':'⚡','Fortnite':'🏆','Roblox':'🎮','Minecraft':'⛏️','Apex Legends':'🎯','Call of Duty':'🪖'};
 
-export default function ListingCard({ listing }) {
+export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
   const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score } = listing;
   const cat   = CAT_COLORS[category] || CAT_COLORS.account;
   const label = CAT_LABELS[category] || category;
@@ -27,6 +27,7 @@ export default function ListingCard({ listing }) {
       }}
         onMouseEnter={e=>{e.currentTarget.style.border='1px solid rgba(255,255,255,0.12)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.4)';}}
         onMouseLeave={e=>{e.currentTarget.style.border=is_featured?'1px solid rgba(59,130,246,0.4)':'1px solid rgba(255,255,255,0.06)';e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>
+        {onToggleFavorite && <button onClick={(e)=>{e.preventDefault();e.stopPropagation();onToggleFavorite(id);}} style={{position:'absolute',top:8,right:8,zIndex:10,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.2)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}><span style={{fontSize:16,color:isFavorited?'#f87171':'#8892a4'}}>{isFavorited?'❤️':'🤍'}</span></button>}
         <div style={{height:130,background:'#161c28',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
           {images?.[0] ? <img src={images[0]} alt={title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:40}}>{emoji}</span>}
           <div style={{position:'absolute',bottom:8,left:8,background:cat.bg,color:cat.color,borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>{label}</div>
