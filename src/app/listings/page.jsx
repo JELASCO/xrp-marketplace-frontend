@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../lib/api';
+import { useAuthStore } from '../../lib/store';
 import ListingCard from '../../components/ListingCard';
 
 const CATS = [
@@ -43,7 +44,13 @@ function ListingsContent() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [favIds, setFavIds] = useState(new Set());
+  const user = useAuthStore(s => s.user);
   const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (user) api.favorites.ids().then(ids => setFavIds(new Set(ids))).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -81,6 +88,15 @@ function ListingsContent() {
       setOffset(next);
       setHasMore((data || []).length === 24);
     });
+  };
+
+  const toggleFav = async (id) => {
+    if (!user) return;
+    const isFav = favIds.has(id);
+    const next = new Set(favIds);
+    if (isFav) { next.delete(id); await api.favorites.remove(id).catch(() => {}); }
+    else { next.add(id); await api.favorites.add(id).catch(() => {}); }
+    setFavIds(next);
   };
 
   const handleSearch = (e) => {
@@ -178,7 +194,7 @@ function ListingsContent() {
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 12 }}>
-            {listings.map(l => <ListingCard key={l.id} listing={l} />)}
+            {listings.map(l => <ListingCard key={l.id} listing={l} isFavorited={favIds.has(l.id)} onToggleFavorite={user ? toggleFav : undefined} />)}
           </div>
           {hasMore && (
             <div style={{ textAlign: 'center', marginTop: 24 }}>
