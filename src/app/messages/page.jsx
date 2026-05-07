@@ -1,0 +1,97 @@
+'use client';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { api } from '../../lib/api';
+import { useAuthStore } from '../../lib/store';
+
+export default function MessagesPage() {
+  const router = useRouter();
+  const user = useAuthStore(s => s.user);
+  const [convos, setConvos] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    if (!user) { router.push('/'); return; }
+    api.messages.list().then(setConvos).catch(() => {});
+  }, [user]);
+
+  useEffect(() => {
+    if (!selected) return;
+    api.messages.get(selected.order_id).then(msgs => {
+      setMessages(msgs);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    });
+  }, [selected]);
+
+  const send = async () => {
+    if (!input.trim() || !selected || sending) return;
+    setSending(true);
+    try {
+      const msg = await api.messages.send(selected.order_id, input.trim());
+      setMessages(m => [...m, msg]);
+      setInput('');
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch(e) {} finally { setSending(false); }
+  };
+
+  if (!user) return null;
+
+  return (
+    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 0, height: 'calc(100vh - 120px)', background: '#0a0e1a', borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+      {/* Sidebar */}
+      <div style={{ width: 280, borderRight: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#e8eaf0' }}>💬 Messages</h2>
+        </div>
+        {convos.length === 0 ? (
+          <div style={{ padding: 24, textAlign: 'center', color: '#4a5568', fontSize: 13 }}>No conversations yet</div>
+        ) : convos.map(c => (
+          <div key={c.order_id} onClick={() => setSelected(c)} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', background: selected?.order_id === c.order_id ? 'rgba(59,130,246,0.1)' : 'transparent', borderLeft: selected?.order_id === c.order_id ? '3px solid #3b82f6' : '3px solid transparent', transition: 'all 0.15s' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#e8eaf0' }}>{c.other_username}</span>
+              {Number(c.unread) > 0 && <span style={{ background: '#3b82f6', color: '#fff', borderRadius: 10, fontSize: 10, padding: '1px 6px' }}>{c.unread}</span>}
+            </div>
+            <div style={{ fontSize: 11, color: '#4a5568', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.listing_title}</div>
+            <div style={{ fontSize: 11, color: '#4a5568', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.content}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chat area */}
+      {!selected ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4a5568', fontSize: 14 }}>Select a conversation</div>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#111620' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#e8eaf0' }}>{selected.other_username}</div>
+            <div style={{ fontSize: 11, color: '#4a5568' }}>{selected.listing_title}</div>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {messages.map(m => {
+              const mine = m.sender_id === user.id;
+              return (
+                <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                  <div style={{ maxWidth: '70%', background: mine ? '#3b82f6' : '#1a2440', borderRadius: mine ? '12px 12px 2px 12px' : '12px 12px 12px 2px', padding: '8px 12px' }}>
+                    <div style={{ fontSize: 13, color: '#e8eaf0' }}>{m.content}</div>
+                    <div style={{ fontSize: 10, color: mine ? 'rgba(255,255,255,0.6)' : '#4a5568', marginTop: 2, textAlign: mine ? 'right' : 'left' }}>
+                      {new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+          <div style={{ padding: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="Type a message..." style={{ flex: 1, background: '#111620', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 12px', color: '#e8eaf0', fontSize: 13, outline: 'none' }} />
+            <button onClick={send} disabled={sending||!input.trim()} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending||!input.trim() ? 0.5 : 1 }}>Send</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
