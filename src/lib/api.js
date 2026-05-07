@@ -24,4 +24,10 @@ export const api = {
     markAllRead: () => request('/notifications/read-all', { method: 'POST' })
   },
   admin: { stats: () => request('/admin/stats'), disputes: () => request('/admin/disputes'), resolveDispute: (id,d) => request(`/disputes/${id}/resolve`, { method: 'POST', body: d }), banUser: (id,b) => request(`/admin/users/${id}/ban`, { method: 'PATCH', body: { banned: b } }), removeListing: (id) => request(`/admin/listings/${id}/remove`, { method: 'PATCH' }) },
+  favorites: {
+    list: () => request('/favorites'),
+    ids: () => request('/favorites/ids'),
+    add: (listingId) => request('/favorites/' + listingId, { method: 'POST' }),
+    remove: (listingId) => request('/favorites/' + listingId, { method: 'DELETE' }),
+  },
 };
