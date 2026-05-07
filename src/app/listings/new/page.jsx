@@ -6,10 +6,10 @@ import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
 const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key â replace with your own from imgbb.com
-const CATS  = [{key:'skin',label:'Skins',emoji:'ð¨'},{key:'coin',label:'Coins',emoji:'ð°'},{key:'bp',label:'Battle Pass',emoji:'ð'},{key:'account',label:'Accounts',emoji:'ð¤'},{key:'physical',label:'Physical',emoji:'ð¦'},{key:'nft',label:'NFT',emoji:'ð'}];
+const CATS=[{key:'skin',label:'Skins & Cosmetics',emoji:'🎨'},{key:'coin',label:'Coins & Currency',emoji:'💰'},{key:'bp',label:'Battle Pass',emoji:'🎖'},{key:'account',label:'Accounts',emoji:'🤖'},{key:'nft',label:'NFTs',emoji:'💎'},{key:'key',label:'CD Keys & Gift Cards',emoji:'🔑'},{key:'item',label:'In-Game Items',emoji:'🛡'},{key:'bundle',label:'Bundles',emoji:'📦'},{key:'template',label:'Templates & Tools',emoji:'📄'},{key:'art',label:'Digital Art',emoji:'🖼'},{key:'ebook',label:'Ebooks & Guides',emoji:'📚'},{key:'audio',label:'Music & Audio',emoji:'🎵'},{key:'software',label:'Software & Scripts',emoji:'💻'}];
 const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
-const TITLE_MAX = 120;
-const DESC_MAX = 2000;
+const TITLE_MAX=120;
+const DESC_MAX=2000;
 
 async function uploadToImgbb(file) {
   const fd = new FormData();
@@ -94,9 +94,7 @@ export default function NewListingPage() {
           </div>
 
           <div><label className="label">Title *</label>
-            <input className="input" maxLength={TITLE_MAX+10} placeholder="e.g. AWP Dragon Lore Factory New" value={form.title} onChange={e=>{setForm(f=>({...f,title:e.target.value}));setFieldErrors(fe=>({...fe,title:null}));}} style={{borderColor:fieldErrors.title?'rgba(248,113,113,0.5)':undefined}}/>
-              {fieldErrors.title && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.title}</div>}
-              <div style={{textAlign:'right',fontSize:11,color:form.title.length>TITLE_MAX?'#f87171':'#4a5568'}}>{form.title.length}/{TITLE_MAX}</div>
+            <input className="input" placeholder="e.g. AWP Dragon Lore Factory New" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
           </div>
 
           <div><label className="label">Game / Platform</label>
@@ -106,9 +104,7 @@ export default function NewListingPage() {
           </div>
 
           <div><label className="label">Description</label>
-            <textarea className="input" rows={3} maxLength={DESC_MAX+50} placeholder="Describe your item..." value={form.description} onChange={e=>{setForm(f=>({...f,description:e.target.value}));setFieldErrors(fe=>({...fe,description:null}));}} style={{resize:'vertical',borderColor:fieldErrors.description?'rgba(248,113,113,0.5)':undefined}}/>
-              {fieldErrors.description && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.description}</div>}
-              <div style={{textAlign:'right',fontSize:11,color:form.description.length>DESC_MAX?'#f87171':'#4a5568'}}>{form.description.length}/{DESC_MAX}</div>
+            <textarea className="input" rows={3} placeholder="Describe your item..." value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} style={{resize:'vertical'}}/>
           </div>
 
           <div>
@@ -118,7 +114,6 @@ export default function NewListingPage() {
               <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'#4a5568',fontWeight:600}}>XRP</span>
             </div>
             {commission && <div style={{fontSize:12,color:'#4a5568',marginTop:5}}>~<span style={{color:'#10b981'}}>{commission} XRP</span> after 3% fee</div>}
-              {fieldErrors.priceXrp && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.priceXrp}</div>}
           </div>
 
           <div>
@@ -147,29 +142,4 @@ export default function NewListingPage() {
       </div>
     </div>
   );
-}const CATS = [
-  {key:'skin',label:'Skins & Cosmetics',emoji:'🎨'},
-  {key:'coin',label:'Coins & Currency',emoji:'💰'},
-  {key:'bp',label:'Battle Pass',emoji:'🎖'},
-  {key:'account',label:'Accounts',emoji:'🤖'},
-  {key:'nft',label:'NFTs',emoji:'💎'},
-  {key:'key',label:'CD Keys & Gift Cards',emoji:'🔑'},
-  {key:'item',label:'In-Game Items',emoji:'🛡'},
-  {key:'bundle',label:'Bundles',emoji:'📦'},
-  {key:'template',label:'Templates & Tools',emoji:'📄'},
-  {key:'art',label:'Digital Art',emoji:'🖼'},
-  {key:'ebook',label:'Ebooks & Guides',emoji:'📚'},
-  {key:'audio',label:'Music & Audio',emoji:'🎵'},
-  {key:'software',label:'Software & Scripts',emoji:'💻'},
-];
-const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
-
-async function uploadToImgbb(file) {
-  const fd = new FormData();
-  fd.append('image', file);
-  fd.append('key', IMGBB_KEY);
-  const r = await fetch('https://api.imgbb.com/1/upload', { method:'POST', body: fd });
-  const d = await r.json();
-  if (!d.success) throw new Error('Upload failed');
-  return d.data.url;
 }
