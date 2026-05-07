@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../lib/api';
@@ -29,7 +29,7 @@ const SORTS = [
   { key: 'popular', label: 'Popular' },
 ];
 
-export default function ListingsPage() {
+function ListingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [listings, setListings] = useState([]);
@@ -189,4 +189,8 @@ export default function ListingsPage() {
       )}
     </div>
   );
+}
+
+export default function ListingsPage() {
+  return <Suspense fallback={<div style={{padding:40,color:'#4a5568',textAlign:'center'}}>Loading...</div>}><ListingsContent /></Suspense>;
 }
