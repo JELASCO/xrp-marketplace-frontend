@@ -11,6 +11,8 @@ export default function AdminPage() {
   const [listings, setListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [tab, setTab] = useState('dashboard');
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [removing, setRemoving] = useState({});
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function AdminPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#e8eaf0', letterSpacing: '-0.02em' }}>Admin Panel</h1>
         <div style={{ display: 'flex', gap: 8 }}>
-          {['dashboard', 'listings', 'disputes'].map(t => (
+          {['dashboard', 'listings', 'disputes', 'users'].map(t => (
             <button key={t} onClick={() => setTab(t)}
               style={{ padding: '7px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', borderRadius: 8, fontFamily: 'inherit', background: tab === t ? '#3b82f6' : '#111620', color: tab === t ? '#fff' : '#8892a4', outline: tab === t ? 'none' : '1px solid rgba(255,255,255,0.08)' }}>
               {t === 'dashboard' ? 'Dashboard' : t === 'listings' ? 'Listings' : 'Disputes'}
@@ -133,6 +135,28 @@ export default function AdminPage() {
                   style={{ flex: 1, background: 'rgba(16,185,129,0.1)', color: '#34d399', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8, padding: '8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Refund buyer</button>
                 <button onClick={() => api.admin.resolveDispute(d.id, { resolution: 'Release to seller', favorBuyer: false }).then(() => api.admin.disputes().then(setDisputes))}
                   style={{ flex: 1, background: 'transparent', color: '#8892a4', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Release to seller</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab === 'users' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {usersLoading && <div style={{ textAlign: 'center', padding: 40, color: '#4a5568' }}>Loading...</div>}
+          {!usersLoading && users.map(u => (
+            <div key={u.id} style={{ background: '#111620', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#e8eaf0' }}>{u.username}</span>
+                  {u.is_verified && <span style={{ fontSize: 10, background: 'rgba(16,185,129,0.15)', color: '#10b981', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>✓ Verified</span>}
+                  {u.is_banned && <span style={{ fontSize: 10, background: 'rgba(239,68,68,0.15)', color: '#f87171', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>Banned</span>}
+                  {u.role === 'admin' && <span style={{ fontSize: 10, background: 'rgba(59,130,246,0.15)', color: '#3b82f6', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>Admin</span>}
+                </div>
+                <div style={{ fontSize: 12, color: '#4a5568', marginTop: 2 }}>{u.wallet_address?.slice(0,10)}... · Rep: {u.reputation_score}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => api.admin.verifyUser(u.id, !u.is_verified).then(() => setUsers(us => us.map(x => x.id===u.id ? {...x, is_verified: !u.is_verified} : x)))} style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: u.is_verified ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: u.is_verified ? '#f87171' : '#10b981', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{u.is_verified ? 'Unverify' : '✓ Verify'}</button>
+                <button onClick={() => api.admin.banUser(u.id, !u.is_banned).then(() => setUsers(us => us.map(x => x.id===u.id ? {...x, is_banned: !u.is_banned} : x)))} style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: u.is_banned ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: u.is_banned ? '#10b981' : '#f87171', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{u.is_banned ? 'Unban' : 'Ban'}</button>
               </div>
             </div>
           ))}
