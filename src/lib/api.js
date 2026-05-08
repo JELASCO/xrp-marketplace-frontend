@@ -35,4 +35,9 @@ export const api = {
     get: (orderId) => request('/messages/' + orderId),
     send: (orderId, content) => request('/messages/' + orderId, { method: 'POST', body: { content } }),
   },
+  contact: {
+    send: (listingId, content) => request('/contact/' + listingId, { method: 'POST', body: { content } }),
+    get: (listingId) => request('/contact/' + listingId),
+    inquiries: () => request('/inquiries'),
+  },
 };
