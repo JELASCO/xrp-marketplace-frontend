@@ -42,4 +42,12 @@ export const api = {
     get: (listingId) => request('/contact/' + listingId),
     inquiries: () => request('/inquiries'),
   },
+  offers: {
+    send: (listingId, amountXrp, message) => request('/offers', { method: 'POST', body: { listingId, amountXrp, message } }),
+    received: () => request('/offers/received'),
+    sent: () => request('/offers/sent'),
+    forListing: (listingId) => request('/offers/listing/' + listingId),
+    accept: (id) => request('/offers/' + id + '/accept', { method: 'PATCH' }),
+    decline: (id) => request('/offers/' + id + '/decline', { method: 'PATCH' }),
+  },
 };
