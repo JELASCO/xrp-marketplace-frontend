@@ -6,7 +6,7 @@ import { useAuthStore } from '../../../lib/store';
 
 const CAT_COLORS = { skin:{bg:'rgba(139,92,246,0.12)',color:'#a78bfa'}, coin:{bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'}, bp:{bg:'rgba(245,158,11,0.12)',color:'#fbbf24'}, account:{bg:'rgba(255,255,255,0.06)',color:'#8892a4'}, physical:{bg:'rgba(255,255,255,0.06)',color:'#8892a4'}, nft:{bg:'rgba(16,185,129,0.12)',color:'#34d399'} };
 const CAT_LABELS = { skin:'Skin', coin:'Coin', bp:'Battle Pass', account:'Account', physical:'Physical', nft:'NFT' };
-const GAME_EMOJIS = { 'CS2':'🔫','Valorant':'⚡','Fortnite':'🏗️','Roblox':'🎮','Minecraft':'⛏️','Apex Legends':'💀','Call of Duty':'💣' };
+const GAME_EMOJIS = { 'CS2':'ð«','Valorant':'â¡','Fortnite':'ðï¸','Roblox':'ð®','Minecraft':'âï¸','Apex Legends':'ð','Call of Duty':'ð£' };
 const STEPS = ['Awaiting payment','In escrow','Delivered','Completed'];
 
 export default function ListingDetailPage({ params }) {
@@ -17,8 +17,11 @@ export default function ListingDetailPage({ params }) {
   const [order, setOrder] = useState(null);
   const [buying, setBuying] = useState(false);
   const [isFav, setIsFav] = useState(false);
+  const [showMsgModal, setShowMsgModal] = useState(false);
+  const [msgInput, setMsgInput] = useState('');
+  const [msgSent, setMsgSent] = useState(false);
   const [msgSending, setMsgSending] = useState(false);
-  const [escrowStep, setEscrowStep] = useState(0);
+      const [escrowStep, setEscrowStep] = useState(0);
   const [buyError, setBuyError] = useState('');
   const [rating, setRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
@@ -43,9 +46,29 @@ export default function ListingDetailPage({ params }) {
     if (!user || !listing) return;
     setMsgSending(true);
     try {
-      // Find or create an order context for messaging — redirect to messages
+      // Find or create an order context for messaging â redirect to messages
       window.location.href = '/messages';
     } finally { setMsgSending(false); }
+  };
+
+  const toggleFav = async () => {
+    if (!user) return;
+    const next = !isFav;
+    setIsFav(next);
+    if (next) await api.favorites.add(listing.id).catch(() => setIsFav(false));
+    else await api.favorites.remove(listing.id).catch(() => setIsFav(true));
+  };
+
+  const handleMessage = async () => {
+    if (!user || !listing || !msgInput.trim()) return;
+    setMsgSending(true);
+    try {
+      await api.contact.send(listing.id, msgInput.trim());
+      setMsgSent(true);
+      setMsgInput('');
+      setTimeout(() => { setMsgSent(false); setShowMsgModal(false); }, 2000);
+    } catch(e) { alert(e.message || 'Failed to send'); }
+    finally { setMsgSending(false); }
   };
 
   async function handleBuy() {
@@ -87,13 +110,13 @@ export default function ListingDetailPage({ params }) {
 
   const isSeller = user?.id === listing.seller_id;
   const cat = CAT_COLORS[listing.category] || CAT_COLORS.account;
-  const emoji = GAME_EMOJIS[listing.game] || '🎮';
+  const emoji = GAME_EMOJIS[listing.game] || 'ð®';
   const img = listing.images?.[0];
   const isSold = listing.status === 'sold';
 
   return (
     <div style={{maxWidth:960,margin:'0 auto',padding:'24px 16px'}}>
-      <Link href="/" style={{color:'#a78bfa',textDecoration:'none',fontSize:14}}>← Back to marketplace</Link>
+      <Link href="/" style={{color:'#a78bfa',textDecoration:'none',fontSize:14}}>â Back to marketplace</Link>
       <div className="listing-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,marginTop:24}}>
         <div>
           <div style={{background:'#111620',borderRadius:12,overflow:'hidden',aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid rgba(255,255,255,0.06)',position:'relative'}}>
@@ -120,32 +143,32 @@ export default function ListingDetailPage({ params }) {
               <Link href={`/listing/${id}/edit`} style={{/* Fav + Message */}
           <div style={{display:'flex',gap:8,marginBottom:16}}>
             <button onClick={toggleFav} disabled={!user} style={{flex:1,padding:10,borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'#8892a4',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed',transition:'all 0.15s'}}>
-              {isFav?'❤️ Saved':'🤍 Save'}
+              {isFav?'â¤ï¸ Saved':'ð¤ Save'}
             </button>
             {user && listing && user.id!==listing.seller_id && (
               <button onClick={()=>window.location.href='/messages'} style={{flex:1,padding:10,borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,fontWeight:600,cursor:'pointer'}}
                 onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
                 onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                💬 Message Seller
+                ð¬ Message Seller
               </button>
             )}
           </div>
-          {color:'#a78bfa',fontSize:13,textDecoration:'none'}}>✏️ Edit</Link>
+          {color:'#a78bfa',fontSize:13,textDecoration:'none'}}>âï¸ Edit</Link>
             </div>
           ) : isSold && !order ? (
             <div style={{padding:'14px 16px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,color:'#f87171',fontWeight:600,textAlign:'center',fontSize:15}}>
-              🔴 This item has been sold
+              ð´ This item has been sold
             </div>
           ) : !order ? (
             <button onClick={handleBuy} disabled={buying} style={{width:'100%',padding:14,borderRadius:10,border:'none',background:buying?'#1e293b':'linear-gradient(135deg,#3b82f6,#8b5cf6)',color:'#fff',fontSize:16,fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>
-              {buying?'Processing...':!user?'Sign in to buy':`Buy · ${listing.price_xrp} XRP`}
+              {buying?'Processing...':!user?'Sign in to buy':`Buy Â· ${listing.price_xrp} XRP`}
             </button>
           ) : (
             <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:16}}>
               <div style={{color:'#e8eaf0',fontWeight:600,marginBottom:12}}>Order Progress</div>
               {STEPS.map((step,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-                  <div style={{width:24,height:24,borderRadius:'50%',border:`2px solid ${i<escrowStep?'#10b981':i===escrowStep?'#3b82f6':'#2d3748'}`,background:i<escrowStep?'#10b981':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:i<escrowStep?'#fff':i===escrowStep?'#3b82f6':'#4a5568',fontWeight:700}}>{i<escrowStep?'✓':i+1}</div>
+                  <div style={{width:24,height:24,borderRadius:'50%',border:`2px solid ${i<escrowStep?'#10b981':i===escrowStep?'#3b82f6':'#2d3748'}`,background:i<escrowStep?'#10b981':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:i<escrowStep?'#fff':i===escrowStep?'#3b82f6':'#4a5568',fontWeight:700}}>{i<escrowStep?'â':i+1}</div>
                   <span style={{color:i<escrowStep?'#10b981':i===escrowStep?'#3b82f6':'#4a5568',fontSize:13}}>{step}</span>
                 </div>
               ))}
@@ -156,7 +179,7 @@ export default function ListingDetailPage({ params }) {
                   </button>
                   {!disputeSubmitted && (
                     <button onClick={()=>setShowDispute(v=>!v)} style={{width:'100%',padding:'8px',borderRadius:8,border:'1px solid rgba(239,68,68,0.4)',background:'transparent',color:'#f87171',fontWeight:600,cursor:'pointer',fontSize:13}}>
-                      ⚠️ Report a problem
+                      â ï¸ Report a problem
                     </button>
                   )}
                   {showDispute && !disputeSubmitted && (
@@ -170,7 +193,7 @@ export default function ListingDetailPage({ params }) {
                   )}
                   {disputeSubmitted && (
                     <div style={{padding:'8px 12px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,color:'#f87171',fontWeight:600,fontSize:13,textAlign:'center'}}>
-                      ❗ Dispute submitted — admin will review
+                      â Dispute submitted â admin will review
                     </div>
                   )}
                 </div>
@@ -179,11 +202,11 @@ export default function ListingDetailPage({ params }) {
                 <div style={{marginTop:12}}>
                   {!showDispute ? (
                     <button onClick={()=>setShowDispute(true)} style={{width:'100%',padding:'8px',borderRadius:8,border:'1px solid rgba(239,68,68,0.3)',background:'transparent',color:'#f87171',fontSize:13,cursor:'pointer'}}>
-                      ⚠️ Report an Issue
+                      â ï¸ Report an Issue
                     </button>
                   ) : (
                     <div style={{background:'rgba(239,68,68,0.05)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:10,padding:14}}>
-                      <div style={{color:'#f87171',fontWeight:600,marginBottom:10,fontSize:14}}>⚠️ Report Issue</div>
+                      <div style={{color:'#f87171',fontWeight:600,marginBottom:10,fontSize:14}}>â ï¸ Report Issue</div>
                       <textarea value={disputeReason} onChange={e=>setDisputeReason(e.target.value)} placeholder="Describe the problem..." rows={3} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
                       <div style={{display:'flex',gap:8,marginTop:8}}>
                         <button onClick={()=>setShowDispute(false)} style={{flex:1,padding:'8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button>
@@ -195,12 +218,12 @@ export default function ListingDetailPage({ params }) {
               )}
               {disputeSubmitted && (
                 <div style={{marginTop:12,padding:'10px 12px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,color:'#f87171',fontWeight:600,textAlign:'center'}}>
-                  ✅ Dispute submitted. Admin will review shortly.
+                  â Dispute submitted. Admin will review shortly.
                 </div>
               )}
                             {escrowStep>=4 && (
                 <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'#10b981',fontWeight:600,textAlign:'center'}}>
-                  ✅ Order Completed!
+                  â Order Completed!
                 </div>
               )}
               {escrowStep>=4 && !reviewSubmitted && (
@@ -208,7 +231,7 @@ export default function ListingDetailPage({ params }) {
                   <div style={{color:'#e8eaf0',fontWeight:600,marginBottom:12,fontSize:14}}>Rate this seller</div>
                   <div style={{display:'flex',gap:6,marginBottom:12}}>
                     {[1,2,3,4,5].map(s=>(
-                      <button key={s} onClick={()=>setRating(s)} style={{fontSize:24,background:'none',border:'none',cursor:'pointer',opacity:s<=rating?1:0.3,transition:'opacity .15s'}}>⭐</button>
+                      <button key={s} onClick={()=>setRating(s)} style={{fontSize:24,background:'none',border:'none',cursor:'pointer',opacity:s<=rating?1:0.3,transition:'opacity .15s'}}>â­</button>
                     ))}
                   </div>
                   <textarea value={reviewComment} onChange={e=>setReviewComment(e.target.value)} placeholder="Leave a comment (optional)" rows={2} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
@@ -219,7 +242,7 @@ export default function ListingDetailPage({ params }) {
               )}
               {reviewSubmitted && (
                 <div style={{marginTop:12,padding:'10px 12px',background:'rgba(59,130,246,0.1)',border:'1px solid #3b82f6',borderRadius:8,color:'#60a5fa',fontWeight:600,textAlign:'center'}}>
-                  ⭐ Review submitted!
+                  â­ Review submitted!
                 </div>
               )}
             </div>
@@ -233,5 +256,21 @@ export default function ListingDetailPage({ params }) {
         </div>
       </div>
     </div>
+
+      {showMsgModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setShowMsgModal(false)}>
+          <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:24,width:400,maxWidth:'90vw'}} onClick={e=>e.stopPropagation()}>
+            <h3 style={{margin:'0 0 4px',color:'#e8eaf0',fontSize:16}}>💬 Message Seller</h3>
+            <p style={{margin:'0 0 16px',color:'#4a5568',fontSize:12}}>{listing?.title}</p>
+            {msgSent?(<div style={{textAlign:'center',padding:20,color:'#10b981'}}>✅ Sent!</div>):(<>
+              <textarea value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Hi, I'm interested..." rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:10,color:'#e8eaf0',fontSize:13,resize:'vertical',boxSizing:'border-box',marginBottom:12}}/>
+              <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                <button onClick={()=>setShowMsgModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button>
+                <button onClick={handleMessage} disabled={!msgInput.trim()||msgSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!msgInput.trim()||msgSending?0.5:1}}>{msgSending?'Sending...':'Send'}</button>
+              </div>
+            </>)}
+          </div>
+        </div>
+      )}
   );
 }
