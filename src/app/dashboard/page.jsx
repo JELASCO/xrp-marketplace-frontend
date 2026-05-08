@@ -12,11 +12,13 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [loadingStats, setLoadingStats] = useState(true);
+  const [offers, setOffers] = useState([]);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { router.push('/'); return; }
     setLoadingStats(true);
+    api.offers.received().then(setOffers).catch(()=>{});
     api.users.myStats()
       .then(setStats)
       .catch(e => setError(e.message || 'Failed to load'))
@@ -92,6 +94,43 @@ function SmallStat({ label, value, alert }) {
     <div style={{background:'#111620',border:'1px solid '+(alert?'rgba(245,158,11,0.3)':'rgba(255,255,255,0.06)'),borderRadius:10,padding:'12px 14px'}}>
       <div style={{fontSize:18,fontWeight:700,color:alert?'#fbbf24':'#e8eaf0',lineHeight:1.1}}>{value}</div>
       <div style={{fontSize:10,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.08em',marginTop:4}}>{label}</div>
-    </div>
+    
+
+    {/* Received Offers */}
+    {offers.length > 0 && (
+      <div style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#e8eaf0', marginBottom: 14 }}>💰 Received Offers ({offers.length})</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {offers.map(o => (
+            <div key={o.id} style={{ background: '#111620', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#e8eaf0', marginBottom: 2 }}>
+                  <a href={'/listing/'+o.listing_id} style={{ color: '#e8eaf0', textDecoration: 'none' }}>{o.listing_title}</a>
+                </div>
+                <div style={{ fontSize: 12, color: '#4a5568' }}>
+                  From <strong style={{ color: '#94a3b8' }}>{o.buyer_username}</strong>
+                  {o.message && <span> · "{o.message.slice(0,60)}{o.message.length>60?'...':''}"</span>}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#3b82f6' }}>{o.amount_xrp} XRP</div>
+                <div style={{ fontSize: 11, color: '#4a5568' }}>Listed: {o.price_xrp} XRP</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button onClick={() => api.offers.accept(o.id).then(() => setOffers(prev => prev.filter(x => x.id !== o.id)))}
+                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#10b981', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  ✓ Accept
+                </button>
+                <button onClick={() => api.offers.decline(o.id).then(() => setOffers(prev => prev.filter(x => x.id !== o.id)))}
+                  style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  ✗ Decline
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+</div>
   );
 }
