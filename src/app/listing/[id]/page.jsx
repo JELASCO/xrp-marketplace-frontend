@@ -100,13 +100,12 @@ export default function ListingDetailPage({ params }) {
             <div><div style={{color:'#e8eaf0',fontWeight:600,fontSize:14}}>{listing.username}</div><div style={{color:'#4a5568',fontSize:12}}>{listing.views} views</div></div>
           </div>
 
+          {!isSeller&&<div style={{display:'flex',gap:8,marginBottom:16}}><button onClick={toggleFav} disabled={!user} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'#8892a4',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed'}}>{isFav?'❤️ Saved':'🤍 Save'}</button>{user&&<button onClick={()=>setShowMsgModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,fontWeight:600,cursor:'pointer'}}>💬 Message Seller</button>}</div>}
           {isSeller ? (
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               <span style={{color:'#8892a4',fontSize:13}}>This is your listing</span>
               <Link href={`/listing/${id}/edit`} style={{color:'#a78bfa',fontSize:13,textDecoration:'none'}}>âï¸ Edit</Link>
             </div>
-          
-          {!isSeller && <div style={{display:'flex',gap:8,marginBottom:16}}><button onClick={toggleFav} disabled={!user} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'#8892a4',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed'}}>{isFav?'❤️ Saved':'🤍 Save'}</button>{user&&<button onClick={()=>setShowMsgModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,fontWeight:600,cursor:'pointer'}}>💬 Message Seller</button>}</div>}
           ) : isSold && !order ? (
             <div style={{padding:'14px 16px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,color:'#f87171',fontWeight:600,textAlign:'center',fontSize:15}}>
               ð´ This item has been sold
