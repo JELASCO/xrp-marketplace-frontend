@@ -206,7 +206,8 @@ export default function ListingDetailPage({ params }) {
           )}
         </div>
       </div>
-    </div>
+    
       {showMsgModal&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowMsgModal(false)}><div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:24,width:420,maxWidth:'100%'}} onClick={e=>e.stopPropagation()}><h3 style={{margin:'0 0 4px',color:'#e8eaf0',fontSize:16}}>💬 Message Seller</h3><p style={{margin:'0 0 16px',color:'#4a5568',fontSize:12}}>{listing?.title}</p>{msgSent?(<div style={{textAlign:'center',padding:'20px 0',color:'#10b981',fontWeight:600}}>✅ Sent!</div>):(<><textarea value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Hi, I'm interested..." rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:10,color:'#e8eaf0',fontSize:13,resize:'vertical',boxSizing:'border-box',marginBottom:12}}/><div style={{display:'flex',gap:8,justifyContent:'flex-end'}}><button onClick={()=>setShowMsgModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button><button onClick={handleMessage} disabled={!msgInput.trim()||msgSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!msgInput.trim()||msgSending?0.5:1}}>{msgSending?'Sending...':'Send'}</button></div></>)}</div></div>)}
+</div>
   );
 }
