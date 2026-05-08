@@ -6,7 +6,7 @@ import { useAuthStore } from '../../lib/store';
 
 const STATUS_MAP = {
   pending:       {label:'Pending',   color:'#8892a4', bg:'rgba(255,255,255,0.06)'},
-  escrow_locked: {label:'In Escrow', color:'#60a5fa', bg:'rgba(59,130,246,0.12)'},
+  awaiting_payment: {label:'Awaiting Payment', color:'#f59e0b', bg:'rgba(245,158,11,0.12)'}, escrow_locked: {label:'In Escrow', color:'#60a5fa', bg:'rgba(59,130,246,0.12)'},
   delivered:     {label:'Delivered', color:'#60a5fa', bg:'rgba(59,130,246,0.12)'},
   completed:     {label:'Completed', color:'#34d399', bg:'rgba(16,185,129,0.12)'},
   disputed:      {label:'Disputed',  color:'#fbbf24', bg:'rgba(245,158,11,0.12)'},
@@ -118,7 +118,12 @@ export default function OrdersPage() {
                       </div>
                     ))}
                   </div>
-                  {(order.status==='escrow_locked'||order.status==='delivered') && role==='buyer' && (
+                  {order.status==='awaiting_payment' && role==='buyer' && (
+              <button onClick={() => handleConfirm(order)} style={{width:'100%',padding:'11px 16px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',marginBottom:8}}>
+                ⚡ Pay with Xumm · {Number(order.total_xrp).toFixed(2)} XRP
+              </button>
+            )}
+            {(order.status==='escrow_locked'||order.status==='delivered') && role==='buyer' && (
                     <div style={{display:'flex',gap:8}}>
                       <button onClick={() => handleConfirm(order)}
                         style={{flex:1,background:'rgba(16,185,129,0.1)',color:'#34d399',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'10px',fontSize:13,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
