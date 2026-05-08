@@ -75,7 +75,7 @@ export default function DashboardPage() {
                   <div style={{ fontSize: 11, color: '#4a5568' }}>Listed: {o.price_xrp} XRP</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => api.offers.accept(o.id).then(() => setOffers(p => p.filter(x => x.id !== o.id))).catch(e => alert(e.message))}
+                  <button onClick={() => api.offers.accept(o.id).then(r => { setOffers(p => p.filter(x => x.id !== o.id)); if(r.orderId) alert("Offer accepted! The buyer will now complete payment via Xumm. Order ID: " + r.orderId.slice(0,8)); }).catch(e => alert(e.message))}
                     style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#10b981', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                     ✓ Accept
                   </button>
