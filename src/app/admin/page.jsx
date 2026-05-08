@@ -57,7 +57,7 @@ export default function AdminPage() {
           {['dashboard', 'listings', 'disputes', 'users'].map(t => (
             <button key={t} onClick={() => setTab(t)}
               style={{ padding: '7px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', borderRadius: 8, fontFamily: 'inherit', background: tab === t ? '#3b82f6' : '#111620', color: tab === t ? '#fff' : '#8892a4', outline: tab === t ? 'none' : '1px solid rgba(255,255,255,0.08)' }}>
-              {t === 'dashboard' ? 'Dashboard' : t === 'listings' ? 'Listings' : 'Disputes'}
+              {t === 'dashboard' ? '📊 Dashboard' : t === 'listings' ? '📋 Listings' : t === 'disputes' ? '⚖️ Disputes' : t === 'users' ? '👥 Users' : t}
               {t === 'disputes' && disputes.length > 0 ? <span style={{ marginLeft: 6, background: 'rgba(239,68,68,0.2)', color: '#f87171', fontSize: 10, padding: '1px 5px', borderRadius: 20 }}>{disputes.length}</span> : ''}
               {t === 'listings' && listings.length > 0 ? <span style={{ marginLeft: 6, background: 'rgba(59,130,246,0.2)', color: '#60a5fa', fontSize: 10, padding: '1px 5px', borderRadius: 20 }}>{listings.length}</span> : ''}
             </button>
