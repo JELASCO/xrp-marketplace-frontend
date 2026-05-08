@@ -13,7 +13,7 @@ const CAT_LABELS = {skin:'Skin',coin:'Coin',bp:'Battle Pass',account:'Account',p
 const GAME_EMOJIS = {'CS2':'🔫','Valorant':'⚡','Fortnite':'🏆','Roblox':'🎮','Minecraft':'⛏️','Apex Legends':'🎯','Call of Duty':'🪖'};
 
 export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
-  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score } = listing;
+  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified } = listing;
   const cat   = CAT_COLORS[category] || CAT_COLORS.account;
   const label = CAT_LABELS[category] || category;
   const emoji = GAME_EMOJIS[game] || '🎮';
@@ -45,7 +45,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               <div style={{width:18,height:18,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:7,fontWeight:700,color:'#fff'}}>
                 {username?.slice(0,2).toUpperCase()}
               </div>
-              <span style={{maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{username}</span>
+              <span style={{maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{username}{is_verified && <span title='Verified Seller' style={{marginLeft:4,fontSize:10,background:'rgba(16,185,129,0.15)',color:'#10b981',borderRadius:4,padding:'1px 4px',fontWeight:700}}>✓</span>}{is_verified && <span title='Verified Seller' style={{marginLeft:4,fontSize:10,background:'rgba(16,185,129,0.15)',color:'#10b981',borderRadius:4,padding:'1px 4px',fontWeight:700,letterSpacing:'0.02em'}}>✓ Verified</span>}</span>
               {reputation_score > 0 && <span style={{color:'#f59e0b'}}>★{Number(reputation_score).toFixed(1)}</span>}
             </div>
           </div>
