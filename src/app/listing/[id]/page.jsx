@@ -21,7 +21,7 @@ export default function ListingDetailPage({ params }) {
   const [msgInput, setMsgInput] = useState('');
   const [msgSent, setMsgSent] = useState(false);
   const [msgSending, setMsgSending] = useState(false);
-      const [escrowStep, setEscrowStep] = useState(0);
+  const [escrowStep, setEscrowStep] = useState(0);
   const [buyError, setBuyError] = useState('');
   const [rating, setRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
@@ -34,44 +34,7 @@ export default function ListingDetailPage({ params }) {
     api.listings.get(id).then(setListing).catch(()=>{}).finally(()=>setLoading(false));
   }, [id]);
 
-  const toggleFav = async () => {
-    if (!user) return;
-    const next = !isFav;
-    setIsFav(next);
-    if (next) await api.favorites.add(listing.id).catch(() => setIsFav(false));
-    else await api.favorites.remove(listing.id).catch(() => setIsFav(true));
-  };
-
-  const handleMessage = async () => {
-    if (!user || !listing) return;
-    setMsgSending(true);
-    try {
-      // Find or create an order context for messaging â redirect to messages
-      window.location.href = '/messages';
-    } finally { setMsgSending(false); }
-  };
-
-  const toggleFav = async () => {
-    if (!user) return;
-    const next = !isFav;
-    setIsFav(next);
-    if (next) await api.favorites.add(listing.id).catch(() => setIsFav(false));
-    else await api.favorites.remove(listing.id).catch(() => setIsFav(true));
-  };
-
-  const handleMessage = async () => {
-    if (!user || !listing || !msgInput.trim()) return;
-    setMsgSending(true);
-    try {
-      await api.contact.send(listing.id, msgInput.trim());
-      setMsgSent(true);
-      setMsgInput('');
-      setTimeout(() => { setMsgSent(false); setShowMsgModal(false); }, 2000);
-    } catch(e) { alert(e.message || 'Failed to send'); }
-    finally { setMsgSending(false); }
-  };
-
-  async function handleBuy() {
+  const toggleFav=async()=>{if(!user)return;const n=!isFav;setIsFav(n);if(n)await api.favorites.add(listing.id).catch(()=>setIsFav(false));else await api.favorites.remove(listing.id).catch(()=>setIsFav(true));};const handleMessage=async()=>{if(!user||!listing||!msgInput.trim())return;setMsgSending(true);try{await api.contact.send(listing.id,msgInput.trim());setMsgSent(true);setMsgInput('');setTimeout(()=>{setMsgSent(false);setShowMsgModal(false);},2000);}catch(e){alert(e.message||'Failed');}finally{setMsgSending(false);}};async function handleBuy() {
     if (!user) return setBuyError('Please sign in first');
     setBuying(true); setBuyError('');
     try {
@@ -140,21 +103,10 @@ export default function ListingDetailPage({ params }) {
           {isSeller ? (
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               <span style={{color:'#8892a4',fontSize:13}}>This is your listing</span>
-              <Link href={`/listing/${id}/edit`} style={{/* Fav + Message */}
-          <div style={{display:'flex',gap:8,marginBottom:16}}>
-            <button onClick={toggleFav} disabled={!user} style={{flex:1,padding:10,borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'#8892a4',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed',transition:'all 0.15s'}}>
-              {isFav?'â¤ï¸ Saved':'ð¤ Save'}
-            </button>
-            {user && listing && user.id!==listing.seller_id && (
-              <button onClick={()=>window.location.href='/messages'} style={{flex:1,padding:10,borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,fontWeight:600,cursor:'pointer'}}
-                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
-                onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                ð¬ Message Seller
-              </button>
-            )}
-          </div>
-          {color:'#a78bfa',fontSize:13,textDecoration:'none'}}>âï¸ Edit</Link>
+              <Link href={`/listing/${id}/edit`} style={{color:'#a78bfa',fontSize:13,textDecoration:'none'}}>âï¸ Edit</Link>
             </div>
+          
+          {!isSeller && <div style={{display:'flex',gap:8,marginBottom:16}}><button onClick={toggleFav} disabled={!user} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'#8892a4',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed'}}>{isFav?'❤️ Saved':'🤍 Save'}</button>{user&&<button onClick={()=>setShowMsgModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,fontWeight:600,cursor:'pointer'}}>💬 Message Seller</button>}</div>}
           ) : isSold && !order ? (
             <div style={{padding:'14px 16px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,color:'#f87171',fontWeight:600,textAlign:'center',fontSize:15}}>
               ð´ This item has been sold
@@ -256,21 +208,6 @@ export default function ListingDetailPage({ params }) {
         </div>
       </div>
     </div>
-
-      {showMsgModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={()=>setShowMsgModal(false)}>
-          <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:24,width:400,maxWidth:'90vw'}} onClick={e=>e.stopPropagation()}>
-            <h3 style={{margin:'0 0 4px',color:'#e8eaf0',fontSize:16}}>💬 Message Seller</h3>
-            <p style={{margin:'0 0 16px',color:'#4a5568',fontSize:12}}>{listing?.title}</p>
-            {msgSent?(<div style={{textAlign:'center',padding:20,color:'#10b981'}}>✅ Sent!</div>):(<>
-              <textarea value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Hi, I'm interested..." rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:10,color:'#e8eaf0',fontSize:13,resize:'vertical',boxSizing:'border-box',marginBottom:12}}/>
-              <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
-                <button onClick={()=>setShowMsgModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button>
-                <button onClick={handleMessage} disabled={!msgInput.trim()||msgSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!msgInput.trim()||msgSending?0.5:1}}>{msgSending?'Sending...':'Send'}</button>
-              </div>
-            </>)}
-          </div>
-        </div>
-      )}
+      {showMsgModal&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowMsgModal(false)}><div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:24,width:420,maxWidth:'100%'}} onClick={e=>e.stopPropagation()}><h3 style={{margin:'0 0 4px',color:'#e8eaf0',fontSize:16}}>💬 Message Seller</h3><p style={{margin:'0 0 16px',color:'#4a5568',fontSize:12}}>{listing?.title}</p>{msgSent?(<div style={{textAlign:'center',padding:'20px 0',color:'#10b981',fontWeight:600}}>✅ Sent!</div>):(<><textarea value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Hi, I'm interested..." rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:10,color:'#e8eaf0',fontSize:13,resize:'vertical',boxSizing:'border-box',marginBottom:12}}/><div style={{display:'flex',gap:8,justifyContent:'flex-end'}}><button onClick={()=>setShowMsgModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button><button onClick={handleMessage} disabled={!msgInput.trim()||msgSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!msgInput.trim()||msgSending?0.5:1}}>{msgSending?'Sending...':'Send'}</button></div></>)}</div></div>)}
   );
 }
