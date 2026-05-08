@@ -16,6 +16,8 @@ export default function ListingDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
   const [buying, setBuying] = useState(false);
+  const [isFav, setIsFav] = useState(false);
+  const [msgSending, setMsgSending] = useState(false);
   const [escrowStep, setEscrowStep] = useState(0);
   const [buyError, setBuyError] = useState('');
   const [rating, setRating] = useState(0);
@@ -28,6 +30,23 @@ export default function ListingDetailPage({ params }) {
   useEffect(() => {
     api.listings.get(id).then(setListing).catch(()=>{}).finally(()=>setLoading(false));
   }, [id]);
+
+  const toggleFav = async () => {
+    if (!user) return;
+    const next = !isFav;
+    setIsFav(next);
+    if (next) await api.favorites.add(listing.id).catch(() => setIsFav(false));
+    else await api.favorites.remove(listing.id).catch(() => setIsFav(true));
+  };
+
+  const handleMessage = async () => {
+    if (!user || !listing) return;
+    setMsgSending(true);
+    try {
+      // Find or create an order context for messaging — redirect to messages
+      window.location.href = '/messages';
+    } finally { setMsgSending(false); }
+  };
 
   async function handleBuy() {
     if (!user) return setBuyError('Please sign in first');
@@ -98,7 +117,20 @@ export default function ListingDetailPage({ params }) {
           {isSeller ? (
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               <span style={{color:'#8892a4',fontSize:13}}>This is your listing</span>
-              <Link href={`/listing/${id}/edit`} style={{color:'#a78bfa',fontSize:13,textDecoration:'none'}}>✏️ Edit</Link>
+              <Link href={`/listing/${id}/edit`} style={{/* Fav + Message */}
+          <div style={{display:'flex',gap:8,marginBottom:16}}>
+            <button onClick={toggleFav} disabled={!user} style={{flex:1,padding:10,borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'#8892a4',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed',transition:'all 0.15s'}}>
+              {isFav?'❤️ Saved':'🤍 Save'}
+            </button>
+            {user && listing && user.id!==listing.seller_id && (
+              <button onClick={()=>window.location.href='/messages'} style={{flex:1,padding:10,borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,fontWeight:600,cursor:'pointer'}}
+                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                💬 Message Seller
+              </button>
+            )}
+          </div>
+          {color:'#a78bfa',fontSize:13,textDecoration:'none'}}>✏️ Edit</Link>
             </div>
           ) : isSold && !order ? (
             <div style={{padding:'14px 16px',background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:10,color:'#f87171',fontWeight:600,textAlign:'center',fontSize:15}}>
