@@ -17,6 +17,7 @@ export default function ListingDetailPage({ params }) {
   const [order, setOrder] = useState(null);
   const [buying, setBuying] = useState(false);
   const [isFav, setIsFav] = useState(false);
+  const [similar, setSimilar] = useState([]);
   const [showMsgModal, setShowMsgModal] = useState(false);
   const [msgInput, setMsgInput] = useState('');
   const [msgSent, setMsgSent] = useState(false);
@@ -208,6 +209,29 @@ export default function ListingDetailPage({ params }) {
       </div>
     
       {showMsgModal&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowMsgModal(false)}><div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:24,width:420,maxWidth:'100%'}} onClick={e=>e.stopPropagation()}><h3 style={{margin:'0 0 4px',color:'#e8eaf0',fontSize:16}}>💬 Message Seller</h3><p style={{margin:'0 0 16px',color:'#4a5568',fontSize:12}}>{listing?.title}</p>{msgSent?(<div style={{textAlign:'center',padding:'20px 0',color:'#10b981',fontWeight:600}}>✅ Sent!</div>):(<><textarea value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Hi, I'm interested..." rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:10,color:'#e8eaf0',fontSize:13,resize:'vertical',boxSizing:'border-box',marginBottom:12}}/><div style={{display:'flex',gap:8,justifyContent:'flex-end'}}><button onClick={()=>setShowMsgModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button><button onClick={handleMessage} disabled={!msgInput.trim()||msgSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!msgInput.trim()||msgSending?0.5:1}}>{msgSending?'Sending...':'Send'}</button></div></>)}</div></div>)}
+
+
+    {/* Similar Listings */}
+    {similar.length > 0 && (
+      <div style={{ maxWidth: 1100, margin: '32px auto 0' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#e8eaf0', marginBottom: 14 }}>Similar Listings</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 12 }}>
+          {similar.map(l => (
+            <a key={l.id} href={'/listing/'+l.id} style={{ textDecoration: 'none', background: '#111620', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, overflow: 'hidden', display: 'block', transition: 'border-color 0.15s' }}
+              onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'}
+              onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'}>
+              <div style={{ height: 120, background: '#0a0e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
+                {l.images?.[0] ? <img src={l.images[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={l.title}/> : '🎮'}
+              </div>
+              <div style={{ padding: '10px 12px' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#e8eaf0', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{l.price_xrp} XRP</div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
 </div>
   );
 }
