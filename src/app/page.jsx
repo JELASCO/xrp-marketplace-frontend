@@ -15,11 +15,11 @@ const CATS = [
   {key:'nft',label:'NFT',emoji:'💎'},
 ];
 
-const STATS = [
-  {label:'Verified Sellers',value:'2,400+'},
-  {label:'Items Traded',value:'18,000+'},
-  {label:'Volume (XRP)',value:'580,000+'},
-  {label:'Avg. Rating',value:'4.9 ★'},
+const STATS_DEFAULT = [
+  {label:'Verified Sellers',value:'—'},
+  {label:'Items Traded',value:'—'},
+  {label:'Volume (XRP)',value:'—'},
+  {label:'Active Listings',value:'—'},
 ];
 
 function SkeletonCard() {
@@ -35,6 +35,19 @@ function SkeletonCard() {
 }
 
 export default function HomePage() {
+  const [liveStats, setLiveStats] = useState(null);
+  useEffect(() => {
+    fetch('/api/stats').then(r=>r.json()).then(d=>{
+      setLiveStats([
+        {label:'Verified Sellers', value: String(d.verified_sellers||0)},
+        {label:'Items Traded', value: String(d.items_traded||0)},
+        {label:'Volume (XRP)', value: d.volume_xrp > 0 ? Math.round(d.volume_xrp).toLocaleString()+' XRP' : '0 XRP'},
+        {label:'Active Listings', value: String(d.active_listings||0)},
+      ]);
+    }).catch(()=>{});
+  }, []);
+  const STATS = liveStats || STATS_DEFAULT;
+
   const user = useAuthStore(s=>s.user);
   const [listings,setListings] = useState([]);
   const [category,setCategory] = useState('');
