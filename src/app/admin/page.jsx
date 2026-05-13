@@ -93,10 +93,10 @@ export default function AdminPage() {
       {tab === 'listings' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {listingsLoading && <div style={{ textAlign: 'center', padding: '40px', color: '#4a5568', fontSize: 13 }}>Loading listings...</div>}
-          {!listingsLoading && listings.length === 0 && (
+          {!listingsLoading && (Array.isArray(listings) ? listings : []).length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#4a5568', fontSize: 13 }}>Aktif listing yok</div>
           )}
-          {listings.map(l => (
+          {(Array.isArray(listings) ? listings : []).map(l => (
             <div key={l.id} style={{ background: '#111620', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
               {l.images && l.images[0] && (
                 <img src={l.images[0]} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0, background: '#0a0e1a' }} />
@@ -108,7 +108,7 @@ export default function AdminPage() {
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#e8eaf0', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
                 <div style={{ fontSize: 12, color: '#4a5568' }}>
                   {l.username && <span style={{ marginRight: 10 }}>@{l.username}</span>}
-                  <span style={{ color: '#60a5fa', fontWeight: 600 }}>{Number(l.price_xrp).toLocaleString()} XRP</span>
+                  <span style={{ color: '#60a5fa', fontWeight: 600 }}>{l.price_xrp != null ? Number(l.price_xrp).toLocaleString() : '0'} XRP</span>
                   {l.category && <span style={{ marginLeft: 10, color: '#4a5568' }}>{l.category}</span>}
                   {l.game && <span style={{ marginLeft: 6, color: '#4a5568' }}>· {l.game}</span>}
                 </div>
