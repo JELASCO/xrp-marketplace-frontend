@@ -61,7 +61,7 @@ export default function AdminPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#e8eaf0', letterSpacing: '-0.02em' }}>Admin Panel</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           {['dashboard', 'listings', 'disputes', 'users'].map(t => (
-            <button key={t} onClick={() => setTab(t)}
+            <button key={t} onClick={() => { setTab(t); if(t==='users' && user?.role==='admin'){ setUsersLoading(true); api.admin.users().then(d=>setUsers(d||[])).catch(()=>{}).finally(()=>setUsersLoading(false)); } }}
               style={{ padding: '7px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', borderRadius: 8, fontFamily: 'inherit', background: tab === t ? '#3b82f6' : '#111620', color: tab === t ? '#fff' : '#8892a4', outline: tab === t ? 'none' : '1px solid rgba(255,255,255,0.08)' }}>
               {t === 'dashboard' ? '📊 Dashboard' : t === 'listings' ? '📋 Listings' : t === 'disputes' ? '⚖️ Disputes' : t === 'users' ? '👥 Users' : t}
               {t === 'disputes' && disputes.length > 0 ? <span style={{ marginLeft: 6, background: 'rgba(239,68,68,0.2)', color: '#f87171', fontSize: 10, padding: '1px 5px', borderRadius: 20 }}>{disputes.length}</span> : ''}
