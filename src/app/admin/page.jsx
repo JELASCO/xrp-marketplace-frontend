@@ -26,7 +26,7 @@ export default function AdminPage() {
     if (tab !== 'listings' || !user || user.role !== 'admin') return;
     setListingsLoading(true);
     api.listings.list({ limit: 100, offset: 0 })
-      .then(data => setListings(data))
+      .then(data => setListings(data?.listings||data||[]))
       .catch(() => {})
       .finally(() => setListingsLoading(false));
 
