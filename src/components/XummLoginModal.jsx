@@ -5,6 +5,7 @@ import { useAuthStore } from '../lib/store';
 
 export default function XummLoginModal({ onClose }) {
   const [qrUrl,setQrUrl] = useState(null);
+  const [nextUrl,setNextUrl] = useState(null);
   const [status,setStatus] = useState('loading');
   const [error,setError] = useState(null);
   const setAuth = useAuthStore(s=>s.setAuth);
@@ -15,7 +16,7 @@ export default function XummLoginModal({ onClose }) {
   const start = useCallback(async () => {
     setStatus('loading'); setError(null); setQrUrl(null);
     try {
-      const {uuid,qrUrl:qr,wsUrl} = await api.auth.startSignIn();
+      const _resp = await api.auth.startSignIn(); const {uuid,qrUrl:qr,wsUrl} = _resp; setNextUrl(_resp.next || _resp.nextUrl || null);
       setQrUrl(qr); uuidRef.current = uuid; setStatus('pending');
       if(wsUrl) {
         wsRef.current = new WebSocket(wsUrl);
@@ -60,7 +61,7 @@ export default function XummLoginModal({ onClose }) {
         {status==='pending'&&qrUrl&&(
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
             <div style={{background:'#fff',padding:12,borderRadius:12}}>
-              <img src={qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/>
+              {(typeof window!=='undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && nextUrl) ? (<a href={nextUrl} target="_blank" rel="noopener" style={{display:'inline-block',background:'#3b82f6',color:'#fff',padding:'14px 28px',borderRadius:10,fontWeight:600,fontSize:14,textDecoration:'none',marginBottom:4}}>Open in Xumm App</a>) : (<img src={qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/>)}
             </div>
             <div style={{fontSize:13,color:'#8892a4',textAlign:'center',lineHeight:1.6}}>
               Open <strong style={{color:'#e8eaf0'}}>Xumm</strong> on your phone and scan to sign in
