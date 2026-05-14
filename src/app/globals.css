@@ -82,3 +82,51 @@ body {
     padding: 16px 12px !important;
   }
 }
+
+
+/* === Mobile responsive overrides === */
+@media (max-width: 768px) {
+  /* Grid layouts - collapse multi-column grids on mobile */
+  [style*="grid-template-columns: repeat(4"],
+  [style*="gridTemplateColumns: repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  [style*="grid-template-columns: repeat(3"],
+  [style*="gridTemplateColumns: repeat(3"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+  [style*="grid-template-columns: repeat(2"],
+  [style*="gridTemplateColumns: repeat(2"] { gap: 12px !important; }
+
+  /* Listing/card grids that use autofill/minmax */
+  [style*="minmax(280px"] { grid-template-columns: 1fr !important; }
+  [style*="minmax(200px"] { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Hero / big headings */
+  h1[style*="font-size: 42px"], h1[style*="fontSize: 42px"], h1[style*="fontSize:42"] { font-size: 28px !important; line-height: 1.2 !important; }
+  h1[style*="font-size: 36px"], h1[style*="fontSize: 36px"] { font-size: 24px !important; }
+  h1[style*="font-size: 32px"], h1[style*="fontSize: 32px"] { font-size: 22px !important; }
+  h1[style*="font-size: 28px"], h1[style*="fontSize: 28px"] { font-size: 20px !important; }
+
+  /* Container padding shrink */
+  [style*="padding: 32px"], [style*="padding:32px"] { padding: 16px !important; }
+  [style*="padding: 24px"], [style*="padding:24px"] { padding: 14px !important; }
+
+  /* Navbar - hide search bar on small screens */
+  header form, nav form { display: none !important; }
+
+  /* Hero buttons - stack vertically */
+  [style*="justify-content: space-between"][style*="display: flex"] { flex-wrap: wrap !important; gap: 12px !important; }
+
+  /* Modals - full width on mobile */
+  [style*="width: 400px"] { width: 95vw !important; max-width: 95vw !important; }
+  [style*="width: 500px"] { width: 95vw !important; max-width: 95vw !important; }
+  [style*="width: 600px"] { width: 95vw !important; max-width: 95vw !important; }
+
+  /* Tables / horizontal flex rows wrap */
+  [style*="display: flex"][style*="gap: 24"] { flex-wrap: wrap !important; }
+}
+
+@media (max-width: 480px) {
+  /* Smaller mobile - even tighter */
+  [style*="grid-template-columns: repeat(4"],
+  [style*="gridTemplateColumns: repeat(4"] { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  [style*="font-size: 22px"], [style*="fontSize: 22px"] { font-size: 18px !important; }
+  [style*="padding: 20px"], [style*="padding:20px"] { padding: 12px !important; }
+}
