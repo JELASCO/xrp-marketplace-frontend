@@ -1,24 +1,59 @@
 import './globals.css';
-import { DM_Sans } from 'next/font/google';
-import Providers from '../components/Providers';
 import Navbar from '../components/Navbar';
+import Providers from '../components/Providers';
 
-const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300','400','500','600','700'] });
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://xrp-marketplace-frontend.vercel.app';
+const SITE_NAME = 'XRPMarket';
+const TITLE = 'XRPMarket — P2P Game & Digital Items Marketplace';
+const DESCRIPTION = 'Buy and sell game skins, coins, accounts, and digital items with XRP Ledger escrow protection. Secure peer-to-peer marketplace powered by the XRP Ledger.';
 
 export const metadata = {
-  title: 'XRPMarket — P2P Game & Digital Items Marketplace',
-  description: 'Buy and sell game skins, coins, battle passes and more. Secured by XRP Ledger escrow.',
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: '%s | ' + SITE_NAME },
+  description: DESCRIPTION,
+  keywords: ['XRP', 'XRPL', 'marketplace', 'game items', 'skins', 'CS2', 'Valorant', 'crypto marketplace', 'P2P', 'escrow'],
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  formatDetection: { email: false, address: false, telephone: false },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+  },
+  icons: { icon: '/favicon.ico', apple: '/apple-icon.png' },
+  alternates: { canonical: SITE_URL },
+};
+
+export const viewport = {
+  themeColor: '#0a0e1a',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={dmSans.className} style={{background:'#080a0e',minHeight:'100vh'}}>
+      <body style={{ margin: 0, padding: 0, background: '#0a0e1a', color: '#e8eaf0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <Providers>
           <Navbar />
-          <main style={{maxWidth:1200,margin:'0 auto',padding:'24px 16px'}}>
-            {children}
-          </main>
+          <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>{children}</main>
         </Providers>
       </body>
     </html>
