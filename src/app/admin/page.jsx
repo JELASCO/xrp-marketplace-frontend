@@ -1,4 +1,4 @@
-R'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../lib/store';
 import { api } from '../../lib/api';
