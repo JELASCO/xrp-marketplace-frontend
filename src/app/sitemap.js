@@ -1,5 +1,5 @@
 export default async function sitemap() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://xrp-marketplace-frontend.vercel.app';
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://xrpharbor.com';
   const now = new Date();
   const staticRoutes = [
     { url: base, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
