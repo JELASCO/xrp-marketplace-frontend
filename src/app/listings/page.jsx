@@ -12,7 +12,6 @@ const CATS = [
   { key: 'coin', label: 'Coins & Currency', emoji: '💰' },
   { key: 'bp', label: 'Battle Pass', emoji: '🎖' },
   { key: 'account', label: 'Accounts', emoji: '🤖' },
-  { key: 'nft', label: 'NFTs', emoji: '💎' },
   { key: 'key', label: 'CD Keys & Gift Cards', emoji: '🔑' },
   { key: 'item', label: 'In-Game Items', emoji: '🛡' },
   { key: 'bundle', label: 'Bundles', emoji: '📦' },
