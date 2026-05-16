@@ -23,13 +23,13 @@ export const metadata = {
     siteName: SITE_NAME,
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: SITE_NAME }],
+    images: [{ url: '/xrpharbor.jpg', width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
-    images: ['/og-image.png'],
+    images: ['/xrpharbor.jpg'],
   },
   robots: {
     index: true,
