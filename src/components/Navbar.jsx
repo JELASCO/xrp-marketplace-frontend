@@ -23,7 +23,7 @@ export default function Navbar() {
       <nav style={{background:'rgba(8,10,14,0.9)',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(255,255,255,0.06)',position:'sticky',top:0,zIndex:50}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{fontWeight:800,fontSize:18,color:'#e8eaf0',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0}}>
-            XRP<span style={{color:'#3b82f6'}}>Market</span>
+            XRP<span style={{color:'#3b82f6'}}>Harbor</span>
           </Link>
           <form onSubmit={handleSearch} style={{flex:1,maxWidth:360,position:'relative'}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'#111620'}}
