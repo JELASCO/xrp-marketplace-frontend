@@ -12,7 +12,6 @@ const CATS = [
   {key:'bp',label:'Battle Pass',emoji:'🏆'},
   {key:'account',label:'Accounts',emoji:'👤'},
   {key:'physical',label:'Physical',emoji:'📦'},
-  {key:'nft',label:'NFT',emoji:'💎'},
 ];
 
 const STATS_DEFAULT = [
