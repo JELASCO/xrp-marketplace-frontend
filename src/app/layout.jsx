@@ -4,7 +4,7 @@ import Providers from '../components/Providers';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://xrpharbor.com';
 const SITE_NAME = 'XRPHarbor';
-const TITLE = 'XRPHarbor â P2P Game & Digital Items Marketplace';
+const TITLE = 'XRPHarbor - P2P Game & Digital Items Marketplace';
 const DESCRIPTION = 'Buy and sell game skins, coins, accounts, and digital items with XRP Ledger escrow protection. Secure peer-to-peer marketplace powered by the XRP Ledger.';
 
 export const metadata = {
