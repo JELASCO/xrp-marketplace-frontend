@@ -6,7 +6,7 @@ import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
 const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key â replace with your own from imgbb.com
-const CATS=[{key:'skin',label:'Skins & Cosmetics',emoji:'🎨'},{key:'coin',label:'Coins & Currency',emoji:'💰'},{key:'bp',label:'Battle Pass',emoji:'🎖'},{key:'account',label:'Accounts',emoji:'🤖'},{key:'nft',label:'NFTs',emoji:'💎'},{key:'key',label:'CD Keys & Gift Cards',emoji:'🔑'},{key:'item',label:'In-Game Items',emoji:'🛡'},{key:'bundle',label:'Bundles',emoji:'📦'},{key:'template',label:'Templates & Tools',emoji:'📄'},{key:'art',label:'Digital Art',emoji:'🖼'},{key:'ebook',label:'Ebooks & Guides',emoji:'📚'},{key:'audio',label:'Music & Audio',emoji:'🎵'},{key:'software',label:'Software & Scripts',emoji:'💻'}];
+const CATS=[{key:'skin',label:'Skins & Cosmetics',emoji:'🎨'},{key:'coin',label:'Coins & Currency',emoji:'💰'},{key:'bp',label:'Battle Pass',emoji:'🎖'},{key:'account',label:'Accounts',emoji:'🤖'},{key:'key',label:'CD Keys & Gift Cards',emoji:'🔑'},{key:'item',label:'In-Game Items',emoji:'🛡'},{key:'bundle',label:'Bundles',emoji:'📦'},{key:'template',label:'Templates & Tools',emoji:'📄'},{key:'art',label:'Digital Art',emoji:'🖼'},{key:'ebook',label:'Ebooks & Guides',emoji:'📚'},{key:'audio',label:'Music & Audio',emoji:'🎵'},{key:'software',label:'Software & Scripts',emoji:'💻'}];
 const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
 const TITLE_MAX=120;
 const DESC_MAX=2000;
