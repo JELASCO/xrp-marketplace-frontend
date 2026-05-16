@@ -175,6 +175,28 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+      <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'28px 24px',marginBottom:20}}>
+        <div style={{fontSize:12,fontWeight:600,color:'#3b82f6',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:8}}>FAQ</div>
+        <h2 style={{fontSize:18,fontWeight:700,color:'#e8eaf0',marginBottom:20}}>Common questions</h2>
+        <div style={{display:'flex',flexDirection:'column'}}>
+          {[
+            {q:'Is my XRP safe during a trade?',a:'Yes. When you buy, your XRP is locked in an on-chain escrow on the XRP Ledger — not held by XRPHarbor. Funds are only released to the seller when you confirm delivery. If the seller never delivers, the escrow can be cancelled and your XRP returns to your wallet.'},
+            {q:"What happens if a seller doesn't deliver?",a:'Every order has a delivery deadline. If the seller does not fulfill within the agreed window, you can cancel the escrow and the XRP returns to your wallet automatically. Verified sellers carry trust scores so you can avoid risky listings.'},
+            {q:'How are fees calculated?',a:'Sellers pay a 0.5% platform fee on completed trades. Buyers pay only the XRPL network fee (~0.0001 XRP per transaction). No hidden costs, no withdrawal fees, no FX markups.'},
+            {q:'Do I need a credit card or bank account?',a:'No. XRPHarbor is XRP-native — you trade exclusively in XRP. Get XRP from any exchange (Coinbase, Bitstamp, Bitso, etc.), send it to your Xaman wallet, and you are ready to trade. No KYC, no banking.'},
+            {q:'Which games and items are supported?',a:'All major titles — CS2, Valorant, Fortnite, Dota 2, Rocket League, WoW, LoL, and dozens more. Categories include skins, in-game currency, battle passes, accounts, CD keys, gift cards, and physical collectibles.'},
+            {q:'How do disputes work?',a:'Disputes are reviewed by our moderation team alongside delivery proof and chat history. Because escrow is on-chain, funds stay locked until resolved. Most cases are settled within 24 hours. Repeat offenders are removed from the platform.'},
+          ].map((item,i)=>(
+            <details key={i} style={{borderBottom:'1px solid rgba(255,255,255,0.06)',padding:'14px 0',cursor:'pointer'}}>
+              <summary style={{listStyle:'none',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14,fontWeight:600,color:'#e8eaf0',outline:'none'}}>
+                <span>{item.q}</span>
+                <span style={{fontSize:18,color:'#5b6370',marginLeft:12,flexShrink:0}}>+</span>
+              </summary>
+              <div style={{fontSize:13,color:'#8892a4',lineHeight:1.6,marginTop:10,paddingRight:24}}>{item.a}</div>
+            </details>
+          ))}
+        </div>
+      </div>
       <style>{`@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     
       {/* Footer */}
