@@ -168,7 +168,7 @@ export default function HomePage() {
     
       {/* Footer */}
       <footer style={{textAlign:'center',padding:'32px 20px',marginTop:40,borderTop:'1px solid rgba(255,255,255,0.06)',color:'#4a5568',fontSize:12}}>
-        <div style={{marginBottom:8}}>© 2025 XRPMarket · P2P Game & Digital Items Marketplace</div>
+        <div style={{marginBottom:8}}>© 2025 XRPHarbor · P2P Game & Digital Items Marketplace</div>
         <div style={{display:'flex',gap:16,justifyContent:'center'}}>
           <a href="/tos" style={{color:'#4a5568',textDecoration:'none'}}>Terms of Service</a>
           <a href="/privacy" style={{color:'#4a5568',textDecoration:'none'}}>Privacy Policy</a>
