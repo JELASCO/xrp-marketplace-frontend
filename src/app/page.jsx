@@ -102,26 +102,6 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Supported Games */}
-      <div style={{marginBottom:20,padding:'14px 16px',background:'#0d1218',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,display:'flex',alignItems:'center',gap:14,overflowX:'auto'}}>
-        <div style={{fontSize:10,fontWeight:700,color:'#5b6370',textTransform:'uppercase',letterSpacing:'0.08em',flexShrink:0,paddingRight:14,borderRight:'1px solid rgba(255,255,255,0.08)'}}>Supported Games</div>
-        {[
-          {name:'CS2',color:'#f4900c',short:'CS'},
-          {name:'Valorant',color:'#fd4556',short:'VL'},
-          {name:'Fortnite',color:'#7c3aed',short:'FN'},
-          {name:'Dota 2',color:'#dc2626',short:'D2'},
-          {name:'Rocket League',color:'#0ea5e9',short:'RL'},
-          {name:'WoW',color:'#f59e0b',short:'WoW'},
-          {name:'LoL',color:'#10b981',short:'LoL'},
-          {name:'Apex Legends',color:'#ef4444',short:'AP'},
-          {name:'Minecraft',color:'#16a34a',short:'MC'},
-        ].map(g=>(
-          <a key={g.name} href={`/listings?q=${encodeURIComponent(g.name)}`} style={{display:'inline-flex',alignItems:'center',gap:7,padding:'6px 12px',background:'#161c28',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,fontSize:12.5,fontWeight:600,color:'#e8eaf0',textDecoration:'none',flexShrink:0,transition:'all 0.15s'}}>
-            <span style={{width:20,height:20,borderRadius:4,background:g.color,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>{g.short}</span>
-            {g.name}
-          </a>
-        ))}
-      </div>
       <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
         {CATS.map(c=>(
           <button key={c.key} onClick={()=>setCategory(c.key)} style={{
@@ -174,7 +154,37 @@ export default function HomePage() {
         )}
       </div>
 
-      <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'28px 32px'}}>
+      {/* Sell on XRPHarbor */}
+      <div style={{background:'#0d1218',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'32px 28px',marginBottom:20,position:'relative',overflow:'hidden'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,alignItems:'center',position:'relative',zIndex:1}}>
+          <div>
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'4px 10px',background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:999,fontSize:11,fontWeight:600,color:'#60a5fa',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:14}}>For sellers</div>
+            <h2 style={{fontSize:22,fontWeight:700,color:'#e8eaf0',marginBottom:10,lineHeight:1.2,letterSpacing:'-0.02em'}}>Sell on XRPHarbor. <span style={{color:'#3b82f6'}}>Keep more of what you earn.</span></h2>
+            <p style={{fontSize:13.5,color:'#8892a4',lineHeight:1.6,marginBottom:18,maxWidth:380}}>List your items in 60 seconds. Get paid in XRP the moment escrow releases — no chargebacks, no holds, no platform delays.</p>
+            {user ? (
+              <Link href="/listings/new" style={{display:'inline-flex',alignItems:'center',gap:6,background:'#3b82f6',color:'#fff',textDecoration:'none',borderRadius:8,padding:'10px 18px',fontSize:13,fontWeight:600}}>+ List an Item</Link>
+            ) : (
+              <div style={{fontSize:12,color:'#5b6370'}}>Connect Xumm to start selling</div>
+            )}
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {[
+              {t:'0.5% platform fee',d:'Industry-leading rates. Compare to 10-15% on traditional marketplaces.'},
+              {t:'Instant XRP payout',d:'Funds hit your wallet in 3 seconds when buyer confirms delivery.'},
+              {t:'Global buyers, zero borders',d:'195+ countries. No FX fees, no PayPal disputes, no bank holds.'},
+            ].map((b,i)=>(
+              <div key={i} style={{display:'flex',gap:12,padding:'12px 14px',background:'#161c28',border:'1px solid rgba(255,255,255,0.04)',borderRadius:10}}>
+                <div style={{width:28,height:28,borderRadius:7,background:'#3b82f6',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14,fontWeight:700}}>{i+1}</div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:'#e8eaf0',marginBottom:2}}>{b.t}</div>
+                  <div style={{fontSize:11.5,color:'#8892a4',lineHeight:1.5}}>{b.d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+            <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'28px 32px'}}>
         <div style={{fontSize:12,fontWeight:600,color:'#3b82f6',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:8}}>How it works</div>
         <h2 style={{fontSize:18,fontWeight:700,color:'#e8eaf0',marginBottom:20}}>Trade with confidence</h2>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:20}}>
