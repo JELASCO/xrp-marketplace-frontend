@@ -68,7 +68,18 @@ export default function HomePage() {
           <div>
             <div style={{fontSize:12,fontWeight:600,color:'#3b82f6',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:8}}>Powered by XRP Ledger</div>
             <h1 style={{fontSize:28,fontWeight:800,color:'#e8eaf0',marginBottom:8,lineHeight:1.2,letterSpacing:'-0.02em'}}>The Secure P2P<br/>Game Marketplace</h1>
-            <p style={{fontSize:14,color:'#8892a4',maxWidth:400,lineHeight:1.6}}>Buy and sell skins, coins, and game items with XRP Ledger escrow protection.</p>
+            <p style={{fontSize:14,color:'#8892a4',maxWidth:400,lineHeight:1.6,marginBottom:20}}>Buy and sell skins, coins, and game items with XRP Ledger escrow protection.</p>
+            <form action="/listings" method="get" style={{display:'flex',gap:8,maxWidth:560,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:6,marginBottom:12}}>
+              <input name="q" type="text" placeholder="Search skins, coins, accounts, games..." aria-label="Search listings" style={{flex:1,background:'transparent',border:'none',outline:'none',color:'#e8eaf0',fontSize:14,padding:'10px 14px',fontFamily:'inherit'}} />
+              <button type="submit" style={{background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'10px 20px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Search</button>
+            </form>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6,alignItems:'center',fontSize:12,color:'#5b6370'}}>
+              <span style={{marginRight:4}}>Popular:</span>
+              <Link href="/listings?q=cs2" style={{color:'#8892a4',textDecoration:'none',padding:'3px 10px',background:'rgba(255,255,255,0.04)',borderRadius:999,fontSize:11.5}}>CS2 knives</Link>
+              <Link href="/listings?q=valorant" style={{color:'#8892a4',textDecoration:'none',padding:'3px 10px',background:'rgba(255,255,255,0.04)',borderRadius:999,fontSize:11.5}}>Valorant skins</Link>
+              <Link href="/listings?q=wow" style={{color:'#8892a4',textDecoration:'none',padding:'3px 10px',background:'rgba(255,255,255,0.04)',borderRadius:999,fontSize:11.5}}>WoW gold</Link>
+              <Link href="/listings?q=fortnite" style={{color:'#8892a4',textDecoration:'none',padding:'3px 10px',background:'rgba(255,255,255,0.04)',borderRadius:999,fontSize:11.5}}>Fortnite accounts</Link>
+            </div>
           </div>
           <div>
             {user ? (
