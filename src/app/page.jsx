@@ -102,6 +102,26 @@ export default function HomePage() {
         ))}
       </div>
 
+      {/* Supported Games */}
+      <div style={{marginBottom:20,padding:'14px 16px',background:'#0d1218',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,display:'flex',alignItems:'center',gap:14,overflowX:'auto'}}>
+        <div style={{fontSize:10,fontWeight:700,color:'#5b6370',textTransform:'uppercase',letterSpacing:'0.08em',flexShrink:0,paddingRight:14,borderRight:'1px solid rgba(255,255,255,0.08)'}}>Supported Games</div>
+        {[
+          {name:'CS2',color:'#f4900c',short:'CS'},
+          {name:'Valorant',color:'#fd4556',short:'VL'},
+          {name:'Fortnite',color:'#7c3aed',short:'FN'},
+          {name:'Dota 2',color:'#dc2626',short:'D2'},
+          {name:'Rocket League',color:'#0ea5e9',short:'RL'},
+          {name:'WoW',color:'#f59e0b',short:'WoW'},
+          {name:'LoL',color:'#10b981',short:'LoL'},
+          {name:'Apex Legends',color:'#ef4444',short:'AP'},
+          {name:'Minecraft',color:'#16a34a',short:'MC'},
+        ].map(g=>(
+          <a key={g.name} href={`/listings?q=${encodeURIComponent(g.name)}`} style={{display:'inline-flex',alignItems:'center',gap:7,padding:'6px 12px',background:'#161c28',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,fontSize:12.5,fontWeight:600,color:'#e8eaf0',textDecoration:'none',flexShrink:0,transition:'all 0.15s'}}>
+            <span style={{width:20,height:20,borderRadius:4,background:g.color,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>{g.short}</span>
+            {g.name}
+          </a>
+        ))}
+      </div>
       <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
         {CATS.map(c=>(
           <button key={c.key} onClick={()=>setCategory(c.key)} style={{
