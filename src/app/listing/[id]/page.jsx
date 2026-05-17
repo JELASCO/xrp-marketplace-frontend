@@ -29,6 +29,7 @@ export default function ListingDetailPage({ params }) {
   const [msgSent, setMsgSent] = useState(false);
   const [msgSending, setMsgSending] = useState(false);
   const [escrowStep, setEscrowStep] = useState(0);
+  const [buyXumm, setBuyXumm] = useState(null);
   const [buyError, setBuyError] = useState('');
   const [rating, setRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
@@ -47,7 +48,18 @@ export default function ListingDetailPage({ params }) {
     try {
       const o = await api.orders.create(id);
       setOrder(o); setEscrowStep(1);
-      setTimeout(()=>setEscrowStep(2), 1500);
+      // Real Xaman payload + status polling
+      const xp = await api.orders.xummPayload(o.id);
+      setBuyXumm(xp);
+      if (xp && xp.deepLink) { try { window.open(xp.deepLink, '_blank', 'noopener'); } catch(_){} }
+      // Poll until signed (max 5 min)
+      const start = Date.now();
+      while (Date.now() - start < 5 * 60 * 1000) {
+        await new Promise(r => setTimeout(r, 3000));
+        const st = await api.orders.escrowStatus(o.id).catch(()=>null);
+        if (st && (st.status === 'in_escrow' || st.status === 'completed')) { setEscrowStep(2); break; }
+        if (st && st.status === 'cancelled') { setBuyError('Payment was cancelled.'); break; }
+      }
     } catch(e) { setBuyError(e.message); }
     finally { setBuying(false); }
   }
