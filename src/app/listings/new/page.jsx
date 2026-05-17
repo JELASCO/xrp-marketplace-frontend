@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
-const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key â replace with your own from imgbb.com
-const CATS=[{key:'skin',label:'Skins & Cosmetics',emoji:'🎨'},{key:'coin',label:'Coins & Currency',emoji:'💰'},{key:'bp',label:'Battle Pass',emoji:'🎖'},{key:'account',label:'Accounts',emoji:'🤖'},{key:'key',label:'CD Keys & Gift Cards',emoji:'🔑'},{key:'item',label:'In-Game Items',emoji:'🛡'},{key:'bundle',label:'Bundles',emoji:'📦'},{key:'template',label:'Templates & Tools',emoji:'📄'},{key:'art',label:'Digital Art',emoji:'🖼'},{key:'ebook',label:'Ebooks & Guides',emoji:'📚'},{key:'audio',label:'Music & Audio',emoji:'🎵'},{key:'software',label:'Software & Scripts',emoji:'💻'}];
+const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key Ã¢ÂÂ replace with your own from imgbb.com
+const CATS=[{key:'skin',label:'Skins & Cosmetics',emoji:'ð¨'},{key:'coin',label:'Coins & Currency',emoji:'ð°'},{key:'bp',label:'Battle Pass',emoji:'ð'},{key:'account',label:'Accounts',emoji:'ð¤'},{key:'key',label:'CD Keys & Gift Cards',emoji:'ð'},{key:'item',label:'In-Game Items',emoji:'ð¡'},{key:'bundle',label:'Bundles',emoji:'ð¦'},{key:'template',label:'Templates & Tools',emoji:'ð'},{key:'art',label:'Digital Art',emoji:'ð¼'},{key:'ebook',label:'Ebooks & Guides',emoji:'ð'},{key:'audio',label:'Music & Audio',emoji:'ðµ'},{key:'software',label:'Software & Scripts',emoji:'ð»'}];
 const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
 const TITLE_MAX=120;
 const DESC_MAX=2000;
@@ -33,13 +33,13 @@ export default function NewListingPage() {
 
   if (!user) return (
     <div style={{textAlign:'center',padding:'60px 20px'}}>
-      <div style={{fontSize:40,marginBottom:16}}>ð</div>
+      <div style={{fontSize:40,marginBottom:16}}>Ã°ÂÂÂ</div>
       <div style={{fontSize:16,fontWeight:600,color:'#e8eaf0',marginBottom:8}}>Sign in required</div>
       <div style={{fontSize:13,color:'#8892a4'}}>Connect your Xumm wallet to list items.</div>
     </div>
   );
 
-  const commission = form.priceXrp ? (parseFloat(form.priceXrp) * 0.97).toFixed(2) : null;
+  const sellerReceives = form.priceXrp ? (parseFloat(form.priceXrp) * 0.97).toFixed(6) : null;
 
   async function handleFileChange(e) {
     const file = e.target.files && e.target.files[0];
@@ -71,7 +71,7 @@ export default function NewListingPage() {
   return (
     <div style={{maxWidth:560,margin:'0 auto'}}>
       <div style={{marginBottom:20}}>
-        <Link href="/listings" style={{fontSize:13,color:'#4a5568',textDecoration:'none'}}>â Back to Listings</Link>
+        <Link href="/listings" style={{fontSize:13,color:'#4a5568',textDecoration:'none'}}>Ã¢ÂÂ Back to Listings</Link>
       </div>
       <h1 style={{fontSize:22,fontWeight:800,color:'#e8eaf0',marginBottom:4,letterSpacing:'-0.02em'}}>Create New Listing</h1>
       <p style={{fontSize:13,color:'#8892a4',marginBottom:24}}>List your game items and get paid in XRP.</p>
@@ -113,7 +113,7 @@ export default function NewListingPage() {
               <input className="input" type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e=>setForm(f=>({...f,priceXrp:e.target.value}))} style={{paddingRight:50}}/>
               <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'#4a5568',fontWeight:600}}>XRP</span>
             </div>
-            {commission && <div style={{fontSize:12,color:'#4a5568',marginTop:5}}>~<span style={{color:'#10b981'}}>{commission} XRP</span> after 3% fee</div>}
+            {sellerReceives && <div style={{fontSize:12,color:'#4a5568',marginTop:5}}>You'll receive <span style={{color:'#10b981'}}>{sellerReceives} XRP</span> after 3% platform fee</div>}
           </div>
 
           <div>
@@ -123,12 +123,12 @@ export default function NewListingPage() {
               <div style={{position:'relative',marginBottom:8}}>
                 <img src={preview || form.images[0]} alt="preview" style={{width:'100%',maxHeight:200,objectFit:'cover',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)'}}/>
                 <button type="button" onClick={()=>{setPreview(null);setForm(f=>({...f,images:[]}));if(fileRef.current)fileRef.current.value='';}}
-                  style={{position:'absolute',top:6,right:6,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:12}}>â</button>
+                  style={{position:'absolute',top:6,right:6,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:12}}>Ã¢ÂÂ</button>
               </div>
             ) : null}
             <button type="button" onClick={()=>fileRef.current&&fileRef.current.click()} disabled={uploading}
               style={{width:'100%',padding:'10px',background:'#161c28',border:'1px dashed rgba(255,255,255,0.15)',borderRadius:8,color:uploading?'#4a5568':'#8892a4',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              {uploading ? 'â³ Uploading...' : 'ð Choose image (max 5MB)'}
+              {uploading ? 'Ã¢ÂÂ³ Uploading...' : 'Ã°ÂÂÂ Choose image (max 5MB)'}
             </button>
           </div>
 
