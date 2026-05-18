@@ -82,19 +82,26 @@ export default function ListingDetailPage({ params }) {
 
   async function handleConfirm() {
     setBuying(true);
+    setBuyError('');
     try {
-      await api.orders.confirm(order.id);
-      setEscrowStep(4);
-      // Poll escrow/status so backend syncs DB to completed
+      // /escrow/confirm returns Xumm payload {uuid, deepLink, qrUrl} for EscrowFinish
+      const xp = await api.orders.confirm(order.id);
+      if (xp && xp.deepLink) {
+        try { window.open(xp.deepLink, '_blank', 'noopener'); } catch(_) {}
+      }
+      // Poll escrow/status until backend syncs DB to completed (max 5 min)
       const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://xrp-marketplace-backend-production.up.railway.app';
       const token = typeof window !== 'undefined' ? localStorage.getItem('xrpmarket_token') : null;
       const start = Date.now();
-      while (Date.now() - start < 3 * 60 * 1000) {
+      while (Date.now() - start < 5 * 60 * 1000) {
         await new Promise(r => setTimeout(r, 3000));
         try {
           const res = await fetch(`${BACKEND}/api/orders/${order.id}/escrow/status`, { headers: { Authorization: `Bearer ${token}` } });
           const d = await res.json();
-          if (d.status === 'completed' || d.synced) break;
+          if (d.status === 'completed' || d.synced) {
+            setEscrowStep(4);
+            break;
+          }
         } catch(_) {}
       }
     } catch(e) { setBuyError(e.message); }
