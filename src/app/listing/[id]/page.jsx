@@ -86,23 +86,31 @@ export default function ListingDetailPage({ params }) {
     try {
       // /escrow/confirm returns Xumm payload {uuid, deepLink, qrUrl} for EscrowFinish
       const xp = await api.orders.confirm(order.id);
+      setBuyXumm(xp);
       if (xp && xp.deepLink) {
         try { window.open(xp.deepLink, '_blank', 'noopener'); } catch(_) {}
       }
-      // Poll escrow/status until backend syncs DB to completed (max 5 min)
+      // Poll escrow/status until backend syncs DB to completed (max 90s)
       const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://xrp-marketplace-backend-production.up.railway.app';
       const token = typeof window !== 'undefined' ? localStorage.getItem('xrpmarket_token') : null;
       const start = Date.now();
-      while (Date.now() - start < 5 * 60 * 1000) {
+      let done = false;
+      while (Date.now() - start < 90 * 1000) {
         await new Promise(r => setTimeout(r, 3000));
         try {
           const res = await fetch(`${BACKEND}/api/orders/${order.id}/escrow/status`, { headers: { Authorization: `Bearer ${token}` } });
           const d = await res.json();
           if (d.status === 'completed' || d.synced) {
             setEscrowStep(4);
+            setBuyXumm(null);
+            done = true;
             break;
           }
         } catch(_) {}
+      }
+      if (!done) {
+        setBuyError('Sign timed out. If you signed in Xaman, refresh this page in a few seconds.');
+        setBuyXumm(null);
       }
     } catch(e) { setBuyError(e.message); }
     finally { setBuying(false); }
@@ -182,7 +190,7 @@ export default function ListingDetailPage({ params }) {
               {escrowStep===2 && (
                 <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:8}}>
                   <button onClick={handleConfirm} disabled={buying} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:buying?'#065f46':'#10b981',color:'#fff',fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>
-                    {buying?'Confirming...':'Confirm Receipt'}
+                    {buying ? (buyXumm ? 'Waiting for Xaman signature…' : 'Opening Xaman…') : 'Confirm Receipt'}
                   </button>
                   {!disputeSubmitted && (
                     <button onClick={()=>setShowDispute(v=>!v)} style={{width:'100%',padding:'8px',borderRadius:8,border:'1px solid rgba(239,68,68,0.4)',background:'transparent',color:'#f87171',fontWeight:600,cursor:'pointer',fontSize:13}}>
