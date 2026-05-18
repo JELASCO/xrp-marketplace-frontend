@@ -42,6 +42,21 @@ export default function ListingDetailPage({ params }) {
     api.listings.get(id).then(setListing).catch(()=>{}).finally(()=>setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (!user) return;
+    api.orders.mine('buyer').then(orders => {
+      const existing = (orders || []).find(o => o.listing_id === id && o.status !== 'cancelled' && o.status !== 'disputed');
+      if (existing) {
+        setOrder(existing);
+        const st = existing.status;
+        if (st === 'pending') setEscrowStep(1);
+        else if (st === 'escrow_locked' || st === 'in_escrow') setEscrowStep(2);
+        else if (st === 'delivered') setEscrowStep(3);
+        else if (st === 'completed') setEscrowStep(4);
+      }
+    }).catch(()=>{});
+  }, [id, user]);
+
   const handleOffer=async()=>{if(!user||!listing||!offerAmount)return;setOfferSending(true);try{const res=await api.offers.send(listing.id,parseFloat(offerAmount),offerMsg.trim()||undefined);if(res.xumm){setOfferXumm(res.xumm);setOfferSent(true);}else{setOfferSent(true);setTimeout(()=>{setOfferSent(false);setShowOfferModal(false);},2000);}}catch(e){alert(e.message||'Failed');}finally{setOfferSending(false);}};const toggleFav=async()=>{if(!user)return;const n=!isFav;setIsFav(n);if(n)await api.favorites.add(listing.id).catch(()=>setIsFav(false));else await api.favorites.remove(listing.id).catch(()=>setIsFav(true));};const handleMessage=async()=>{if(!user||!listing||!msgInput.trim())return;setMsgSending(true);try{await api.contact.send(listing.id,msgInput.trim());setMsgSent(true);setMsgInput('');setTimeout(()=>{setMsgSent(false);setShowMsgModal(false);},2000);}catch(e){alert(e.message||'Failed');}finally{setMsgSending(false);}};async function handleBuy() {
     if (!user) return setBuyError('Please sign in first');
     setBuying(true); setBuyError('');
