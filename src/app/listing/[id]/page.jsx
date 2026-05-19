@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
-const CAT_COLORS = { skin:{bg:'rgba(139,92,246,0.12)',color:'#a78bfa'}, coin:{bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'}, bp:{bg:'rgba(245,158,11,0.12)',color:'#fbbf24'}, account:{bg:'rgba(255,255,255,0.06)',color:'#8892a4'}, physical:{bg:'rgba(255,255,255,0.06)',color:'#8892a4'}, nft:{bg:'rgba(16,185,129,0.12)',color:'#34d399'} };
+const CAT_COLORS = { skin:{bg:'rgba(139,92,246,0.12)',color:'#a78bfa'}, coin:{bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'}, bp:{bg:'rgba(245,158,11,0.12)',color:'#fbbf24'}, account:{bg:'var(--border)',color:'var(--text2)'}, physical:{bg:'var(--border)',color:'var(--text2)'}, nft:{bg:'rgba(16,185,129,0.12)',color:'#34d399'} };
 const CAT_LABELS = { skin:'Skin', coin:'Coin', bp:'Battle Pass', account:'Account', physical:'Physical', nft:'NFT' };
 const GAME_EMOJIS = { 'CS2':'🔫','Valorant':'⚡','Fortnite':'🏗️','Roblox':'🎮','Minecraft':'⛏️','Apex Legends':'💀','Call of Duty':'💣' };
 const STEPS = ['Awaiting payment','In escrow','Delivered','Completed'];
@@ -132,8 +132,8 @@ export default function ListingDetailPage({ params }) {
     } catch(e) { setBuyError(e.message); }
   }
 
-  if (loading) return <div style={{padding:32,color:'#8892a4'}}>Loading...</div>;
-  if (!listing) return <div style={{padding:32,color:'#8892a4'}}>Listing not found</div>;
+  if (loading) return <div style={{padding:32,color:'var(--text2)'}}>Loading...</div>;
+  if (!listing) return <div style={{padding:32,color:'var(--text2)'}}>Listing not found</div>;
 
   const isSeller = user?.id === listing.seller_id;
   const cat = CAT_COLORS[listing.category] || CAT_COLORS.account;
@@ -146,28 +146,28 @@ export default function ListingDetailPage({ params }) {
       <Link href="/" style={{color:'#a78bfa',textDecoration:'none',fontSize:14}}>← Back to marketplace</Link>
       <div className="listing-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,marginTop:24}}>
         <div>
-          <div style={{background:'#111620',borderRadius:12,overflow:'hidden',aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid rgba(255,255,255,0.06)',position:'relative'}}>
+          <div style={{background:'var(--surface)',borderRadius:12,overflow:'hidden',aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid var(--border)',position:'relative'}}>
             {img ? <img src={img} alt={listing.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:80}}>{emoji}</span>}
             {isSold && <div style={{position:'absolute',top:12,right:12,background:'rgba(239,68,68,0.9)',color:'#fff',fontWeight:700,fontSize:12,padding:'4px 10px',borderRadius:6}}>SOLD</div>}
           </div>
           <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
             <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,...cat}}>{CAT_LABELS[listing.category]||listing.category}</span>
-            <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,background:'rgba(255,255,255,0.06)',color:'#8892a4'}}>{emoji} {listing.game}</span>
+            <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,background:'var(--border)',color:'var(--text2)'}}>{emoji} {listing.game}</span>
           </div>
         </div>
         <div>
-          <h1 style={{fontSize:28,fontWeight:700,color:'#e8eaf0',margin:'0 0 8px'}}>{listing.title}</h1>
-          <div style={{fontSize:32,fontWeight:800,color: isSold ? '#4a5568' : '#10b981',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{listing.price_xrp} XRP</div>
-          {listing.description && <p style={{color:'#8892a4',fontSize:14,lineHeight:1.6,marginBottom:20}}>{listing.description}</p>}
-          <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
+          <h1 style={{fontSize:28,fontWeight:700,color:'var(--text)',margin:'0 0 8px'}}>{listing.title}</h1>
+          <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--green)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{listing.price_xrp} XRP</div>
+          {listing.description && <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.6,marginBottom:20}}>{listing.description}</p>}
+          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
             <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff',fontSize:14}}>{listing.username?.slice(0,2).toUpperCase()}</div>
-            <div><div style={{color:'#e8eaf0',fontWeight:600,fontSize:14}}>{listing.username}{listing.is_verified && <span style={{marginLeft:6,fontSize:11,background:'rgba(16,185,129,0.15)',color:'#10b981',borderRadius:5,padding:'1px 6px',fontWeight:700}}>✓ Verified</span>}</div><div style={{color:'#4a5568',fontSize:12}}>{listing.views} views</div></div>
+            <div><div style={{color:'var(--text)',fontWeight:600,fontSize:14}}>{listing.username}{listing.is_verified && <span style={{marginLeft:6,fontSize:11,background:'rgba(16,185,129,0.15)',color:'var(--green)',borderRadius:5,padding:'1px 6px',fontWeight:700}}>✓ Verified</span>}</div><div style={{color:'var(--text3)',fontSize:12}}>{listing.views} views</div></div>
           </div>
 
-          {!isSeller&&<div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}><button onClick={toggleFav} disabled={!user} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'#8892a4',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed'}}>{isFav?'❤️ Saved':'🤍 Save'}</button>{user&&<button onClick={()=>setShowOfferModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(59,130,246,0.3)',background:'rgba(59,130,246,0.08)',color:'#3b82f6',fontSize:13,fontWeight:600,cursor:'pointer'}}>💰 Make Offer</button>}{user&&<button onClick={()=>setShowMsgModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,fontWeight:600,cursor:'pointer'}}>💬 Message Seller</button>}</div>}
+          {!isSeller&&<div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}><button onClick={toggleFav} disabled={!user} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'var(--text2)',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed'}}>{isFav?'❤️ Saved':'🤍 Save'}</button>{user&&<button onClick={()=>setShowOfferModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(59,130,246,0.3)',background:'rgba(59,130,246,0.08)',color:'var(--accent)',fontSize:13,fontWeight:600,cursor:'pointer'}}>💰 Make Offer</button>}{user&&<button onClick={()=>setShowMsgModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}>💬 Message Seller</button>}</div>}
           {isSeller ? (
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
-              <span style={{color:'#8892a4',fontSize:13}}>This is your listing</span>
+              <span style={{color:'var(--text2)',fontSize:13}}>This is your listing</span>
               <Link href={`/listing/${id}/edit`} style={{color:'#a78bfa',fontSize:13,textDecoration:'none'}}>✏️ Edit</Link>
             </div>
           ) : isSold && !order ? (
@@ -179,17 +179,17 @@ export default function ListingDetailPage({ params }) {
               {buying?'Processing...':!user?'Sign in to buy':`Buy · ${listing.price_xrp} XRP`}
             </button>
           ) : (
-            <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:16}}>
-              <div style={{color:'#e8eaf0',fontWeight:600,marginBottom:12}}>Order Progress</div>
+            <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:16}}>
+              <div style={{color:'var(--text)',fontWeight:600,marginBottom:12}}>Order Progress</div>
               {STEPS.map((step,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-                  <div style={{width:24,height:24,borderRadius:'50%',border:`2px solid ${i<escrowStep?'#10b981':i===escrowStep?'#3b82f6':'#2d3748'}`,background:i<escrowStep?'#10b981':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:i<escrowStep?'#fff':i===escrowStep?'#3b82f6':'#4a5568',fontWeight:700}}>{i<escrowStep?'✓':i+1}</div>
-                  <span style={{color:i<escrowStep?'#10b981':i===escrowStep?'#3b82f6':'#4a5568',fontSize:13}}>{step}</span>
+                  <div style={{width:24,height:24,borderRadius:'50%',border:`2px solid ${i<escrowStep?'var(--green)':i===escrowStep?'var(--accent)':'#2d3748'}`,background:i<escrowStep?'var(--green)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:i<escrowStep?'#fff':i===escrowStep?'var(--accent)':'var(--text3)',fontWeight:700}}>{i<escrowStep?'✓':i+1}</div>
+                  <span style={{color:i<escrowStep?'var(--green)':i===escrowStep?'var(--accent)':'var(--text3)',fontSize:13}}>{step}</span>
                 </div>
               ))}
               {escrowStep===2 && (
                 <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:8}}>
-                  <button onClick={handleConfirm} disabled={buying} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:buying?'#065f46':'#10b981',color:'#fff',fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>
+                  <button onClick={handleConfirm} disabled={buying} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:buying?'#065f46':'var(--green)',color:'#fff',fontWeight:700,cursor:buying?'not-allowed':'pointer'}}>
                     {buying ? (buyXumm ? 'Waiting for Xaman signature…' : 'Opening Xaman…') : 'Confirm Receipt'}
                   </button>
                   {!disputeSubmitted && (
@@ -198,9 +198,9 @@ export default function ListingDetailPage({ params }) {
                     </button>
                   )}
                   {showDispute && !disputeSubmitted && (
-                    <div style={{background:'#0d1117',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,padding:12}}>
+                    <div style={{background:'var(--bg2)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,padding:12}}>
                       <div style={{color:'#f87171',fontWeight:600,fontSize:13,marginBottom:8}}>Describe the issue</div>
-                      <textarea value={disputeReason} onChange={e=>setDisputeReason(e.target.value)} placeholder="e.g. Item not delivered, wrong item received..." rows={3} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,color:'#e8eaf0',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
+                      <textarea value={disputeReason} onChange={e=>setDisputeReason(e.target.value)} placeholder="e.g. Item not delivered, wrong item received..." rows={3} style={{width:'100%',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,color:'var(--text)',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
                       <button onClick={handleDispute} disabled={!disputeReason.trim()} style={{marginTop:8,width:'100%',padding:'8px',borderRadius:6,border:'none',background:disputeReason.trim()?'#dc2626':'#1e293b',color:'#fff',fontWeight:700,cursor:disputeReason.trim()?'pointer':'not-allowed',fontSize:13}}>
                         Submit Dispute
                       </button>
@@ -222,9 +222,9 @@ export default function ListingDetailPage({ params }) {
                   ) : (
                     <div style={{background:'rgba(239,68,68,0.05)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:10,padding:14}}>
                       <div style={{color:'#f87171',fontWeight:600,marginBottom:10,fontSize:14}}>⚠️ Report Issue</div>
-                      <textarea value={disputeReason} onChange={e=>setDisputeReason(e.target.value)} placeholder="Describe the problem..." rows={3} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
+                      <textarea value={disputeReason} onChange={e=>setDisputeReason(e.target.value)} placeholder="Describe the problem..." rows={3} style={{width:'100%',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'var(--text)',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
                       <div style={{display:'flex',gap:8,marginTop:8}}>
-                        <button onClick={()=>setShowDispute(false)} style={{flex:1,padding:'8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button>
+                        <button onClick={()=>setShowDispute(false)} style={{flex:1,padding:'8px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'var(--text2)',fontSize:13,cursor:'pointer'}}>Cancel</button>
                         <button onClick={handleDispute} disabled={!disputeReason.trim()} style={{flex:2,padding:'8px',borderRadius:8,border:'none',background:disputeReason.trim()?'#dc2626':'#1e293b',color:'#fff',fontWeight:700,fontSize:13,cursor:disputeReason.trim()?'pointer':'not-allowed'}}>Submit Report</button>
                       </div>
                     </div>
@@ -237,26 +237,26 @@ export default function ListingDetailPage({ params }) {
                 </div>
               )}
                             {escrowStep>=4 && (
-                <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'#10b981',fontWeight:600,textAlign:'center'}}>
+                <div style={{marginTop:12,padding:'10px 12px',background:'rgba(16,185,129,0.1)',border:'1px solid #10b981',borderRadius:8,color:'var(--green)',fontWeight:600,textAlign:'center'}}>
                   ✅ Order Completed!
                 </div>
               )}
               {escrowStep>=4 && !reviewSubmitted && (
-                <div style={{marginTop:16,background:'#0d1117',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:16}}>
-                  <div style={{color:'#e8eaf0',fontWeight:600,marginBottom:12,fontSize:14}}>Rate this seller</div>
+                <div style={{marginTop:16,background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:10,padding:16}}>
+                  <div style={{color:'var(--text)',fontWeight:600,marginBottom:12,fontSize:14}}>Rate this seller</div>
                   <div style={{display:'flex',gap:6,marginBottom:12}}>
                     {[1,2,3,4,5].map(s=>(
                       <button key={s} onClick={()=>setRating(s)} style={{fontSize:24,background:'none',border:'none',cursor:'pointer',opacity:s<=rating?1:0.3,transition:'opacity .15s'}}>⭐</button>
                     ))}
                   </div>
-                  <textarea value={reviewComment} onChange={e=>setReviewComment(e.target.value)} placeholder="Leave a comment (optional)" rows={2} style={{width:'100%',background:'#111620',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#e8eaf0',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
-                  <button onClick={handleReview} disabled={!rating} style={{marginTop:8,width:'100%',padding:'10px',borderRadius:8,border:'none',background:rating?'#3b82f6':'#1e293b',color:'#fff',fontWeight:700,cursor:rating?'pointer':'not-allowed',fontSize:14}}>
+                  <textarea value={reviewComment} onChange={e=>setReviewComment(e.target.value)} placeholder="Leave a comment (optional)" rows={2} style={{width:'100%',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'var(--text)',padding:'8px 10px',fontSize:13,resize:'none',boxSizing:'border-box'}}/>
+                  <button onClick={handleReview} disabled={!rating} style={{marginTop:8,width:'100%',padding:'10px',borderRadius:8,border:'none',background:rating?'var(--accent)':'#1e293b',color:'#fff',fontWeight:700,cursor:rating?'pointer':'not-allowed',fontSize:14}}>
                     Submit Review
                   </button>
                 </div>
               )}
               {reviewSubmitted && (
-                <div style={{marginTop:12,padding:'10px 12px',background:'rgba(59,130,246,0.1)',border:'1px solid #3b82f6',borderRadius:8,color:'#60a5fa',fontWeight:600,textAlign:'center'}}>
+                <div style={{marginTop:12,padding:'10px 12px',background:'rgba(59,130,246,0.1)',border:'1px solid #3b82f6',borderRadius:8,color:'var(--accent2)',fontWeight:600,textAlign:'center'}}>
                   ⭐ Review submitted!
                 </div>
               )}
@@ -271,24 +271,24 @@ export default function ListingDetailPage({ params }) {
         </div>
       </div>
     
-      {showOfferModal&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowOfferModal(false)}><div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:24,width:420,maxWidth:'100%'}} onClick={e=>e.stopPropagation()}><h3 style={{margin:'0 0 4px',color:'#e8eaf0',fontSize:16}}>💰 Make an Offer</h3><p style={{margin:'0 0 16px',color:'#4a5568',fontSize:12}}>Listed at <strong style={{color:'#3b82f6'}}>{listing?.price_xrp} XRP</strong></p>{offerSent&&offerXumm?(<div style={{textAlign:'center'}}><div style={{fontSize:14,fontWeight:700,color:'#e8eaf0',marginBottom:8}}>⚡ Complete Payment in Xumm</div><div style={{fontSize:12,color:'#4a5568',marginBottom:12}}>Scan the QR to lock escrow. Seller will review your offer.</div>{offerXumm.qrUrl&&<img src={offerXumm.qrUrl} style={{width:200,height:200,borderRadius:8,marginBottom:12}} alt="Xumm QR"/>}{offerXumm.deepLink&&<a href={offerXumm.deepLink} style={{background:'#3b82f6',color:'#fff',textDecoration:'none',borderRadius:8,padding:'10px 20px',fontSize:13,fontWeight:600,display:'inline-block',marginTop:4}}>Open in Xumm App</a>}</div>):offerSent?(<div style={{textAlign:'center',padding:'20px 0',color:'#10b981',fontWeight:600}}>✅ Offer sent!</div>):(<><div style={{marginBottom:12}}><label style={{fontSize:12,color:'#8892a4',display:'block',marginBottom:4}}>Your offer (XRP)</label><input type="number" value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} placeholder="e.g. 90.00" style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',color:'#e8eaf0',fontSize:14,fontWeight:700,boxSizing:'border-box'}}/></div><div style={{marginBottom:12}}><label style={{fontSize:12,color:'#8892a4',display:'block',marginBottom:4}}>Message (optional)</label><textarea value={offerMsg} onChange={e=>setOfferMsg(e.target.value)} placeholder="Why should they accept?" rows={2} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',color:'#e8eaf0',fontSize:13,resize:'none',boxSizing:'border-box'}}/></div><div style={{display:'flex',gap:8,justifyContent:'flex-end'}}><button onClick={()=>setShowOfferModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button><button onClick={handleOffer} disabled={!offerAmount||offerSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!offerAmount||offerSending?0.5:1}}>{offerSending?'Sending...':'Send Offer'}</button></div></>)}</div></div>)}{showMsgModal&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowMsgModal(false)}><div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,padding:24,width:420,maxWidth:'100%'}} onClick={e=>e.stopPropagation()}><h3 style={{margin:'0 0 4px',color:'#e8eaf0',fontSize:16}}>💬 Message Seller</h3><p style={{margin:'0 0 16px',color:'#4a5568',fontSize:12}}>{listing?.title}</p>{msgSent?(<div style={{textAlign:'center',padding:'20px 0',color:'#10b981',fontWeight:600}}>✅ Sent!</div>):(<><textarea value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Hi, I'm interested..." rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:10,color:'#e8eaf0',fontSize:13,resize:'vertical',boxSizing:'border-box',marginBottom:12}}/><div style={{display:'flex',gap:8,justifyContent:'flex-end'}}><button onClick={()=>setShowMsgModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#8892a4',fontSize:13,cursor:'pointer'}}>Cancel</button><button onClick={handleMessage} disabled={!msgInput.trim()||msgSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'#3b82f6',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!msgInput.trim()||msgSending?0.5:1}}>{msgSending?'Sending...':'Send'}</button></div></>)}</div></div>)}
+      {showOfferModal&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowOfferModal(false)}><div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:14,padding:24,width:420,maxWidth:'100%'}} onClick={e=>e.stopPropagation()}><h3 style={{margin:'0 0 4px',color:'var(--text)',fontSize:16}}>💰 Make an Offer</h3><p style={{margin:'0 0 16px',color:'var(--text3)',fontSize:12}}>Listed at <strong style={{color:'var(--accent)'}}>{listing?.price_xrp} XRP</strong></p>{offerSent&&offerXumm?(<div style={{textAlign:'center'}}><div style={{fontSize:14,fontWeight:700,color:'var(--text)',marginBottom:8}}>⚡ Complete Payment in Xumm</div><div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Scan the QR to lock escrow. Seller will review your offer.</div>{offerXumm.qrUrl&&<img src={offerXumm.qrUrl} style={{width:200,height:200,borderRadius:8,marginBottom:12}} alt="Xumm QR"/>}{offerXumm.deepLink&&<a href={offerXumm.deepLink} style={{background:'var(--accent)',color:'#fff',textDecoration:'none',borderRadius:8,padding:'10px 20px',fontSize:13,fontWeight:600,display:'inline-block',marginTop:4}}>Open in Xumm App</a>}</div>):offerSent?(<div style={{textAlign:'center',padding:'20px 0',color:'var(--green)',fontWeight:600}}>✅ Offer sent!</div>):(<><div style={{marginBottom:12}}><label style={{fontSize:12,color:'var(--text2)',display:'block',marginBottom:4}}>Your offer (XRP)</label><input type="number" value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} placeholder="e.g. 90.00" style={{width:'100%',background:'#0a0e1a',border:'1px solid var(--border2)',borderRadius:8,padding:'8px 12px',color:'var(--text)',fontSize:14,fontWeight:700,boxSizing:'border-box'}}/></div><div style={{marginBottom:12}}><label style={{fontSize:12,color:'var(--text2)',display:'block',marginBottom:4}}>Message (optional)</label><textarea value={offerMsg} onChange={e=>setOfferMsg(e.target.value)} placeholder="Why should they accept?" rows={2} style={{width:'100%',background:'#0a0e1a',border:'1px solid var(--border2)',borderRadius:8,padding:'8px 12px',color:'var(--text)',fontSize:13,resize:'none',boxSizing:'border-box'}}/></div><div style={{display:'flex',gap:8,justifyContent:'flex-end'}}><button onClick={()=>setShowOfferModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'var(--text2)',fontSize:13,cursor:'pointer'}}>Cancel</button><button onClick={handleOffer} disabled={!offerAmount||offerSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'var(--accent)',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!offerAmount||offerSending?0.5:1}}>{offerSending?'Sending...':'Send Offer'}</button></div></>)}</div></div>)}{showMsgModal&&(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowMsgModal(false)}><div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:14,padding:24,width:420,maxWidth:'100%'}} onClick={e=>e.stopPropagation()}><h3 style={{margin:'0 0 4px',color:'var(--text)',fontSize:16}}>💬 Message Seller</h3><p style={{margin:'0 0 16px',color:'var(--text3)',fontSize:12}}>{listing?.title}</p>{msgSent?(<div style={{textAlign:'center',padding:'20px 0',color:'var(--green)',fontWeight:600}}>✅ Sent!</div>):(<><textarea value={msgInput} onChange={e=>setMsgInput(e.target.value)} placeholder="Hi, I'm interested..." rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid var(--border2)',borderRadius:8,padding:10,color:'var(--text)',fontSize:13,resize:'vertical',boxSizing:'border-box',marginBottom:12}}/><div style={{display:'flex',gap:8,justifyContent:'flex-end'}}><button onClick={()=>setShowMsgModal(false)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'var(--text2)',fontSize:13,cursor:'pointer'}}>Cancel</button><button onClick={handleMessage} disabled={!msgInput.trim()||msgSending} style={{padding:'8px 16px',borderRadius:8,border:'none',background:'var(--accent)',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:!msgInput.trim()||msgSending?0.5:1}}>{msgSending?'Sending...':'Send'}</button></div></>)}</div></div>)}
 
 
     {/* Similar Listings */}
     {similar.length > 0 && (
       <div style={{ maxWidth: 1100, margin: '32px auto 0' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#e8eaf0', marginBottom: 14 }}>Similar Listings</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>Similar Listings</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 12 }}>
           {similar.map(l => (
-            <a key={l.id} href={'/listing/'+l.id} style={{ textDecoration: 'none', background: '#111620', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, overflow: 'hidden', display: 'block', transition: 'border-color 0.15s' }}
+            <a key={l.id} href={'/listing/'+l.id} style={{ textDecoration: 'none', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', display: 'block', transition: 'border-color 0.15s' }}
               onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'}
-              onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'}>
+              onMouseLeave={e=>e.currentTarget.style.borderColor='var(--border)'}>
               <div style={{ height: 120, background: '#0a0e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
                 {l.images?.[0] ? <img src={l.images[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={l.title}/> : '🎮'}
               </div>
               <div style={{ padding: '10px 12px' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#e8eaf0', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{l.price_xrp} XRP</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{l.price_xrp} XRP</div>
               </div>
             </a>
           ))}
