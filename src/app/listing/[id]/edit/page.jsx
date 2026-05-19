@@ -48,27 +48,27 @@ export default function EditListingPage() {
 
   return (
     <div style={{maxWidth:480,margin:'0 auto',padding:'20px'}}>
-      <h1 style={{color:'#e8eaf0',marginBottom:24}}>Edit Listing</h1>
+      <h1 style={{color:'var(--text)',marginBottom:24}}>Edit Listing</h1>
       <div style={{display:'flex',flexDirection:'column',gap:16}}>
         <div>
-          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>TITLE</label>
-          <input value={title} maxLength={TITLE_MAX+10} onChange={e=>{setTitle(e.target.value);setFieldErrors(fe=>({...fe,title:null}));}} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.title?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
+          <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:4}}>TITLE</label>
+          <input value={title} maxLength={TITLE_MAX+10} onChange={e=>{setTitle(e.target.value);setFieldErrors(fe=>({...fe,title:null}));}} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.title?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
         {fieldErrors.title && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.title}</div>}
-        <div style={{textAlign:'right',fontSize:11,color:title.length>TITLE_MAX?'#f87171':'#4a5568'}}>{title.length}/{TITLE_MAX}</div>
+        <div style={{textAlign:'right',fontSize:11,color:title.length>TITLE_MAX?'#f87171':'var(--text3)'}}>{title.length}/{TITLE_MAX}</div>
         </div>
         <div>
-          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>PRICE (XRP)</label>
-          <input value={priceXrp} onChange={e=>{setPriceXrp(e.target.value);setFieldErrors(fe=>({...fe,priceXrp:null}));}} type='number' style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.priceXrp?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box'}} />
+          <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:4}}>PRICE (XRP)</label>
+          <input value={priceXrp} onChange={e=>{setPriceXrp(e.target.value);setFieldErrors(fe=>({...fe,priceXrp:null}));}} type='number' style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.priceXrp?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
         {fieldErrors.priceXrp && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.priceXrp}</div>}
         </div>
         <div>
-          <label style={{color:'#8892a4',fontSize:12,display:'block',marginBottom:4}}>DESCRIPTION</label>
-          <textarea value={description} maxLength={DESC_MAX+50} onChange={e=>{setDescription(e.target.value);setFieldErrors(fe=>({...fe,description:null}));}} rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.description?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.1)'),borderRadius:8,padding:'10px',color:'#e8eaf0',fontSize:14,boxSizing:'border-box',resize:'vertical'}} />
+          <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:4}}>DESCRIPTION</label>
+          <textarea value={description} maxLength={DESC_MAX+50} onChange={e=>{setDescription(e.target.value);setFieldErrors(fe=>({...fe,description:null}));}} rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.description?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box',resize:'vertical'}} />
         {fieldErrors.description && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.description}</div>}
-        <div style={{textAlign:'right',fontSize:11,color:description.length>DESC_MAX?'#f87171':'#4a5568'}}>{description.length}/{DESC_MAX}</div>
+        <div style={{textAlign:'right',fontSize:11,color:description.length>DESC_MAX?'#f87171':'var(--text3)'}}>{description.length}/{DESC_MAX}</div>
         </div>
         {error && <div style={{color:'#f87171',fontSize:13}}>{error}</div>}
-        <button onClick={handleSave} disabled={saving} style={{background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'12px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
+        <button onClick={handleSave} disabled={saving} style={{background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'12px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
