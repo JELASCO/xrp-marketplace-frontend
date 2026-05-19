@@ -52,11 +52,11 @@ export default function ProfilePage() {
 
   if (loading) return (
     <div style={{maxWidth:800,margin:'0 auto'}}>
-      <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:28,marginBottom:24,display:'flex',gap:20,alignItems:'center'}}>
-        <div style={{width:72,height:72,borderRadius:'50%',background:'#161c28',animation:'pulse2 1.5s infinite'}}/>
+      <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:28,marginBottom:24,display:'flex',gap:20,alignItems:'center'}}>
+        <div style={{width:72,height:72,borderRadius:'50%',background:'var(--surface2)',animation:'pulse2 1.5s infinite'}}/>
         <div style={{flex:1}}>
-          <div style={{height:18,width:140,background:'#161c28',borderRadius:6,marginBottom:8,animation:'pulse2 1.5s infinite'}}/>
-          <div style={{height:12,width:200,background:'#161c28',borderRadius:6,animation:'pulse2 1.5s infinite'}}/>
+          <div style={{height:18,width:140,background:'var(--surface2)',borderRadius:6,marginBottom:8,animation:'pulse2 1.5s infinite'}}/>
+          <div style={{height:12,width:200,background:'var(--surface2)',borderRadius:6,animation:'pulse2 1.5s infinite'}}/>
         </div>
       </div>
       <style>{'@keyframes pulse2{0%,100%{opacity:1}50%{opacity:0.5}}'}</style>
@@ -66,8 +66,8 @@ export default function ProfilePage() {
   if (error || !user) return (
     <div style={{textAlign:'center',padding:'60px 20px'}}>
       <div style={{fontSize:40,marginBottom:12}}>🤷</div>
-      <div style={{fontSize:16,fontWeight:600,color:'#e8eaf0',marginBottom:6}}>User not found</div>
-      <Link href="/listings" style={{color:'#3b82f6',fontSize:13}}>← Browse Listings</Link>
+      <div style={{fontSize:16,fontWeight:600,color:'var(--text)',marginBottom:6}}>User not found</div>
+      <Link href="/listings" style={{color:'var(--accent)',fontSize:13}}>← Browse Listings</Link>
     </div>
   );
 
@@ -80,20 +80,20 @@ export default function ProfilePage() {
   return (
     <div style={{maxWidth:800,margin:'0 auto'}}>
       {/* Header */}
-      <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:28,marginBottom:24,display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
+      <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:28,marginBottom:24,display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
         <div style={{width:72,height:72,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:700,color:'#fff',flexShrink:0,overflow:'hidden'}}>
           {avatar ? <img src={avatar} alt={user.username} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e => { e.target.style.display = 'none'; }}/> : initials}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
-            <span style={{fontSize:20,fontWeight:700,color:'#e8eaf0'}}>{user.username}</span>
+            <span style={{fontSize:20,fontWeight:700,color:'var(--text)'}}>{user.username}</span>
             {user.is_verified && <span style={{fontSize:11,color:'#34d399',background:'rgba(16,185,129,0.1)',padding:'2px 8px',borderRadius:20}}>✓ Verified</span>}
           </div>
-          <div style={{fontSize:12,color:'#4a5568',fontFamily:'monospace',marginBottom:8,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.wallet_address}</div>
-          {user.bio && <div style={{fontSize:13,color:'#8892a4',marginTop:4}}>{user.bio}</div>}
+          <div style={{fontSize:12,color:'var(--text3)',fontFamily:'monospace',marginBottom:8,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.wallet_address}</div>
+          {user.bio && <div style={{fontSize:13,color:'var(--text2)',marginTop:4}}>{user.bio}</div>}
         </div>
         {isOwn && (
-          <Link href="/settings" style={{background:'#161c28',border:'1px solid rgba(255,255,255,0.08)',color:'#8892a4',borderRadius:8,padding:'8px 14px',fontSize:13,textDecoration:'none',flexShrink:0}}>
+          <Link href="/settings" style={{background:'var(--surface2)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',borderRadius:8,padding:'8px 14px',fontSize:13,textDecoration:'none',flexShrink:0}}>
             Edit Profile
           </Link>
         )}
@@ -111,7 +111,7 @@ export default function ProfilePage() {
       {/* Tabs */}
       <div style={{display:'flex',gap:0,borderBottom:'1px solid rgba(255,255,255,0.08)',marginBottom:16}}>
         {[{key:'listings',label:'Listings ('+listings.length+')'},{key:'reviews',label:'Reviews ('+reviews.length+')'}].map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{padding:'10px 16px',background:'none',border:'none',borderBottom:tab===t.key?'2px solid #3b82f6':'2px solid transparent',color:tab===t.key?'#e8eaf0':'#8892a4',fontSize:13,fontWeight:tab===t.key?600:500,cursor:'pointer',marginBottom:-1}}>
+          <button key={t.key} onClick={() => setTab(t.key)} style={{padding:'10px 16px',background:'none',border:'none',borderBottom:tab===t.key?'2px solid #3b82f6':'2px solid transparent',color:tab===t.key?'var(--text)':'var(--text2)',fontSize:13,fontWeight:tab===t.key?600:500,cursor:'pointer',marginBottom:-1}}>
             {t.label}
           </button>
         ))}
@@ -119,10 +119,10 @@ export default function ProfilePage() {
 
       {tab === 'listings' && (
         listings.length === 0 ? (
-          <div style={{textAlign:'center',padding:'40px',background:'#111620',borderRadius:12,border:'1px solid rgba(255,255,255,0.06)'}}>
+          <div style={{textAlign:'center',padding:'40px',background:'var(--surface)',borderRadius:12,border:'1px solid var(--border)'}}>
             <div style={{fontSize:32,marginBottom:8}}>📭</div>
-            <div style={{fontSize:14,color:'#4a5568',marginBottom:isOwn?12:0}}>No listings yet</div>
-            {isOwn && <Link href="/listings/new" style={{display:'inline-flex',background:'#3b82f6',color:'#fff',textDecoration:'none',borderRadius:8,padding:'8px 16px',fontSize:13,fontWeight:600}}>+ Create your first listing</Link>}
+            <div style={{fontSize:14,color:'var(--text3)',marginBottom:isOwn?12:0}}>No listings yet</div>
+            {isOwn && <Link href="/listings/new" style={{display:'inline-flex',background:'var(--accent)',color:'#fff',textDecoration:'none',borderRadius:8,padding:'8px 16px',fontSize:13,fontWeight:600}}>+ Create your first listing</Link>}
           </div>
         ) : (
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
@@ -133,14 +133,14 @@ export default function ProfilePage() {
 
       {tab === 'reviews' && (
         reviews.length === 0 ? (
-          <div style={{textAlign:'center',padding:'40px',background:'#111620',borderRadius:12,border:'1px solid rgba(255,255,255,0.06)'}}>
+          <div style={{textAlign:'center',padding:'40px',background:'var(--surface)',borderRadius:12,border:'1px solid var(--border)'}}>
             <div style={{fontSize:32,marginBottom:8}}>💬</div>
-            <div style={{fontSize:14,color:'#4a5568'}}>No reviews yet</div>
+            <div style={{fontSize:14,color:'var(--text3)'}}>No reviews yet</div>
           </div>
         ) : (
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {reviews.map(r => (
-              <div key={r.id} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:16,display:'flex',gap:12,alignItems:'flex-start'}}>
+              <div key={r.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:16,display:'flex',gap:12,alignItems:'flex-start'}}>
                 <Link href={'/profile/'+r.reviewer_id} style={{textDecoration:'none',flexShrink:0}}>
                   <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',overflow:'hidden'}}>
                     {r.reviewer_avatar ? <img src={r.reviewer_avatar} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : (r.reviewer_username || '??').slice(0,2).toUpperCase()}
@@ -148,11 +148,11 @@ export default function ProfilePage() {
                 </Link>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
-                    <Link href={'/profile/'+r.reviewer_id} style={{fontSize:13,fontWeight:600,color:'#e8eaf0',textDecoration:'none'}}>{r.reviewer_username}</Link>
-                    <span style={{fontSize:12,color:'#f59e0b'}}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</span>
-                    <span style={{fontSize:11,color:'#4a5568'}}>{timeAgo(r.created_at)}</span>
+                    <Link href={'/profile/'+r.reviewer_id} style={{fontSize:13,fontWeight:600,color:'var(--text)',textDecoration:'none'}}>{r.reviewer_username}</Link>
+                    <span style={{fontSize:12,color:'var(--amber)'}}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</span>
+                    <span style={{fontSize:11,color:'var(--text3)'}}>{timeAgo(r.created_at)}</span>
                   </div>
-                  {r.comment && <div style={{fontSize:13,color:'#8892a4',lineHeight:1.5}}>{r.comment}</div>}
+                  {r.comment && <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.5}}>{r.comment}</div>}
                 </div>
               </div>
             ))}
@@ -165,9 +165,9 @@ export default function ProfilePage() {
 
 function Stat({ label, value }) {
   return (
-    <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:'12px 14px',textAlign:'center'}}>
-      <div style={{fontSize:18,fontWeight:700,color:'#e8eaf0',marginBottom:2}}>{value}</div>
-      <div style={{fontSize:10,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.08em'}}>{label}</div>
+    <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px',textAlign:'center'}}>
+      <div style={{fontSize:18,fontWeight:700,color:'var(--text)',marginBottom:2}}>{value}</div>
+      <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.08em'}}>{label}</div>
     </div>
   );
 }
