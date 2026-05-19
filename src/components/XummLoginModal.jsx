@@ -61,13 +61,13 @@ export default function XummLoginModal({ onClose }) {
         {status==='pending'&&qrUrl&&(
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
             <div style={{background:'#fff',padding:12,borderRadius:12}}>
-              {(typeof window!=='undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && nextUrl) ? (<a href={nextUrl} target="_blank" rel="noopener" style={{display:'inline-block',background:'#3b82f6',color:'#fff',padding:'14px 28px',borderRadius:10,fontWeight:600,fontSize:14,textDecoration:'none',marginBottom:4}}>Open in Xumm App</a>) : (<img src={qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/>)}
+              {(typeof window!=='undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && nextUrl) ? (<a href={nextUrl} target="_blank" rel="noopener" style={{display:'inline-block',background:'var(--accent)',color:'#fff',padding:'14px 28px',borderRadius:10,fontWeight:600,fontSize:14,textDecoration:'none',marginBottom:4}}>Open in Xumm App</a>) : (<img src={qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/>)}
             </div>
             <div style={{fontSize:13,color:'var(--text2)',textAlign:'center',lineHeight:1.6}}>
               Open <strong style={{color:'var(--text)'}}>Xumm</strong> on your phone and scan to sign in
             </div>
             <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'var(--text3)'}}>
-              <div style={{width:6,height:6,borderRadius:'50%',background:'#10b981',animation:'pulse2 1.5s ease-in-out infinite'}}/>
+              <div style={{width:6,height:6,borderRadius:'50%',background:'var(--green)',animation:'pulse2 1.5s ease-in-out infinite'}}/>
               Waiting for signature...
             </div>
           </div>
