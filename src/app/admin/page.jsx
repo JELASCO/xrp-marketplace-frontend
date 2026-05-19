@@ -107,7 +107,7 @@ export default function AdminPage() {
           {!listingsLoading && listings.length === 0 && <div style={{textAlign:'center',padding:40,color:'var(--text3)',fontSize:13}}>No active listings</div>}
           {!listingsLoading && listings.map(l => (
             <div key={l.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:14}}>
-              <div style={{width:48,height:48,borderRadius:8,background:'#0a0e1a',flexShrink:0,overflow:'hidden'}}>
+              <div style={{width:48,height:48,borderRadius:8,background:'var(--bg)',flexShrink:0,overflow:'hidden'}}>
                 {l.images && l.images[0] && <img src={l.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>}
               </div>
               <div style={{flex:1,minWidth:0}}>
