@@ -64,8 +64,8 @@ export default function AdminPage() {
     } catch(e) { alert('Hata: ' + e.message); }
   };
 
-  if (loading) return <div style={{textAlign:'center',padding:'60px 20px',color:'#4a5568'}}>Loading...</div>;
-  if (!user) return <div style={{textAlign:'center',padding:'60px 20px',color:'#4a5568'}}>Sign in required</div>;
+  if (loading) return <div style={{textAlign:'center',padding:'60px 20px',color:'var(--text3)'}}>Loading...</div>;
+  if (!user) return <div style={{textAlign:'center',padding:'60px 20px',color:'var(--text3)'}}>Sign in required</div>;
   if (user.role !== 'admin') return <div style={{textAlign:'center',padding:'60px 20px',color:'#f87171'}}>Admin only</div>;
 
   const TABS = [{key:'dashboard',label:'📊 Dashboard'},{key:'listings',label:'📋 Listings'},{key:'disputes',label:'⚖️ Disputes'},{key:'users',label:'👥 Users'}];
@@ -73,10 +73,10 @@ export default function AdminPage() {
   return (
     <div style={{maxWidth:1000,margin:'0 auto',padding:'24px 20px'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
-        <h1 style={{fontSize:22,fontWeight:700,color:'#e8eaf0'}}>Admin Panel</h1>
+        <h1 style={{fontSize:22,fontWeight:700,color:'var(--text)'}}>Admin Panel</h1>
         <div style={{display:'flex',gap:8}}>
           {TABS.map(t => (
-            <button key={t.key} onClick={() => switchTab(t.key)} style={{background:tab===t.key?'#3b82f6':'rgba(255,255,255,0.05)',color:tab===t.key?'#fff':'#8892a4',border:'none',borderRadius:8,padding:'8px 16px',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+            <button key={t.key} onClick={() => switchTab(t.key)} style={{background:tab===t.key?'var(--accent)':'rgba(255,255,255,0.05)',color:tab===t.key?'#fff':'var(--text2)',border:'none',borderRadius:8,padding:'8px 16px',fontSize:13,fontWeight:600,cursor:'pointer'}}>
               {t.label}
             </button>
           ))}
@@ -92,9 +92,9 @@ export default function AdminPage() {
               {label:'Completed Orders',value:stats?.completedOrders??'...'},
               {label:'Revenue (XRP)',value:stats?.totalRevenue!=null?Number(stats.totalRevenue).toFixed(2):'...'},
             ].map(s => (
-              <div key={s.label} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'20px 24px'}}>
-                <div style={{fontSize:12,color:'#4a5568',marginBottom:8}}>{s.label}</div>
-                <div style={{fontSize:28,fontWeight:700,color:'#e8eaf0'}}>{s.value}</div>
+              <div key={s.label} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'20px 24px'}}>
+                <div style={{fontSize:12,color:'var(--text3)',marginBottom:8}}>{s.label}</div>
+                <div style={{fontSize:28,fontWeight:700,color:'var(--text)'}}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -103,18 +103,18 @@ export default function AdminPage() {
 
       {tab === 'listings' && (
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {listingsLoading && <div style={{textAlign:'center',padding:40,color:'#4a5568',fontSize:13}}>Loading listings...</div>}
-          {!listingsLoading && listings.length === 0 && <div style={{textAlign:'center',padding:40,color:'#4a5568',fontSize:13}}>No active listings</div>}
+          {listingsLoading && <div style={{textAlign:'center',padding:40,color:'var(--text3)',fontSize:13}}>Loading listings...</div>}
+          {!listingsLoading && listings.length === 0 && <div style={{textAlign:'center',padding:40,color:'var(--text3)',fontSize:13}}>No active listings</div>}
           {!listingsLoading && listings.map(l => (
-            <div key={l.id} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:14}}>
+            <div key={l.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:14}}>
               <div style={{width:48,height:48,borderRadius:8,background:'#0a0e1a',flexShrink:0,overflow:'hidden'}}>
                 {l.images && l.images[0] && <img src={l.images[0]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>}
               </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:600,color:'#e8eaf0',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</div>
-                <div style={{fontSize:12,color:'#4a5568'}}>
+                <div style={{fontSize:14,fontWeight:600,color:'var(--text)',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</div>
+                <div style={{fontSize:12,color:'var(--text3)'}}>
                   {l.username && <span style={{marginRight:10}}>@{l.username}</span>}
-                  <span style={{color:'#60a5fa',fontWeight:600}}>{l.price_xrp!=null?Number(l.price_xrp).toLocaleString():'0'} XRP</span>
+                  <span style={{color:'var(--accent2)',fontWeight:600}}>{l.price_xrp!=null?Number(l.price_xrp).toLocaleString():'0'} XRP</span>
                   {l.category && <span style={{marginLeft:10}}>{l.category}</span>}
                 </div>
               </div>
@@ -128,11 +128,11 @@ export default function AdminPage() {
 
       {tab === 'disputes' && (
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {disputes.length === 0 && <div style={{textAlign:'center',padding:40,color:'#4a5568',fontSize:13}}>No disputes</div>}
+          {disputes.length === 0 && <div style={{textAlign:'center',padding:40,color:'var(--text3)',fontSize:13}}>No disputes</div>}
           {disputes.map(d => (
-            <div key={d.id} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'14px 16px'}}>
-              <div style={{fontSize:13,color:'#e8eaf0',marginBottom:4}}>{d.reason||'Dispute'}</div>
-              <div style={{fontSize:12,color:'#4a5568'}}>Status: {d.status}</div>
+            <div key={d.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px'}}>
+              <div style={{fontSize:13,color:'var(--text)',marginBottom:4}}>{d.reason||'Dispute'}</div>
+              <div style={{fontSize:12,color:'var(--text3)'}}>Status: {d.status}</div>
             </div>
           ))}
         </div>
@@ -140,26 +140,26 @@ export default function AdminPage() {
 
       {tab === 'users' && (
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {usersLoading && <div style={{textAlign:'center',padding:40,color:'#4a5568',fontSize:13}}>Loading...</div>}
-          {!usersLoading && users.length === 0 && <div style={{textAlign:'center',padding:40,color:'#4a5568',fontSize:13}}>No users</div>}
+          {usersLoading && <div style={{textAlign:'center',padding:40,color:'var(--text3)',fontSize:13}}>Loading...</div>}
+          {!usersLoading && users.length === 0 && <div style={{textAlign:'center',padding:40,color:'var(--text3)',fontSize:13}}>No users</div>}
           {!usersLoading && users.map(u => (
-            <div key={u.id} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:36,height:36,borderRadius:'50%',background:'#161c28',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,color:'#3b82f6',flexShrink:0}}>
+            <div key={u.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+              <div style={{width:36,height:36,borderRadius:'50%',background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,color:'var(--accent)',flexShrink:0}}>
                 {(u.username||'?')[0].toUpperCase()}
               </div>
               <div style={{flex:1}}>
-                <div style={{fontSize:14,fontWeight:600,color:'#e8eaf0'}}>
+                <div style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>
                   {u.username}
-                  {u.is_verified && <span style={{marginLeft:6,fontSize:11,color:'#10b981'}}>✓ Verified</span>}
+                  {u.is_verified && <span style={{marginLeft:6,fontSize:11,color:'var(--green)'}}>✓ Verified</span>}
                   {u.is_banned && <span style={{marginLeft:6,fontSize:11,color:'#f87171'}}>Banned</span>}
                 </div>
-                <div style={{fontSize:12,color:'#4a5568'}}>{u.role} · ★ {Number(u.reputation_score||0).toFixed(1)}</div>
+                <div style={{fontSize:12,color:'var(--text3)'}}>{u.role} · ★ {Number(u.reputation_score||0).toFixed(1)}</div>
               </div>
               <div style={{display:'flex',gap:8}}>
-                <button onClick={() => verifyUser(u.id,!u.is_verified)} style={{background:u.is_verified?'rgba(239,68,68,0.1)':'rgba(16,185,129,0.1)',color:u.is_verified?'#f87171':'#10b981',border:'none',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+                <button onClick={() => verifyUser(u.id,!u.is_verified)} style={{background:u.is_verified?'rgba(239,68,68,0.1)':'rgba(16,185,129,0.1)',color:u.is_verified?'#f87171':'var(--green)',border:'none',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
                   {u.is_verified?'Unverify':'✓ Verify'}
                 </button>
-                <button onClick={() => banUser(u.id,!u.is_banned)} style={{background:u.is_banned?'rgba(16,185,129,0.1)':'rgba(239,68,68,0.1)',color:u.is_banned?'#10b981':'#f87171',border:'none',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
+                <button onClick={() => banUser(u.id,!u.is_banned)} style={{background:u.is_banned?'rgba(16,185,129,0.1)':'rgba(239,68,68,0.1)',color:u.is_banned?'var(--green)':'#f87171',border:'none',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
                   {u.is_banned?'Unban':'Ban'}
                 </button>
               </div>
