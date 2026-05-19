@@ -52,18 +52,18 @@ export default function EditListingPage() {
       <div style={{display:'flex',flexDirection:'column',gap:16}}>
         <div>
           <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:4}}>TITLE</label>
-          <input value={title} maxLength={TITLE_MAX+10} onChange={e=>{setTitle(e.target.value);setFieldErrors(fe=>({...fe,title:null}));}} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.title?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
+          <input value={title} maxLength={TITLE_MAX+10} onChange={e=>{setTitle(e.target.value);setFieldErrors(fe=>({...fe,title:null}));}} style={{width:'100%',background:'var(--bg)',border:'1px solid '+(fieldErrors.title?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
         {fieldErrors.title && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.title}</div>}
         <div style={{textAlign:'right',fontSize:11,color:title.length>TITLE_MAX?'#f87171':'var(--text3)'}}>{title.length}/{TITLE_MAX}</div>
         </div>
         <div>
           <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:4}}>PRICE (XRP)</label>
-          <input value={priceXrp} onChange={e=>{setPriceXrp(e.target.value);setFieldErrors(fe=>({...fe,priceXrp:null}));}} type='number' style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.priceXrp?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
+          <input value={priceXrp} onChange={e=>{setPriceXrp(e.target.value);setFieldErrors(fe=>({...fe,priceXrp:null}));}} type='number' style={{width:'100%',background:'var(--bg)',border:'1px solid '+(fieldErrors.priceXrp?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
         {fieldErrors.priceXrp && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.priceXrp}</div>}
         </div>
         <div>
           <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:4}}>DESCRIPTION</label>
-          <textarea value={description} maxLength={DESC_MAX+50} onChange={e=>{setDescription(e.target.value);setFieldErrors(fe=>({...fe,description:null}));}} rows={4} style={{width:'100%',background:'#0a0e1a',border:'1px solid '+(fieldErrors.description?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box',resize:'vertical'}} />
+          <textarea value={description} maxLength={DESC_MAX+50} onChange={e=>{setDescription(e.target.value);setFieldErrors(fe=>({...fe,description:null}));}} rows={4} style={{width:'100%',background:'var(--bg)',border:'1px solid '+(fieldErrors.description?'rgba(248,113,113,0.5)':'var(--border2)'),borderRadius:8,padding:'10px',color:'var(--text)',fontSize:14,boxSizing:'border-box',resize:'vertical'}} />
         {fieldErrors.description && <div style={{fontSize:11,color:'#f87171',marginTop:3}}>{fieldErrors.description}</div>}
         <div style={{textAlign:'right',fontSize:11,color:description.length>DESC_MAX?'#f87171':'var(--text3)'}}>{description.length}/{DESC_MAX}</div>
         </div>
