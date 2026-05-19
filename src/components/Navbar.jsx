@@ -24,14 +24,14 @@ export default function Navbar() {
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{fontWeight:800,fontSize:18,color:'var(--text)',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
             <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
-              <circle cx="32" cy="14" r="5" stroke="#3b82f6" strokeWidth="3.5" fill="none"/>
-              <line x1="32" y1="19" x2="32" y2="50" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="22" y1="24" x2="42" y2="24" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round"/>
-              <path d="M 14 42 Q 32 56 50 42" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
-              <line x1="14" y1="42" x2="19" y2="38" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="50" y1="42" x2="45" y2="38" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round"/>
+              <circle cx="32" cy="14" r="5" stroke="var(--accent)" strokeWidth="3.5" fill="none"/>
+              <line x1="32" y1="19" x2="32" y2="50" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round"/>
+              <line x1="22" y1="24" x2="42" y2="24" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M 14 42 Q 32 56 50 42" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
+              <line x1="14" y1="42" x2="19" y2="38" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round"/>
+              <line x1="50" y1="42" x2="45" y2="38" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round"/>
             </svg>
-            <span>XRP<span style={{color:'#3b82f6'}}>Harbor</span></span>
+            <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
           <form onSubmit={handleSearch} style={{flex:1,maxWidth:360,position:'relative'}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'var(--surface)'}}
@@ -50,7 +50,7 @@ export default function Navbar() {
             ))}
           </div>
           <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'var(--text3)',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
-            XRP <span style={{color:'#10b981'}}>$2.18</span>
+            XRP <span style={{color:'var(--green)'}}>$2.18</span>
           </div>
           {user ? (
             <div style={{position:'relative'}}>
@@ -71,7 +71,7 @@ export default function Navbar() {
                       {i.label}
                     </Link>
                   ))}
-                  {user.role==='admin' && <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#60a5fa',textDecoration:'none'}}>Admin Panel</Link>}
+                  {user.role==='admin' && <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--accent2)',textDecoration:'none'}}>Admin Panel</Link>}
                   <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
                   <button onClick={()=>{logout();setShowMenu(false);}} style={{width:'100%',textAlign:'left',padding:'9px 16px',fontSize:13,color:'#f87171',background:'none',border:'none',cursor:'pointer'}}>
                     Sign out
@@ -81,7 +81,7 @@ export default function Navbar() {
               </div>
           ) : (
             <button onClick={()=>setShowLogin(true)}
-              style={{display:'flex',alignItems:'center',gap:6,background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+              style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
               ⚡ Connect Xumm
             </button>
           )}
@@ -124,7 +124,7 @@ function NotificationsBell() {
       <button onClick={()=>setOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,cursor:'pointer',color:'var(--text2)',position:'relative',padding:0}}>
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
         {unread > 0 && (
-          <span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',color:'#fff',fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px',border:'2px solid #0a0d13'}}>{unread > 9 ? '9+' : unread}</span>
+          <span style={{position:'absolute',top:-4,right:-4,background:'var(--red)',color:'#fff',fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px',border:'2px solid #0a0d13'}}>{unread > 9 ? '9+' : unread}</span>
         )}
       </button>
       {open && (
@@ -134,7 +134,7 @@ function NotificationsBell() {
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderBottom:'1px solid var(--border)'}}>
               <span style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>Notifications</span>
               {unread > 0 && (
-                <button onClick={markAllRead} style={{background:'none',border:'none',color:'#60a5fa',fontSize:11,cursor:'pointer',padding:0}}>Mark all read</button>
+                <button onClick={markAllRead} style={{background:'none',border:'none',color:'var(--accent2)',fontSize:11,cursor:'pointer',padding:0}}>Mark all read</button>
               )}
             </div>
             <div style={{overflowY:'auto',flex:1}}>
@@ -144,7 +144,7 @@ function NotificationsBell() {
                 const orderId = n.payload && n.payload.orderId;
                 const inner = (
                   <div style={{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.04)',background:n.is_read?'transparent':'rgba(59,130,246,0.06)',display:'flex',alignItems:'flex-start',gap:8,cursor:orderId?'pointer':'default'}}>
-                    {!n.is_read && <span style={{width:6,height:6,borderRadius:'50%',background:'#3b82f6',marginTop:6,flexShrink:0}}/>}
+                    {!n.is_read && <span style={{width:6,height:6,borderRadius:'50%',background:'var(--accent)',marginTop:6,flexShrink:0}}/>}
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:12,color:'var(--text)',lineHeight:1.4}}>{labelFor(n)}</div>
                       <div style={{fontSize:10,color:'var(--text3)',marginTop:2}}>{timeAgo(n.created_at)} ago</div>
