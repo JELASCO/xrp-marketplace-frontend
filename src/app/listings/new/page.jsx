@@ -34,8 +34,8 @@ export default function NewListingPage() {
   if (!user) return (
     <div style={{textAlign:'center',padding:'60px 20px'}}>
       <div style={{fontSize:40,marginBottom:16}}>🔒</div>
-      <div style={{fontSize:16,fontWeight:600,color:'#e8eaf0',marginBottom:8}}>Sign in required</div>
-      <div style={{fontSize:13,color:'#8892a4'}}>Connect your Xumm wallet to list items.</div>
+      <div style={{fontSize:16,fontWeight:600,color:'var(--text)',marginBottom:8}}>Sign in required</div>
+      <div style={{fontSize:13,color:'var(--text2)'}}>Connect your Xumm wallet to list items.</div>
     </div>
   );
 
@@ -71,11 +71,11 @@ export default function NewListingPage() {
   return (
     <div style={{maxWidth:560,margin:'0 auto'}}>
       <div style={{marginBottom:20}}>
-        <Link href="/listings" style={{fontSize:13,color:'#4a5568',textDecoration:'none'}}>← Back to Listings</Link>
+        <Link href="/listings" style={{fontSize:13,color:'var(--text3)',textDecoration:'none'}}>← Back to Listings</Link>
       </div>
-      <h1 style={{fontSize:22,fontWeight:800,color:'#e8eaf0',marginBottom:4,letterSpacing:'-0.02em'}}>Create New Listing</h1>
-      <p style={{fontSize:13,color:'#8892a4',marginBottom:24}}>List your game items and get paid in XRP.</p>
-      <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'24px'}}>
+      <h1 style={{fontSize:22,fontWeight:800,color:'var(--text)',marginBottom:4,letterSpacing:'-0.02em'}}>Create New Listing</h1>
+      <p style={{fontSize:13,color:'var(--text2)',marginBottom:24}}>List your game items and get paid in XRP.</p>
+      <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,padding:'24px'}}>
         <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:20}}>
 
           <div>
@@ -84,10 +84,10 @@ export default function NewListingPage() {
               {CATS.map(c => (
                 <button key={c.key} type="button" onClick={() => setForm(f => ({...f, category:c.key}))}
                   style={{padding:'10px 8px',borderRadius:8,cursor:'pointer',transition:'all 0.15s',display:'flex',flexDirection:'column',alignItems:'center',gap:4,border:'none',
-                    background: form.category===c.key ? 'rgba(59,130,246,0.15)' : '#161c28',
-                    outline: form.category===c.key ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(255,255,255,0.06)'}}>
+                    background: form.category===c.key ? 'rgba(59,130,246,0.15)' : 'var(--surface2)',
+                    outline: form.category===c.key ? '1px solid rgba(59,130,246,0.4)' : '1px solid var(--border)'}}>
                   <span style={{fontSize:20}}>{c.emoji}</span>
-                  <span style={{fontSize:12,fontWeight:500,color:form.category===c.key?'#60a5fa':'#8892a4'}}>{c.label}</span>
+                  <span style={{fontSize:12,fontWeight:500,color:form.category===c.key?'var(--accent2)':'var(--text2)'}}>{c.label}</span>
                 </button>
               ))}
             </div>
@@ -111,13 +111,13 @@ export default function NewListingPage() {
             <label className="label">Price (XRP) *</label>
             <div style={{position:'relative'}}>
               <input className="input" type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e=>setForm(f=>({...f,priceXrp:e.target.value}))} style={{paddingRight:50}}/>
-              <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'#4a5568',fontWeight:600}}>XRP</span>
+              <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'var(--text3)',fontWeight:600}}>XRP</span>
             </div>
-            {sellerReceives && <div style={{fontSize:12,color:'#4a5568',marginTop:5}}>You'll receive <span style={{color:'#10b981'}}>{sellerReceives} XRP</span> after 3% platform fee</div>}
+            {sellerReceives && <div style={{fontSize:12,color:'var(--text3)',marginTop:5}}>You'll receive <span style={{color:'var(--green)'}}>{sellerReceives} XRP</span> after 3% platform fee</div>}
           </div>
 
           <div>
-            <label className="label">Product Image <span style={{color:'#4a5568',fontWeight:400,textTransform:'none',fontSize:11}}>(optional)</span></label>
+            <label className="label">Product Image <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional)</span></label>
             <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleFileChange}/>
             {preview || form.images[0] ? (
               <div style={{position:'relative',marginBottom:8}}>
@@ -127,7 +127,7 @@ export default function NewListingPage() {
               </div>
             ) : null}
             <button type="button" onClick={()=>fileRef.current&&fileRef.current.click()} disabled={uploading}
-              style={{width:'100%',padding:'10px',background:'#161c28',border:'1px dashed rgba(255,255,255,0.15)',borderRadius:8,color:uploading?'#4a5568':'#8892a4',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              style={{width:'100%',padding:'10px',background:'var(--surface2)',border:'1px dashed rgba(255,255,255,0.15)',borderRadius:8,color:uploading?'var(--text3)':'var(--text2)',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               {uploading ? '⏳ Uploading...' : '📁 Choose image (max 5MB)'}
             </button>
           </div>
@@ -135,7 +135,7 @@ export default function NewListingPage() {
           {error && <div style={{background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171'}}>{error}</div>}
 
           <button type="submit" disabled={loading||uploading}
-            style={{background:loading?'#1a2440':'#3b82f6',color:'#fff',border:'none',borderRadius:10,padding:'12px',fontSize:14,fontWeight:600,cursor:loading?'not-allowed':'pointer'}}>
+            style={{background:loading?'#1a2440':'var(--accent)',color:'#fff',border:'none',borderRadius:10,padding:'12px',fontSize:14,fontWeight:600,cursor:loading?'not-allowed':'pointer'}}>
             {loading ? 'Publishing...' : 'Publish Listing'}
           </button>
         </form>
