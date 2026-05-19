@@ -25,7 +25,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         border: is_featured ? '1px solid rgba(59,130,246,0.4)' : '1px solid var(--border)',
         borderRadius:12,overflow:'hidden',cursor:'pointer',transition:'all 0.2s',position:'relative',
       }}
-        onMouseEnter={e=>{e.currentTarget.style.border='1px solid rgba(255,255,255,0.12)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.4)';}}
+        onMouseEnter={e=>{e.currentTarget.style.border='1px solid var(--border2)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.4)';}}
         onMouseLeave={e=>{e.currentTarget.style.border=is_featured?'1px solid rgba(59,130,246,0.4)':'1px solid var(--border)';e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>
         {onToggleFavorite && <button onClick={(e)=>{e.preventDefault();e.stopPropagation();onToggleFavorite(id);}} style={{position:'absolute',top:8,right:8,zIndex:10,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.2)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}><span style={{fontSize:16,color:isFavorited?'#f87171':'var(--text2)'}}>{isFavorited?'❤️':'🤍'}</span></button>}
         <div style={{height:130,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
@@ -45,8 +45,8 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               <div style={{width:18,height:18,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:7,fontWeight:700,color:'#fff'}}>
                 {username?.slice(0,2).toUpperCase()}
               </div>
-              <span style={{maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{username}{is_verified && <span title='Verified Seller' style={{marginLeft:4,fontSize:10,background:'rgba(16,185,129,0.15)',color:'#10b981',borderRadius:4,padding:'1px 4px',fontWeight:700}}>✓</span>}{is_verified && <span title='Verified Seller' style={{marginLeft:4,fontSize:10,background:'rgba(16,185,129,0.15)',color:'#10b981',borderRadius:4,padding:'1px 4px',fontWeight:700,letterSpacing:'0.02em'}}>✓ Verified</span>}</span>
-              {reputation_score > 0 && <span style={{color:'#f59e0b'}}>★{Number(reputation_score).toFixed(1)}</span>}
+              <span style={{maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{username}{is_verified && <span title='Verified Seller' style={{marginLeft:4,fontSize:10,background:'rgba(16,185,129,0.15)',color:'var(--green)',borderRadius:4,padding:'1px 4px',fontWeight:700}}>✓</span>}{is_verified && <span title='Verified Seller' style={{marginLeft:4,fontSize:10,background:'rgba(16,185,129,0.15)',color:'var(--green)',borderRadius:4,padding:'1px 4px',fontWeight:700,letterSpacing:'0.02em'}}>✓ Verified</span>}</span>
+              {reputation_score > 0 && <span style={{color:'var(--amber)'}}>★{Number(reputation_score).toFixed(1)}</span>}
             </div>
           </div>
         </div>
