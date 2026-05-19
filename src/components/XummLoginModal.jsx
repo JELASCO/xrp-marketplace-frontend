@@ -44,18 +44,18 @@ export default function XummLoginModal({ onClose }) {
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:'28px',width:'100%',maxWidth:380,boxShadow:'0 24px 64px rgba(0,0,0,0.6)'}}>
+      <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:'28px',width:'100%',maxWidth:380,boxShadow:'0 24px 64px rgba(0,0,0,0.6)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
           <div>
-            <div style={{fontSize:16,fontWeight:700,color:'#e8eaf0'}}>Sign in with Xumm</div>
-            <div style={{fontSize:12,color:'#4a5568',marginTop:2}}>Scan with your Xumm app</div>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>Sign in with Xumm</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>Scan with your Xumm app</div>
           </div>
-          <button onClick={onClose} style={{background:'#161c28',border:'1px solid rgba(255,255,255,0.08)',color:'#8892a4',borderRadius:8,width:32,height:32,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+          <button onClick={onClose} style={{background:'var(--surface2)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',borderRadius:8,width:32,height:32,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
         </div>
         {status==='loading'&&(
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,padding:'32px 0'}}>
             <div style={{width:40,height:40,border:'2px solid #3b82f6',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
-            <div style={{fontSize:13,color:'#4a5568'}}>Preparing QR code...</div>
+            <div style={{fontSize:13,color:'var(--text3)'}}>Preparing QR code...</div>
           </div>
         )}
         {status==='pending'&&qrUrl&&(
@@ -63,10 +63,10 @@ export default function XummLoginModal({ onClose }) {
             <div style={{background:'#fff',padding:12,borderRadius:12}}>
               {(typeof window!=='undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && nextUrl) ? (<a href={nextUrl} target="_blank" rel="noopener" style={{display:'inline-block',background:'#3b82f6',color:'#fff',padding:'14px 28px',borderRadius:10,fontWeight:600,fontSize:14,textDecoration:'none',marginBottom:4}}>Open in Xumm App</a>) : (<img src={qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/>)}
             </div>
-            <div style={{fontSize:13,color:'#8892a4',textAlign:'center',lineHeight:1.6}}>
-              Open <strong style={{color:'#e8eaf0'}}>Xumm</strong> on your phone and scan to sign in
+            <div style={{fontSize:13,color:'var(--text2)',textAlign:'center',lineHeight:1.6}}>
+              Open <strong style={{color:'var(--text)'}}>Xumm</strong> on your phone and scan to sign in
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#4a5568'}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'var(--text3)'}}>
               <div style={{width:6,height:6,borderRadius:'50%',background:'#10b981',animation:'pulse2 1.5s ease-in-out infinite'}}/>
               Waiting for signature...
             </div>
@@ -75,7 +75,7 @@ export default function XummLoginModal({ onClose }) {
         {status==='verifying'&&(
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,padding:'32px 0'}}>
             <div style={{width:40,height:40,border:'2px solid #3b82f6',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
-            <div style={{fontSize:13,color:'#8892a4'}}>Verifying signature...</div>
+            <div style={{fontSize:13,color:'var(--text2)'}}>Verifying signature...</div>
           </div>
         )}
         {status==='success'&&(
@@ -88,7 +88,7 @@ export default function XummLoginModal({ onClose }) {
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,padding:'24px 0'}}>
             <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'#f87171'}}>✕</div>
             <div style={{fontSize:13,color:'#f87171',textAlign:'center'}}>{status==='rejected'?'Request was cancelled.':error}</div>
-            <button onClick={start} style={{background:'#111620',border:'1px solid rgba(255,255,255,0.1)',color:'#e8eaf0',borderRadius:8,padding:'8px 18px',fontSize:13,cursor:'pointer',fontWeight:500}}>Try again</button>
+            <button onClick={start} style={{background:'var(--surface)',border:'1px solid var(--border2)',color:'var(--text)',borderRadius:8,padding:'8px 18px',fontSize:13,cursor:'pointer',fontWeight:500}}>Try again</button>
           </div>
         )}
       </div>
