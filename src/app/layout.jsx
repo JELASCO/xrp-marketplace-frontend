@@ -41,7 +41,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#0a0e1a',
+  themeColor: 'var(--bg)',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -50,7 +50,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0, background: '#0a0e1a', color: 'var(--text)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <body style={{ margin: 0, padding: 0, background: 'var(--bg)', color: 'var(--text)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <Providers>
           <Navbar />
           <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>{children}</main>
