@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useAuthStore } from '../../lib/store';
+import { useAuthStore } from '../../../lib/store';
 
 export default function CreateStorePage() {
   const { user } = useAuthStore(s => s);
