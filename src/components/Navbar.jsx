@@ -41,7 +41,7 @@ export default function Navbar() {
             </svg>
           </form>
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:2,marginLeft:'auto'}}>
-            {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
+            {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/store/create',label:'Create Store'},{href:'/orders',label:'Orders'}].map(l=>(
               <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'var(--text2)',padding:'6px 10px',borderRadius:8,textDecoration:'none',transition:'all 0.15s'}}
                 onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
                 onMouseLeave={e=>{e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'}}>
