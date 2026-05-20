@@ -123,7 +123,7 @@ function ListingsContent() {
         <button type="submit" style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
           Search
         </button>
-        <button type="button" onClick={() => setShowFilters(f => !f)} style={{ background: showFilters ? '#1e293b' : 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text2)', borderRadius: 10, padding: '10px 14px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button type="button" onClick={() => setShowFilters(f => !f)} style={{ background: showFilters ? 'var(--surface)' : 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text2)', borderRadius: 10, padding: '10px 14px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
           ⚙ Filters {hasActiveFilters && <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 10, fontSize: 10, padding: '1px 6px' }}>ON</span>}
         </button>
       </form>
@@ -133,17 +133,17 @@ function ListingsContent() {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
           <div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sort</div>
-            <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: '#0a0e1a', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}>
+            <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}>
               {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
           </div>
           <div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Min Price (XRP)</div>
-            <input type="number" min="0" step="0.01" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="0" style={{ width: 90, background: '#0a0e1a', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
+            <input type="number" min="0" step="0.01" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="0" style={{ width: 90, background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
           </div>
           <div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Max Price (XRP)</div>
-            <input type="number" min="0" step="0.01" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="∞" style={{ width: 90, background: '#0a0e1a', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
+            <input type="number" min="0" step="0.01" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="∞" style={{ width: 90, background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
           </div>
           {hasActiveFilters && (
             <button onClick={clearFilters} style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>
