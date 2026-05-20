@@ -72,12 +72,12 @@ export default function SettingsPage() {
 
         <div>
           <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:8,letterSpacing:1}}>USERNAME</label>
-          <input value={username} onChange={e => setUsername(e.target.value)} style={{width:'100%',background:'#0a0e1a',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
+          <input value={username} onChange={e => setUsername(e.target.value)} style={{width:'100%',background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',color:'var(--text)',fontSize:14,boxSizing:'border-box'}} />
         </div>
 
         <div>
           <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:8,letterSpacing:1}}>BIO</label>
-          <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell others about yourself..." style={{width:'100%',background:'#0a0e1a',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',color:'var(--text)',fontSize:14,boxSizing:'border-box',resize:'vertical',fontFamily:'inherit'}} />
+          <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell others about yourself..." style={{width:'100%',background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',color:'var(--text)',fontSize:14,boxSizing:'border-box',resize:'vertical',fontFamily:'inherit'}} />
         </div>
 
         <div>
@@ -86,20 +86,20 @@ export default function SettingsPage() {
             {avatars.map((url, i) => {
               const isSelected = avatarUrl === url;
               return (
-                <button key={i} type="button" onClick={() => setAvatarUrl(url)} style={{background:'#0a0e1a',border: isSelected ? '2px solid #3b82f6' : '1px solid var(--border2)',borderRadius:12,padding:8,cursor:'pointer',transition:'all 0.15s',aspectRatio:'1'}}>
+                <button key={i} type="button" onClick={() => setAvatarUrl(url)} style={{background:'var(--bg)',border: isSelected ? '2px solid #3b82f6' : '1px solid var(--border2)',borderRadius:12,padding:8,cursor:'pointer',transition:'all 0.15s',aspectRatio:'1'}}>
                   <img src={url} alt="avatar" style={{width:'100%',height:'100%',borderRadius:8,display:'block'}} />
                 </button>
               );
             })}
           </div>
           <label style={{color:'var(--text2)',fontSize:11,display:'block',marginBottom:6}}>OR ENTER A CUSTOM URL</label>
-          <input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="https://..." style={{width:'100%',background:'#0a0e1a',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',color:'var(--text)',fontSize:13,boxSizing:'border-box'}} />
+          <input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="https://..." style={{width:'100%',background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',color:'var(--text)',fontSize:13,boxSizing:'border-box'}} />
         </div>
 
         
         <div>
           <label style={{color:'var(--text2)',fontSize:12,display:'block',marginBottom:8,letterSpacing:1}}>NOTIFICATIONS</label>
-          <div style={{background:'#0a0e1a',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,overflow:'hidden'}}>
+          <div style={{background:'var(--bg)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,overflow:'hidden'}}>
             {NOTIF_TYPES.map((nt, i) => (
               <label key={nt.key} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderBottom: i < NOTIF_TYPES.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none',cursor:'pointer'}}>
                 <div style={{flex:1,minWidth:0}}>
