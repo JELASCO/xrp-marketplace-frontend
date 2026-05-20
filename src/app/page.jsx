@@ -103,7 +103,7 @@ export default function HomePage() {
       </div>
 
       {/* Supported Games */}
-      <div style={{marginBottom:20,padding:'14px 16px',background:'#0d1218',border:'1px solid var(--border)',borderRadius:12,display:'flex',alignItems:'center',gap:14,overflowX:'auto'}}>
+      <div style={{marginBottom:20,padding:'14px 16px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:12,display:'flex',alignItems:'center',gap:14,overflowX:'auto'}}>
         <div style={{fontSize:10,fontWeight:700,color:'#5b6370',textTransform:'uppercase',letterSpacing:'0.08em',flexShrink:0,paddingRight:14,borderRight:'1px solid rgba(255,255,255,0.08)'}}>Supported Games</div>
         {[
           {name:'CS2',color:'#f4900c',short:'CS'},
@@ -175,7 +175,7 @@ export default function HomePage() {
       </div>
 
       {/* Sell on XRPHarbor */}
-      <div style={{background:'#0d1218',border:'1px solid var(--border)',borderRadius:14,padding:'32px 28px',marginBottom:20,position:'relative',overflow:'hidden'}}>
+      <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:'32px 28px',marginBottom:20,position:'relative',overflow:'hidden'}}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,alignItems:'center',position:'relative',zIndex:1}}>
           <div>
             <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'4px 10px',background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:999,fontSize:11,fontWeight:600,color:'var(--accent2)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:14}}>For sellers</div>
