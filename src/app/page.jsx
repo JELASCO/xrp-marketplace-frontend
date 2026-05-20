@@ -62,7 +62,7 @@ export default function HomePage() {
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:32}}>
-      <div style={{background:'linear-gradient(135deg, var(--surface) 0%, var(--bg2) 50%, var(--bg2) 100%)',border:'1px solid rgba(59,130,246,0.15)',borderRadius:16,padding:'32px',position:'relative',overflow:'hidden'}}>
+      <div style={{background:'linear-gradient(135deg, var(--surface) 0%, var(--surface2) 50%, var(--bg2) 100%)',border:'1px solid rgba(59,130,246,0.15)',borderRadius:16,padding:'32px',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:-60,right:-60,width:240,height:240,background:'radial-gradient(circle,rgba(59,130,246,0.08) 0%,transparent 70%)',borderRadius:'50%'}}/>
         <div style={{position:'relative',zIndex:1,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:20}}>
           <div>
