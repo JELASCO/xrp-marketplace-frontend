@@ -135,7 +135,7 @@ export default function NewListingPage() {
           {error && <div style={{background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171'}}>{error}</div>}
 
           <button type="submit" disabled={loading||uploading}
-            style={{background:loading?'#1a2440':'var(--accent)',color:'#fff',border:'none',borderRadius:10,padding:'12px',fontSize:14,fontWeight:600,cursor:loading?'not-allowed':'pointer'}}>
+            style={{background:loading?'var(--surface)':'var(--accent)',color:'#fff',border:'none',borderRadius:10,padding:'12px',fontSize:14,fontWeight:600,cursor:loading?'not-allowed':'pointer'}}>
             {loading ? 'Publishing...' : 'Publish Listing'}
           </button>
         </form>
