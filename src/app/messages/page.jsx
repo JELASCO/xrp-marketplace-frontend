@@ -48,7 +48,7 @@ export default function MessagesPage() {
   if (!user) return null;
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 0, height: 'calc(100vh - 120px)', background: '#0a0e1a', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 0, height: 'calc(100vh - 120px)', background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
       <div style={{ width: 280, borderRight: '1px solid var(--border)', flexShrink: 0, overflowY: 'auto' }}>
         <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>💬 Messages</h2>
@@ -87,7 +87,7 @@ export default function MessagesPage() {
               const mine = m.sender_id === user.id;
               return (
                 <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-                  <div style={{ maxWidth: '70%', background: mine ? 'var(--accent)' : '#1a2440', borderRadius: mine ? '12px 12px 2px 12px' : '12px 12px 12px 2px', padding: '8px 12px' }}>
+                  <div style={{ maxWidth: '70%', background: mine ? 'var(--accent)' : 'var(--surface)', borderRadius: mine ? '12px 12px 2px 12px' : '12px 12px 12px 2px', padding: '8px 12px' }}>
                     {!mine && <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 2, fontWeight: 600 }}>{m.sender_username}</div>}
                     <div style={{ fontSize: 13, color: 'var(--text)' }}>{m.content}</div>
                     <div style={{ fontSize: 10, color: mine ? 'rgba(255,255,255,0.6)' : 'var(--text3)', marginTop: 2, textAlign: mine ? 'right' : 'left' }}>
