@@ -50,7 +50,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0, background: 'var(--bg)', color: 'var(--text)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <body style={{ margin: 0, padding: 0, background: 'var(--bg)', color: 'var(--text)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif' }}>
         <Providers>
           <Navbar />
           <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>{children}</main>
