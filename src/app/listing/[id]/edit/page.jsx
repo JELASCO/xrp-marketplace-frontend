@@ -23,7 +23,11 @@ export default function EditListingPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { router.push('/'); return; }
+    const hasToken = typeof window !== 'undefined' && localStorage.getItem('xrpmarket_token');
+    if (!user) {
+      if (hasToken) return; // auth still hydrating, wait
+      router.push('/'); return;
+    }
     api.listings.get(id).then(l => {
       if (l.seller_id !== user.id) { router.push('/listing/' + id); return; }
       setTitle(l.title || '');

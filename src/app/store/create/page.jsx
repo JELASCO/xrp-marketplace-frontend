@@ -77,7 +77,11 @@ export default function CreateStorePage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (user === null) return;
+    if (user === null) {
+      const hasToken = typeof window !== 'undefined' && localStorage.getItem('xrpmarket_token');
+      if (hasToken) return; // auth still hydrating
+      router.push('/'); return;
+    }
     if (!user) { router.push('/'); return; }
     api.stores.mine().then((d) => {
       if (d.store) {
