@@ -11,7 +11,7 @@ export default function EditListingPage() {
   const { id } = useParams();
   const router = useRouter();
   const user = useAuthStore(s => s.user);
-  const loading = useAuthStore(s => s.loading);
+  const hydrated = useAuthStore(s => s.hydrated);
   const [title, setTitle] = useState('');
   const [priceXrp, setPriceXrp] = useState('');
   const [description, setDescription] = useState('');
@@ -22,12 +22,8 @@ export default function EditListingPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
-    const hasToken = typeof window !== 'undefined' && localStorage.getItem('xrpmarket_token');
-    if (!user) {
-      if (hasToken) return; // auth still hydrating, wait
-      router.push('/'); return;
-    }
+    if (!hydrated) return;
+    if (!user) { router.push('/'); return; }
     api.listings.get(id).then(l => {
       if (l.seller_id !== user.id) { router.push('/listing/' + id); return; }
       setTitle(l.title || '');
@@ -61,7 +57,7 @@ export default function EditListingPage() {
     }
   };
 
-  if (loading) return null;
+  if (!hydrated) return null;
   if (!user) return null;
 
   return (

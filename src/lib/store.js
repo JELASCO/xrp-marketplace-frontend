@@ -2,13 +2,13 @@
 import { create } from 'zustand';
 import { api } from './api';
 export const useAuthStore = create((set, get) => ({
-  user: null, token: null, loading: false,
+  user: null, token: null, loading: false, hydrated: false,
   init: async () => {
     if (typeof window === 'undefined') return;
     const token = localStorage.getItem('xrpmarket_token');
-    if (!token) return;
-    try { set({ loading: true }); const user = await api.auth.me(); set({ user, token, loading: false }); }
-    catch { localStorage.removeItem('xrpmarket_token'); set({ user: null, token: null, loading: false }); }
+    if (!token) { set({ hydrated: true }); return; }
+    try { set({ loading: true }); const user = await api.auth.me(); set({ user, token, loading: false, hydrated: true }); }
+    catch { localStorage.removeItem('xrpmarket_token'); set({ user: null, token: null, loading: false, hydrated: true }); }
   },
   setAuth: (token, user) => { localStorage.setItem('xrpmarket_token', token); set({ token, user }); },
   logout: () => { localStorage.removeItem('xrpmarket_token'); set({ user: null, token: null }); },

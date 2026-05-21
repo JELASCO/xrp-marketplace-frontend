@@ -55,6 +55,7 @@ function ToggleRow({ title, desc, checked, onChange, last }) {
 export default function CreateStorePage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
   const [cats, setCats] = useState([]);
@@ -77,11 +78,7 @@ export default function CreateStorePage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (user === null) {
-      const hasToken = typeof window !== 'undefined' && localStorage.getItem('xrpmarket_token');
-      if (hasToken) return; // auth still hydrating
-      router.push('/'); return;
-    }
+    if (!hydrated) return;
     if (!user) { router.push('/'); return; }
     api.stores.mine().then((d) => {
       if (d.store) {
