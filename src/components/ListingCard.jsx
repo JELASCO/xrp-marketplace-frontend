@@ -10,7 +10,8 @@ const CAT_COLORS = {
   nft:     {bg:'rgba(16,185,129,0.12)',color:'#34d399'},
 };
 const CAT_LABELS = {skin:'Skin',coin:'Coin',bp:'Battle Pass',account:'Account',physical:'Physical',nft:'NFT',key:'Key',item:'Item',bundle:'Bundle',template:'Template',art:'Art',ebook:'Ebook',audio:'Audio',software:'Software'};
-const GAME_EMOJIS = {'CS2':'Ã°ÂÂÂ«','Valorant':'Ã¢ÂÂ¡','Fortnite':'Ã°ÂÂÂ','Roblox':'Ã°ÂÂÂ®','Minecraft':'Ã¢ÂÂÃ¯Â¸Â','Apex Legends':'Ã°ÂÂÂ¯','Call of Duty':'Ã°ÂÂªÂ'};
+const GAME_EMOJIS = {};
+
 
 export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
   const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified } = listing;
