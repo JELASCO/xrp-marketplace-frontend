@@ -72,12 +72,16 @@ export default function CreateStorePage() {
   const [bannerUrl, setBannerUrl] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [hasStore, setHasStore] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (user === null) return;
     if (!user) { router.push('/'); return; }
     api.stores.mine().then((d) => {
       if (d.store) {
+        setHasStore(true);
         setName(d.store.name || '');
         setHandle(d.handle || '');
         setCats(d.store.categories || []);
@@ -139,6 +143,18 @@ export default function CreateStorePage() {
     } catch (e) {
       setError(e.message);
       setSaving(false);
+    }
+  };
+
+  const handleDeleteStore = async () => {
+    setError(''); setDeleting(true);
+    try {
+      await api.stores.remove();
+      router.push('/dashboard');
+    } catch (e) {
+      setError(e.message);
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -266,6 +282,24 @@ export default function CreateStorePage() {
                 <div style={hintStyle}>Required if your wallet is hosted on an exchange (Bitstamp, Bitso, etc.).</div>
               </div>
             </section>
+
+            {hasStore && (
+              <section style={{ ...sectionStyle, borderColor: 'rgba(239,68,68,0.3)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#dc2626', marginBottom: 4 }}>Danger zone</div>
+                <div style={{ fontSize: 13, color: C.muted, marginBottom: 14 }}>Deleting your store removes your public storefront page. Your listings stay active.</div>
+                {!confirmDelete ? (
+                  <button type="button" onClick={() => setConfirmDelete(true)} style={{ background: C.bg, color: '#dc2626', border: '1px solid rgba(239,68,68,0.4)', padding: '10px 18px', borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Delete store</button>
+                ) : (
+                  <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: 14 }}>
+                    <div style={{ fontSize: 13, color: C.ink, marginBottom: 12 }}>Delete your storefront? This cannot be undone.</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting} style={{ flex: 1, background: C.bg, color: C.muted, border: `1px solid ${C.lineStrong}`, borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                      <button type="button" onClick={handleDeleteStore} disabled={deleting} style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{deleting ? 'Deleting…' : 'Yes, delete'}</button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
           </div>
 
           <aside style={{ position: 'sticky', top: 80 }} className="store-create-preview">
@@ -305,12 +339,12 @@ export default function CreateStorePage() {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <div style={{ fontSize: 13, color: C.muted, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, display: 'inline-block' }} aria-hidden="true" />
-            <strong style={{ color: C.ink }}>Draft</strong> · not published yet
+            <strong style={{ color: C.ink }}>{hasStore ? 'Published' : 'Draft'}</strong> · {hasStore ? 'live now' : 'not published yet'}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             {error && <span style={{ color: '#ef4444', fontSize: 13, marginRight: 'auto' }}>{error}</span>}
             <button type="button" onClick={handlePreview} style={{ background: C.bg, color: C.ink, border: `1px solid ${C.lineStrong}`, padding: '10px 18px', borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Preview live</button>
-            <button type="button" onClick={handlePublish} disabled={saving} style={{ background: saving ? C.lineStrong : C.blue, color: '#fff', border: `1px solid ${saving ? C.lineStrong : C.blue}`, padding: '10px 22px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit', minHeight: 44 }}>{saving ? 'Publishing…' : 'Publish store'}</button>
+            <button type="button" onClick={handlePublish} disabled={saving} style={{ background: saving ? C.lineStrong : C.blue, color: '#fff', border: `1px solid ${saving ? C.lineStrong : C.blue}`, padding: '10px 22px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit', minHeight: 44 }}>{saving ? 'Saving…' : (hasStore ? 'Save changes' : 'Publish store')}</button>
           </div>
         </div>
       </div>

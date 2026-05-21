@@ -18,6 +18,8 @@ export default function EditListingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -40,6 +42,18 @@ export default function EditListingPage() {
     } catch (e) {
       setError(e.message || 'Failed to save');
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setError(''); setDeleting(true);
+    try {
+      await api.listings.remove(id);
+      router.push('/profile/' + user.id);
+    } catch (e) {
+      setError(e.message || 'Failed to delete');
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -71,6 +85,23 @@ export default function EditListingPage() {
         <button onClick={handleSave} disabled={saving} style={{background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'12px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
+
+        <div style={{borderTop:'1px solid var(--border)',marginTop:8,paddingTop:20}}>
+          <div style={{fontSize:12,fontWeight:600,color:'var(--text2)',marginBottom:8}}>DANGER ZONE</div>
+          {!confirmDelete ? (
+            <button onClick={()=>setConfirmDelete(true)} style={{width:'100%',background:'transparent',color:'#f87171',border:'1px solid rgba(248,113,113,0.4)',borderRadius:8,padding:'11px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
+              Delete listing
+            </button>
+          ) : (
+            <div style={{background:'rgba(248,113,113,0.08)',border:'1px solid rgba(248,113,113,0.3)',borderRadius:8,padding:14}}>
+              <div style={{fontSize:13,color:'var(--text)',marginBottom:12}}>Permanently delete this listing? This cannot be undone.</div>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={()=>setConfirmDelete(false)} disabled={deleting} style={{flex:1,background:'var(--surface)',color:'var(--text2)',border:'1px solid var(--border2)',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+                <button onClick={handleDelete} disabled={deleting} style={{flex:1,background:'#ef4444',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:700,cursor:'pointer'}}>{deleting?'Deleting...':'Yes, delete'}</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
