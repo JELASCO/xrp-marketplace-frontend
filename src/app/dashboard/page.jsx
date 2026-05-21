@@ -57,7 +57,7 @@ export default function DashboardPage() {
       {/* Received Offers */}
       {offers.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>ð° Received Offers ({offers.length})</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>Received Offers ({offers.length})</h2>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>Received Offers ({offers.length})</h2>
             {offers.map(o => (
               <div key={o.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -67,7 +67,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text3)' }}>
                     From <strong style={{ color: '#94a3b8' }}>{o.buyer_username}</strong>
-                    {o.message && <span> Â· &ldquo;{o.message.slice(0,60)}{o.message.length>60?'...':''}&rdquo;</span>}
+                    {o.message && <span> · "{o.message.slice(0,60)}{o.message.length>60?'...':''}"</span>}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -77,12 +77,12 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                   <button onClick={() => api.offers.accept(o.id).then(r => { setOffers(p => p.filter(x => x.id !== o.id)); if(r.orderId) alert("Offer accepted! The buyer will now complete payment via Xumm. Order ID: " + r.orderId.slice(0,8)); }).catch(e => alert(e.message))}
                     style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                    â Accept
-                    Accept
+                  Accept
+                  </button>
                   <button onClick={() => api.offers.decline(o.id).then(() => setOffers(p => p.filter(x => x.id !== o.id))).catch(e => alert(e.message))}
                     style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                    â Decline
                     Decline
+                  </button>
                 </div>
               </div>
             ))}
