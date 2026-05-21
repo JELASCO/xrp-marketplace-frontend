@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
+const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e';
 async function uploadImage(file) {
-  const key = process.env.NEXT_PUBLIC_IMGBB_KEY;
-  if (!key) throw new Error('Image upload not configured');
+  if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5MB');
   const fd = new FormData();
   fd.append('image', file);
-  const r = await fetch('https://api.imgbb.com/1/upload?key=' + key, { method: 'POST', body: fd });
+  fd.append('key', IMGBB_KEY);
+  const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
   const d = await r.json();
   if (!d.success) throw new Error('Upload failed');
   return d.data.url;
