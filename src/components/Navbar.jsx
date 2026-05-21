@@ -20,148 +20,23 @@ export default function Navbar() {
   return (
     <>
       <style>{`@media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}`}</style>
-      <nav style={{background:'#ffffff',backdropFilter:'blur(12px)',borderBottom:'1px solid var(--border)',position:'sticky',top:0,zIndex:50}}>
+      <nav style={{background:'#000',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(255,255,255,0.08)',position:'sticky',top:0,zIndex:50}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
-          <Link href="/" style={{fontWeight:800,fontSize:18,color:'var(--text)',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
+          <Link href="/" style={{fontWeight:800,fontSize:18,color:'#fff',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
             <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
-              <circle cx="32" cy="14" r="5" stroke="var(--accent)" strokeWidth="3.5" fill="none"/>
-              <line x1="32" y1="19" x2="32" y2="50" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="22" y1="24" x2="42" y2="24" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round"/>
-              <path d="M 14 42 Q 32 56 50 42" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
-              <line x1="14" y1="42" x2="19" y2="38" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="50" y1="42" x2="45" y2="38" stroke="var(--accent)" strokeWidth="3.5" strokeLinecap="round"/>
+              <circle cx="32" cy="14" r="5" stroke="#fff" strokeWidth="3.5" fill="none"/>
+              <line x1="32" y1="19" x2="32" y2="50" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
+              <line x1="22" y1="24" x2="42" y2="24" stroke="#fff" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M 14 42 Q 32 56 50 42" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
+              <line x1="14" y1="42" x2="19" y2="38" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
+              <line x1="50" y1="42" x2="45" y2="38" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
             </svg>
             <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
           <form onSubmit={handleSearch} style={{flex:1,maxWidth:360,position:'relative'}}>
-            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'var(--surface)'}}
+            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',color:'#fff',borderRadius:8}}
               placeholder="Search skins, coins, accounts..." value={search} onChange={e=>setSearch(e.target.value)}/>
-            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8b8f96',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-          </form>
-          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:2,marginLeft:'auto'}}>
-            {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/store/create',label:'Create Store'},{href:'/orders',label:'Orders'}].map(l=>(
-              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'var(--text2)',padding:'6px 10px',borderRadius:8,textDecoration:'none',transition:'all 0.15s'}}
-                onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'}}>
-                {l.label}
-              </Link>
-            ))}
-          </div>
-          <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'var(--text3)',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
-            XRP <span style={{color:'var(--green)'}}>$2.18</span>
-          </div>
-          {user ? (
-            <div style={{position:'relative'}}>
-              <button onClick={()=>setShowMenu(v=>!v)}
-                style={{display:'flex',alignItems:'center',gap:8,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,padding:'6px 10px',cursor:'pointer',color:'var(--text)',fontSize:13,fontWeight:500}}>
-                <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#fff'}}>
-                  {user.username?.slice(0,2).toUpperCase()}
-                </div>
-                <span style={{maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.username}</span>
-              </button>
-              {showMenu && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
-                  {[{href:'/dashboard',label:'Dashboard'},{href:'/favorites',label:'❤️ Favorites'},{href:'/messages',label:'💬 Messages'},{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Orders'},{href:'/settings',label:'Settings'}].map(i=>(
-                    <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
-                      style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--text2)',textDecoration:'none',transition:'all 0.15s'}}
-                      onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
-                      onMouseLeave={e=>{e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'}}>
-                      {i.label}
-                    </Link>
-                  ))}
-                  {user.role==='admin' && <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--accent2)',textDecoration:'none'}}>Admin Panel</Link>}
-                  <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
-                  <button onClick={()=>{logout();setShowMenu(false);}} style={{width:'100%',textAlign:'left',padding:'9px 16px',fontSize:13,color:'#f87171',background:'none',border:'none',cursor:'pointer'}}>
-                    Sign out
-                  </button>
-                </div>
-              )}
-              </div>
-          ) : (
-            <button onClick={()=>setShowLogin(true)}
-              style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
-              ⚡ Connect Xumm
-            </button>
-          )}
-        </div>
-      </nav>
-      {showLogin && <XummLoginModal onClose={()=>setShowLogin(false)}/>}
-    </>
-  );
-}
-
-
-function NotificationsBell() {
-  const items = useNotificationsStore(s => s.items);
-  const unread = useNotificationsStore(s => s.unread);
-  const markRead = useNotificationsStore(s => s.markRead);
-  const markAllRead = useNotificationsStore(s => s.markAllRead);
-  const [open, setOpen] = useState(false);
-
-  function labelFor(n) {
-    const t = n.type;
-    const p = n.payload || {};
-    if (t === 'new_order') return 'New order on "' + (p.listingTitle || 'listing') + '"';
-    if (t === 'order_completed') return 'Order completed';
-    if (t === 'dispute_opened') return 'Dispute opened on your order';
-    if (t === 'dispute_resolved') return 'Dispute resolved' + (p.favorBuyer ? ' (refunded)' : ' (released)');
-    if (t === 'new_review') return 'New review (' + (p.rating || '') + '★)';
-    return t;
-  }
-  function timeAgo(d) {
-    if (!d) return '';
-    const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
-    if (s < 60) return s + 's';
-    if (s < 3600) return Math.floor(s/60) + 'm';
-    if (s < 86400) return Math.floor(s/3600) + 'h';
-    return Math.floor(s/86400) + 'd';
-  }
-
-  return (
-    <div style={{position:'relative'}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,cursor:'pointer',color:'var(--text2)',position:'relative',padding:0}}>
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
-        {unread > 0 && (
-          <span style={{position:'absolute',top:-4,right:-4,background:'var(--red)',color:'#fff',fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px',border:'2px solid #0a0d13'}}>{unread > 9 ? '9+' : unread}</span>
-        )}
-      </button>
-      {open && (
-        <>
-          <div onClick={()=>setOpen(false)} style={{position:'fixed',inset:0,zIndex:99}}/>
-          <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:340,maxWidth:'90vw',maxHeight:440,overflow:'hidden',display:'flex',flexDirection:'column',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderBottom:'1px solid var(--border)'}}>
-              <span style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>Notifications</span>
-              {unread > 0 && (
-                <button onClick={markAllRead} style={{background:'none',border:'none',color:'var(--accent2)',fontSize:11,cursor:'pointer',padding:0}}>Mark all read</button>
-              )}
-            </div>
-            <div style={{overflowY:'auto',flex:1}}>
-              {items.length === 0 ? (
-                <div style={{padding:'30px 16px',textAlign:'center',color:'var(--text3)',fontSize:12}}>No notifications yet</div>
-              ) : items.map(n => {
-                const orderId = n.payload && n.payload.orderId;
-                const inner = (
-                  <div style={{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.04)',background:n.is_read?'transparent':'rgba(59,130,246,0.06)',display:'flex',alignItems:'flex-start',gap:8,cursor:orderId?'pointer':'default'}}>
-                    {!n.is_read && <span style={{width:6,height:6,borderRadius:'50%',background:'var(--accent)',marginTop:6,flexShrink:0}}/>}
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:12,color:'var(--text)',lineHeight:1.4}}>{labelFor(n)}</div>
-                      <div style={{fontSize:10,color:'var(--text3)',marginTop:2}}>{timeAgo(n.created_at)} ago</div>
-                    </div>
-                  </div>
-                );
-                const onClick = () => { if (!n.is_read) markRead(n.id); setOpen(false); };
-                return orderId ? (
-                  <Link key={n.id} href={'/orders/' + orderId} onClick={onClick} style={{textDecoration:'none'}}>{inner}</Link>
-                ) : (
-                  <div key={n.id} onClick={onClick}>{inner}</div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+          </form>æÖÓâ¢ÄÆæ²¶W×¶æ&VgÒ&Vc×¶æ&VgÒöä6Æ6³×²Óç6WE6÷tÖVçRfÇ6RÐ¢7GÆS×·¶F7Æ¢v&Æö6²rÇFFæs¢sgrÆföçE6¦S£2Æ6öÆ÷#¢wf"Ò×FWC"rÇFWDFV6÷&Föã¢væöæRrÇG&ç6Föã¢vÆÂãW2w×Ð¢öäÖ÷W6TVçFW#×¶SÓç¶Ræ7W'&VçEF&vWBç7GÆRæ6öÆ÷#Òwf"Ò×FWBs¶Ræ7W'&VçEF&vWBç7GÆRæ&6¶w&÷VæCÒwf"Ò×7W&f6S"w×Ð¢öäÖ÷W6TÆVfS×¶SÓç¶Ræ7W'&VçEF&vWBç7GÆRæ6öÆ÷#Òwf"Ò×FWC"s¶Ræ7W'&VçEF&vWBç7GÆRæ&6¶w&÷VæCÒwG&ç7&VçBw×Óà¢¶æÆ&VÇÐ¢ÂôÆæ³à¢Ð¢·W6W"ç&öÆSÓÓÒvFÖârbbÄÆæ²&VcÒ"öFÖâ"öä6Æ6³×²Óç6WE6÷tÖVçRfÇ6RÒ7GÆS×·¶F7Æ¢v&Æö6²rÇFFæs¢sgrÆföçE6¦S£2Æ6öÆ÷#¢wf"ÒÖ66VçC"rÇFWDFV6÷&Föã¢væöæRw×ÓäFÖâæVÃÂôÆæ³çÐ¢ÆFb7GÆS×·¶VvC£Æ&6¶w&÷VæC¢wf"ÒÖ&÷&FW"rÆÖ&vã¢sGw×Òóà¢Æ'WGFöâöä6Æ6³×²Óç¶Æöv÷WB·6WE6÷tÖVçRfÇ6R·×Ò7GÆS×··vGF¢sRrÇFWDÆvã¢vÆVgBrÇFFæs¢sgrÆföçE6¦S£2Æ6öÆ÷#¢r6cssrÆ&6¶w&÷VæC¢væöæRrÆ&÷&FW#¢væöæRrÆ7W'6÷#¢wöçFW"w×Óà¢6vâ÷W@¢Âö'WGFöãà¢ÂöFcà¢Ð¢ÂöFcà¢¢¢Æ'WGFöâöä6Æ6³×²Óç6WE6÷tÆövâG'VRÐ¢7GÆS×·¶F7Æ¢vfÆWrÆÆväFV×3¢v6VçFW"rÆv£bÆ&6¶w&÷VæC¢wf"ÒÖ66VçBrÆ6öÆ÷#¢r6ffbrÆ&÷&FW#¢væöæRrÆ&÷&FW%&FW3£ÇFFæs¢swGrÆföçE6¦S£2ÆföçEvVvC£cÆ7W'6÷#¢wöçFW"rÇvFU76S¢væ÷w&rÆfÆW6&æ³£×Óà¢)ª6öææV7BVÖÐ¢Âö'WGFöãà¢Ð¢ÂöFcà¢Âöæcà¢·6÷tÆövâbbÅVÖÔÆöväÖöFÂöä6Æ÷6S×²Óç6WE6÷tÆövâfÇ6RÒóçÐ¢Âóà¢°§Ð  ¦gVæ7Föâæ÷Ff6Föç4&VÆÂ°¢6öç7BFV×2ÒW6Tæ÷Ff6Föç57F÷&R2Óâ2æFV×2°¢6öç7BVç&VBÒW6Tæ÷Ff6Föç57F÷&R2Óâ2çVç&VB°¢6öç7BÖ&µ&VBÒW6Tæ÷Ff6Föç57F÷&R2Óâ2æÖ&µ&VB°¢6öç7BÖ&´ÆÅ&VBÒW6Tæ÷Ff6Föç57F÷&R2Óâ2æÖ&´ÆÅ&VB°¢6öç7B¶÷VâÂ6WD÷VåÒÒW6U7FFRfÇ6R° ¢gVæ7FöâÆ&VÄf÷"â°¢6öç7BBÒâçGS°¢6öç7BÒâçÆöBÇÂ·Ó°¢bBÓÓÒvæWuö÷&FW"r&WGW&âtæWr÷&FW"öâ"r²æÆ7FæuFFÆRÇÂvÆ7Færr²r"s°¢bBÓÓÒv÷&FW%ö6ö×ÆWFVBr&WGW&ât÷&FW"6ö×ÆWFVBs°¢bBÓÓÒvF7WFUö÷VæVBr&WGW&âtF7WFR÷VæVBöâ÷W"÷&FW"s°¢bBÓÓÒvF7WFU÷&W6öÇfVBr&WGW&âtF7WFR&W6öÇfVBr²æff÷$'WW"òr&VgVæFVBr¢r&VÆV6VBr°¢bBÓÓÒvæWu÷&WfWrr&WGW&âtæWr&WfWrr²ç&FærÇÂrr²~)Rs°¢&WGW&âC°¢Ð¢gVæ7FöâFÖTvòB°¢bB&WGW&ârs°¢6öç7B2ÒÖFæfÆö÷"FFRææ÷rÒæWrFFRBævWEFÖRò°¢b2Âc&WGW&â2²w2s°¢b2Â3c&WGW&âÖFæfÆö÷"2óc²vÒs°¢b2ÂcC&WGW&âÖFæfÆö÷"2ó3c²vs°¢&WGW&âÖFæfÆö÷"2ócC²vBs°¢Ð ¢&WGW&â¢ÆFb7GÆS×··÷6Föã¢w&VÆFfRw×Óà¢Æ'WGFöâöä6Æ6³×²Óç6WD÷VâcÓâbÒ7GÆS×·¶F7Æ¢vfÆWrÆÆväFV×3¢v6VçFW"rÆ§W7Fg6öçFVçC¢v6VçFW"rÇvGF£3BÆVvC£3BÆ&6¶w&÷VæC¢wf"Ò×7W&f6RrÆ&÷&FW#¢s6öÆB&v&#SRÃ#SRÃ#SRÃãrÆ&÷&FW%&FW3£Æ7W'6÷#¢wöçFW"rÆ6öÆ÷#¢wf"Ò×FWC"rÇ÷6Föã¢w&VÆFfRrÇFFæs£×Óà¢Ç7frvGFÒ#b"VvCÒ#b"fÆÃÒ&æöæR"fWt&÷Ò##B#B"7G&ö¶SÒ&7W'&VçD6öÆ÷"#ãÇF7G&ö¶TÆæV6Ò'&÷VæB"7G&ö¶TÆæV¦öãÒ'&÷VæB"7G&ö¶UvGF×³'ÒCÒ$ÓRvVÂÓãBÓãD""Bã%cbbÓ"c2ã&3ãRÒã"ÒãbãDÃBvVÓb22Ób"óãÂ÷7fsà¢·Vç&VBâbb¢Ç7â7GÆS×··÷6Föã¢v'6öÇWFRrÇF÷¢ÓBÇ&vC¢ÓBÆ&6¶w&÷VæC¢wf"Ò×&VBrÆ6öÆ÷#¢r6ffbrÆföçE6¦S£ÆföçEvVvC£sÆÖåvGF£bÆVvC£bÆ&÷&FW%&FW3£ÆF7Æ¢vfÆWrÆÆväFV×3¢v6VçFW"rÆ§W7Fg6öçFVçC¢v6VçFW"rÇFFæs¢sGrÆ&÷&FW#¢s'6öÆB3C2w×Óç·Vç&VBâòs²r¢Vç&VGÓÂ÷7ãà¢Ð¢Âö'WGFöãà¢¶÷Vâbb¢Ãà¢ÆFböä6Æ6³×²Óç6WD÷VâfÇ6RÒ7GÆS×··÷6Föã¢vfVBrÆç6WC£Ç¤æFW£×Òóà¢ÆFb7GÆS×··÷6Föã¢v'6öÇWFRrÇ&vC£ÇF÷¢v6Æ2R²grÇvGF£3CÆÖvGF¢sgrrÆÖVvC£CCÆ÷fW&fÆ÷s¢vFFVârÆF7Æ¢vfÆWrÆfÆWF&V7Föã¢v6öÇVÖârÆ&6¶w&÷VæC¢wf"Ò×7W&f6RrÆ&÷&FW#¢s6öÆB&v&#SRÃ#SRÃ#SRÃãrÆ&÷&FW%&FW3£Æ&÷6F÷s¢s3'&v&ÃÃÃãRrÇ¤æFW£×Óà¢ÆFb7GÆS×·¶F7Æ¢vfÆWrÆÆväFV×3¢v6VçFW"rÆ§W7Fg6öçFVçC¢w76RÖ&WGvVVârÇFFæs¢sGrÆ&÷&FW$&÷GFöÓ¢s6öÆBf"ÒÖ&÷&FW"w×Óà¢Ç7â7GÆS×·¶föçE6¦S£2ÆföçEvVvC£cÆ6öÆ÷#¢wf"Ò×FWBw×Óäæ÷Ff6Föç3Â÷7ãà¢·Vç&VBâbb¢Æ'WGFöâöä6Æ6³×¶Ö&´ÆÅ&VGÒ7GÆS×·¶&6¶w&÷VæC¢væöæRrÆ&÷&FW#¢væöæRrÆ6öÆ÷#¢wf"ÒÖ66VçC"rÆföçE6¦S£Æ7W'6÷#¢wöçFW"rÇFFæs£×ÓäÖ&²ÆÂ&VCÂö'WGFöãà¢Ð¢ÂöFcà¢ÆFb7GÆS×·¶÷fW&fÆ÷u¢vWFòrÆfÆW£×Óà¢¶FV×2æÆVæwFÓÓÒò¢ÆFb7GÆS×··FFæs¢s3grÇFWDÆvã¢v6VçFW"rÆ6öÆ÷#¢wf"Ò×FWC2rÆföçE6¦S£'×Óäæòæ÷Ff6Föç2WCÂöFcà¢¢FV×2æÖâÓâ°¢6öç7B÷&FW$BÒâçÆöBbbâçÆöBæ÷&FW$C°¢6öç7BææW"Ò¢ÆFb7GÆS×··FFæs¢sGrÆ&÷&FW$&÷GFöÓ¢s6öÆB&v&#SRÃ#SRÃ#SRÃãBrÆ&6¶w&÷VæC¦âæ5÷&VCòwG&ç7&VçBs¢w&v&SÃ3Ã#CbÃãbrÆF7Æ¢vfÆWrÆÆväFV×3¢vfÆW×7F'BrÆv£Æ7W'6÷#¦÷&FW$CòwöçFW"s¢vFVfVÇBw×Óà¢²âæ5÷&VBbbÇ7â7GÆS×··vGF£bÆVvC£bÆ&÷&FW%&FW3¢sSRrÆ&6¶w&÷VæC¢wf"ÒÖ66VçBrÆÖ&våF÷£bÆfÆW6&æ³£×ÒóçÐ¢ÆFb7GÆS×·¶fÆW£ÆÖåvGF£×Óà¢ÆFb7GÆS×·¶föçE6¦S£"Æ6öÆ÷#¢wf"Ò×FWBrÆÆæTVvC£ãG×Óç¶Æ&VÄf÷"âÓÂöFcà¢ÆFb7GÆS×·¶föçE6¦S£Æ6öÆ÷#¢wf"Ò×FWC2rÆÖ&våF÷£'×Óç·FÖTvòâæ7&VFVEöBÒvóÂöFcà¢ÂöFcà¢ÂöFcà¢°¢6öç7Böä6Æ6²ÒÓâ²bâæ5÷&VBÖ&µ&VBâæB²6WD÷VâfÇ6R²Ó°¢&WGW&â÷&FW$Bò¢ÄÆæ²¶W×¶âæGÒ&Vc×²rö÷&FW'2òr²÷&FW$GÒöä6Æ6³×¶öä6Æ6·Ò7GÆS×··FWDFV6÷&Föã¢væöæRw×Óç¶ææW'ÓÂôÆæ³à¢¢¢ÆFb¶W×¶âæGÒöä6Æ6³×¶öä6Æ6·Óç¶ææW'ÓÂöFcà¢°¢ÒÐ¢ÂöFcà¢ÂöFcà¢Âóà¢Ð¢ÂöFcà¢°§Ð
