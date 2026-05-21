@@ -49,8 +49,25 @@ export default function CreateStorePage() {
   const [response, setResponse] = useState(RESPONSES[0]);
   const [wallet, setWallet] = useState('');
   const [destTag, setDestTag] = useState('');
+  const [logo, setLogo] = useState(null);
+  const [banner, setBanner] = useState(null);
 
   const toggleCat = (c) => setCats((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : (prev.length >= 4 ? prev : [...prev, c]));
+
+  const handlePreview = () => {
+    if (!name.trim()) { alert('Store name is required'); return; }
+    if (!handle.trim()) { alert('Store URL is required'); return; }
+    if (cats.length === 0) { alert('Select at least one category'); return; }
+    alert('Preview: ' + displayName + ' - Categories: ' + cats.join(', '));
+  };
+
+  const handlePublish = () => {
+    if (!name.trim()) { alert('Store name is required'); return; }
+    if (!handle.trim()) { alert('Store URL is required'); return; }
+    if (cats.length === 0) { alert('Select at least one category'); return; }
+    if (!wallet.trim()) { alert('XRP Ledger address is required'); return; }
+    alert('Store created! Redirecting...');
+  };
 
   const displayName = name.trim() || 'Your store';
   const initials = (name.trim() || 'St').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -117,16 +134,18 @@ export default function CreateStorePage() {
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><polyline points="21 15 16 10 5 21" /></svg>
                   </div>
                   <div>
-                    <button type="button" style={{ minHeight: 36, padding: '8px 14px', fontSize: 13, background: C.bg, border: `1px solid ${C.lineStrong}`, borderRadius: 8, color: C.ink, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Upload logo</button>
-                    <div style={{ ...hintStyle }}>Square, 256×256 or larger. PNG, JPG, or SVG.</div>
+                    <input type="file" id="logo-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) setLogo(e.target.files[0]); }} />
+                    <button type="button" onClick={() => document.getElementById('logo-upload').click()} style={{ minHeight: 36, padding: '8px 14px', fontSize: 13, background: C.bg, border: `1px solid ${C.lineStrong}`, borderRadius: 8, color: C.ink, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Upload logo</button>
+                    <div style={{ ...hintStyle }}>{logo ? logo.name : 'Square, 256×256 or larger. PNG, JPG, or SVG.'}</div>
                   </div>
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Cover banner</label>
-                <div style={{ aspectRatio: '3 / 1', background: C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4, color: C.muted, cursor: 'pointer' }}>
+                <input type="file" id="banner-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) setBanner(e.target.files[0]); }} />
+                <div onClick={() => document.getElementById('banner-upload').click()} style={{ aspectRatio: '3 / 1', background: C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4, color: C.muted, cursor: 'pointer' }}>
                   <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>Drop an image or click to browse</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{banner ? banner.name : 'Drop an image or click to browse'}</div>
                   <div style={{ fontSize: 11, color: C.muted }}>3:1 ratio recommended (1500×500). PNG or JPG, up to 5 MB.</div>
                 </div>
               </div>
@@ -216,8 +235,8 @@ export default function CreateStorePage() {
             <strong style={{ color: C.ink }}>Draft</strong> · not published yet
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" style={{ background: C.bg, color: C.ink, border: `1px solid ${C.lineStrong}`, padding: '10px 18px', borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Preview live</button>
-            <button type="button" style={{ background: C.blue, color: '#fff', border: `1px solid ${C.blue}`, padding: '10px 22px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Publish store</button>
+            <button type="button" onClick={handlePreview} style={{ background: C.bg, color: C.ink, border: `1px solid ${C.lineStrong}`, padding: '10px 18px', borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Preview live</button>
+            <button type="button" onClick={handlePublish} style={{ background: C.blue, color: '#fff', border: `1px solid ${C.blue}`, padding: '10px 22px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Publish store</button>
           </div>
         </div>
       </div>

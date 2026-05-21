@@ -48,7 +48,7 @@ export default function DashboardPage() {
           <StatCard label="Total Sales" value={stats.total_sales ?? 0} />
           <StatCard label="Revenue (XRP)" value={Number(stats.total_revenue_xrp ?? 0).toFixed(2)} />
           <StatCard label="Active Listings" value={stats.active_listings ?? 0} />
-          <StatCard label="Reputation" value={Number(stats.reputation_score ?? 0).toFixed(1) + ' â'} />
+          <StatCard label="Reputation" value={Number(stats.reputation_score ?? 0).toFixed(1) + ' ★'} />
           <StatCard label="Pending Orders" value={stats.pending_orders ?? 0} alert={(stats.pending_orders ?? 0) > 0} />
           <StatCard label="Disputes" value={stats.open_disputes ?? 0} alert={(stats.open_disputes ?? 0) > 0} />
         </div>
@@ -58,7 +58,7 @@ export default function DashboardPage() {
       {offers.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>ð° Received Offers ({offers.length})</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>Received Offers ({offers.length})</h2>
             {offers.map(o => (
               <div key={o.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ flex: 1 }}>
@@ -78,11 +78,11 @@ export default function DashboardPage() {
                   <button onClick={() => api.offers.accept(o.id).then(r => { setOffers(p => p.filter(x => x.id !== o.id)); if(r.orderId) alert("Offer accepted! The buyer will now complete payment via Xumm. Order ID: " + r.orderId.slice(0,8)); }).catch(e => alert(e.message))}
                     style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--green)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                     â Accept
-                  </button>
+                    Accept
                   <button onClick={() => api.offers.decline(o.id).then(() => setOffers(p => p.filter(x => x.id !== o.id))).catch(e => alert(e.message))}
                     style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                     â Decline
-                  </button>
+                    Decline
                 </div>
               </div>
             ))}
