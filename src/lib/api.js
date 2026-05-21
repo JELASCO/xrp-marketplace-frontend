@@ -50,4 +50,9 @@ export const api = {
     accept: (id) => request('/offers/' + id + '/accept', { method: 'PATCH' }),
     decline: (id) => request('/offers/' + id + '/decline', { method: 'PATCH' }),
   },
+  stores: {
+    mine: () => request('/stores/me'),
+    save: (d) => request('/stores/me', { method: 'PATCH', body: d }),
+    get: (handle) => request('/stores/' + handle),
+  },
 };

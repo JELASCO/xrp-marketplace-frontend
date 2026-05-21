@@ -58,7 +58,7 @@ export default function DashboardPage() {
       {offers.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>Received Offers ({offers.length})</h2>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 14 }}>Received Offers ({offers.length})</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {offers.map(o => (
               <div key={o.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ flex: 1 }}>

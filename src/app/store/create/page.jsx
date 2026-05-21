@@ -1,6 +1,20 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '../../../lib/api';
+import { useAuthStore } from '../../../lib/store';
+
+async function uploadImage(file) {
+  const key = process.env.NEXT_PUBLIC_IMGBB_KEY;
+  if (!key) throw new Error('Image upload not configured');
+  const fd = new FormData();
+  fd.append('image', file);
+  const r = await fetch('https://api.imgbb.com/1/upload?key=' + key, { method: 'POST', body: fd });
+  const d = await r.json();
+  if (!d.success) throw new Error('Upload failed');
+  return d.data.url;
+}
 
 const C = {
   ink: '#14161a', muted: '#5b6370', line: '#e7e9ed', lineStrong: '#cfd2d7',
@@ -38,6 +52,8 @@ function ToggleRow({ title, desc, checked, onChange, last }) {
 }
 
 export default function CreateStorePage() {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
   const [cats, setCats] = useState([]);
@@ -51,22 +67,78 @@ export default function CreateStorePage() {
   const [destTag, setDestTag] = useState('');
   const [logo, setLogo] = useState(null);
   const [banner, setBanner] = useState(null);
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [bannerUrl, setBannerUrl] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (user === null) return;
+    if (!user) { router.push('/'); return; }
+    api.stores.mine().then((d) => {
+      if (d.store) {
+        setName(d.store.name || '');
+        setHandle(d.handle || '');
+        setCats(d.store.categories || []);
+        setTagline(d.store.tagline || '');
+        setAbout(d.store.about || '');
+        setWallet(d.store.payoutAddress || '');
+        setDestTag(d.store.destinationTag || '');
+        setLogoUrl(d.store.logoUrl || null);
+        setBannerUrl(d.store.bannerUrl || null);
+        const s = d.store.settings || {};
+        if (typeof s.autoAccept === 'boolean') setAutoAccept(s.autoAccept);
+        if (typeof s.requireShot === 'boolean') setRequireShot(s.requireShot);
+        if (typeof s.vacation === 'boolean') setVacation(s.vacation);
+        if (s.response) setResponse(s.response);
+      }
+    }).catch(() => {});
+  }, [user, router]);
 
   const toggleCat = (c) => setCats((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : (prev.length >= 4 ? prev : [...prev, c]));
 
-  const handlePreview = () => {
-    if (!name.trim()) { alert('Store name is required'); return; }
-    if (!handle.trim()) { alert('Store URL is required'); return; }
-    if (cats.length === 0) { alert('Select at least one category'); return; }
-    alert('Preview: ' + displayName + ' - Categories: ' + cats.join(', '));
+  const handleLogoFile = async (file) => {
+    if (!file) return;
+    setLogo(file); setError('');
+    try { setLogoUrl(await uploadImage(file)); }
+    catch (e) { setError('Logo upload failed: ' + e.message); }
+  };
+  const handleBannerFile = async (file) => {
+    if (!file) return;
+    setBanner(file); setError('');
+    try { setBannerUrl(await uploadImage(file)); }
+    catch (e) { setError('Banner upload failed: ' + e.message); }
   };
 
-  const handlePublish = () => {
-    if (!name.trim()) { alert('Store name is required'); return; }
-    if (!handle.trim()) { alert('Store URL is required'); return; }
-    if (cats.length === 0) { alert('Select at least one category'); return; }
-    if (!wallet.trim()) { alert('XRP Ledger address is required'); return; }
-    alert('Store created! Redirecting...');
+  const validate = () => {
+    if (!name.trim()) return 'Store name is required';
+    if (!/^[a-z0-9-]{3,40}$/.test(handle)) return 'Store URL must be 3-40 chars: lowercase letters, numbers, hyphens';
+    if (cats.length === 0) return 'Select at least one category';
+    if (!wallet.trim()) return 'XRP Ledger payout address is required';
+    return null;
+  };
+
+  const handlePreview = () => {
+    if (handle && /^[a-z0-9-]{3,40}$/.test(handle)) window.open('/store/' + handle, '_blank');
+    else setError('Set a valid store URL first to preview');
+  };
+
+  const handlePublish = async () => {
+    const v = validate();
+    if (v) { setError(v); return; }
+    setError(''); setSaving(true);
+    try {
+      await api.stores.save({
+        name, handle, tagline, about, categories: cats,
+        settings: { autoAccept, requireShot, vacation, response },
+        payoutAddress: wallet, destinationTag: destTag || null,
+        logoUrl, bannerUrl,
+      });
+      router.push('/store/' + handle);
+    } catch (e) {
+      setError(e.message);
+      setSaving(false);
+    }
   };
 
   const displayName = name.trim() || 'Your store';
@@ -130,11 +202,11 @@ export default function CreateStorePage() {
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Logo</label>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ width: 72, height: 72, borderRadius: 12, background: C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, flexShrink: 0 }} aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><polyline points="21 15 16 10 5 21" /></svg>
+                  <div style={{ width: 72, height: 72, borderRadius: 12, background: C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, flexShrink: 0, overflow: 'hidden' }} aria-hidden="true">
+                    {logoUrl ? <img src={logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><polyline points="21 15 16 10 5 21" /></svg>}
                   </div>
                   <div>
-                    <input type="file" id="logo-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) setLogo(e.target.files[0]); }} />
+                    <input type="file" id="logo-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleLogoFile(e.target.files?.[0])} />
                     <button type="button" onClick={() => document.getElementById('logo-upload').click()} style={{ minHeight: 36, padding: '8px 14px', fontSize: 13, background: C.bg, border: `1px solid ${C.lineStrong}`, borderRadius: 8, color: C.ink, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Upload logo</button>
                     <div style={{ ...hintStyle }}>{logo ? logo.name : 'Square, 256×256 or larger. PNG, JPG, or SVG.'}</div>
                   </div>
@@ -142,11 +214,11 @@ export default function CreateStorePage() {
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Cover banner</label>
-                <input type="file" id="banner-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) setBanner(e.target.files[0]); }} />
-                <div onClick={() => document.getElementById('banner-upload').click()} style={{ aspectRatio: '3 / 1', background: C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4, color: C.muted, cursor: 'pointer' }}>
-                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                <input type="file" id="banner-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleBannerFile(e.target.files?.[0])} />
+                <div onClick={() => document.getElementById('banner-upload').click()} style={{ aspectRatio: '3 / 1', background: bannerUrl ? `center/cover no-repeat url(${bannerUrl})` : C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4, color: C.muted, cursor: 'pointer' }}>
+                  {!bannerUrl && <><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                   <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{banner ? banner.name : 'Drop an image or click to browse'}</div>
-                  <div style={{ fontSize: 11, color: C.muted }}>3:1 ratio recommended (1500×500). PNG or JPG, up to 5 MB.</div>
+                  <div style={{ fontSize: 11, color: C.muted }}>3:1 ratio recommended (1500×500). PNG or JPG, up to 5 MB.</div></>}
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
@@ -234,9 +306,10 @@ export default function CreateStorePage() {
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, display: 'inline-block' }} aria-hidden="true" />
             <strong style={{ color: C.ink }}>Draft</strong> · not published yet
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {error && <span style={{ color: '#ef4444', fontSize: 13, marginRight: 'auto' }}>{error}</span>}
             <button type="button" onClick={handlePreview} style={{ background: C.bg, color: C.ink, border: `1px solid ${C.lineStrong}`, padding: '10px 18px', borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Preview live</button>
-            <button type="button" onClick={handlePublish} style={{ background: C.blue, color: '#fff', border: `1px solid ${C.blue}`, padding: '10px 22px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>Publish store</button>
+            <button type="button" onClick={handlePublish} disabled={saving} style={{ background: saving ? C.lineStrong : C.blue, color: '#fff', border: `1px solid ${saving ? C.lineStrong : C.blue}`, padding: '10px 22px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: saving ? 'default' : 'pointer', fontFamily: 'inherit', minHeight: 44 }}>{saving ? 'Publishing…' : 'Publish store'}</button>
           </div>
         </div>
       </div>
