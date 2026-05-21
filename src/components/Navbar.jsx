@@ -19,8 +19,11 @@ export default function Navbar() {
 
   return (
     <>
-      <style>{`@media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}`}</style>
-      <nav style={{background:'#000',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(255,255,255,0.08)',position:'sticky',top:0,zIndex:50}}>
+      <style>{`
+        * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; }
+        @media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}
+      `}</style>
+      <nav style={{background:'#000',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(255,255,255,0.08)',position:'sticky',top:0,zIndex:50,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{fontWeight:800,fontSize:18,color:'#fff',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
             <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
@@ -34,36 +37,36 @@ export default function Navbar() {
             <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
           <form onSubmit={handleSearch} style={{flex:1,maxWidth:360,position:'relative'}}>
-            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',color:'#fff',borderRadius:8}}
+            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',color:'#fff',borderRadius:8,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}
               placeholder="Search skins, coins, accounts..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8b8f96',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </form>
-          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:2,marginLeft:'auto'}}>
+          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
-              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#d4d6da',padding:'6px 10px',borderRadius:8,textDecoration:'none',transition:'all 0.15s'}}
-                onMouseEnter={e=>{e.currentTarget.style.color='#fff';e.currentTarget.style.background='rgba(255,255,255,0.06)'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='#d4d6da';e.currentTarget.style.background='transparent'}}>
+              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#d4d6da',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
+                onMouseEnter={e=>{e.currentTarget.style.color='#fff';e.currentTarget.style.background='rgba(255,255,255,0.06)';e.currentTarget.style.border='1px solid rgba(255,255,255,0.1)'}}
+                onMouseLeave={e=>{e.currentTarget.style.color='#d4d6da';e.currentTarget.style.background='transparent';e.currentTarget.style.border='1px solid transparent'}}>
                 {l.label}
               </Link>
             ))}
           </div>
-          <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#fff',background:'rgba(255,255,255,0.08)',border:'none',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
+          <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#fff',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
             XRP <span style={{color:'var(--green)'}}>$2.18</span>
           </div>
           {user ? (
             <div style={{position:'relative'}}>
               <button onClick={()=>setShowMenu(v=>!v)}
-                style={{display:'flex',alignItems:'center',gap:8,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'6px 10px',cursor:'pointer',color:'#fff',fontSize:13,fontWeight:500}}>
-                <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#fff'}}>
+                style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#fff',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
+                <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#fff',flexShrink:0}}>
                   {user.username?.slice(0,2).toUpperCase()}
                 </div>
-                <span style={{maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.username}</span>
+                <span style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#fff'}}>{user.username}</span>
               </button>
               {showMenu && (
                 <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
-                  {[{href:'/dashboard',label:'Dashboard'},{href:'/favorites',label:'â¤ï¸ Favorites'},{href:'/messages',label:'ð¬ Messages'},{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Orders'},{href:'/settings',label:'Settings'}].map(i=>(
+                  {[{href:'/dashboard',label:'Dashboard'},{href:'/favorites',label:'Favorites'},{href:'/messages',label:'Messages'},{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Orders'},{href:'/settings',label:'Settings'}].map(i=>(
                     <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
                       style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--text2)',textDecoration:'none',transition:'all 0.15s'}}
                       onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
@@ -82,7 +85,7 @@ export default function Navbar() {
           ) : (
             <button onClick={()=>setShowLogin(true)}
               style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
-              â¡ Connect Xumm
+ Connect Xumm
             </button>
           )}
         </div>
