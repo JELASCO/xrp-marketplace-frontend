@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const CAT_COLORS = {
   skin:    {bg:'rgba(139,92,246,0.12)',color:'#a78bfa'},
@@ -14,10 +15,12 @@ const GAME_EMOJIS = {};
 
 
 export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
-  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified } = listing;
+  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified, store_handle } = listing;
+  const router = useRouter();
   const cat   = CAT_COLORS[category] || CAT_COLORS.account;
   const label = CAT_LABELS[category] || category;
   const emoji = '';
+  const goToStore = (e) => { e.preventDefault(); e.stopPropagation(); if (store_handle) router.push('/store/' + store_handle); };
   return (
     <Link href={`/listing/${id}`} style={{textDecoration:'none',display:'block'}}>
       <div style={{
@@ -39,10 +42,10 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
             <span style={{fontSize:15,fontWeight:700,color:'var(--text)',whiteSpace:'nowrap'}}>{Number(price_xrp).toLocaleString()} <span style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>XRP</span></span>
             <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'var(--text3)',minWidth:0}}>
-              <div style={{width:18,height:18,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:7,fontWeight:700,color:'#fff',flexShrink:0}}>
+              <div onClick={store_handle ? goToStore : undefined} style={{width:18,height:18,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:7,fontWeight:700,color:'#fff',flexShrink:0,cursor:store_handle?'pointer':'default'}}>
                 {username?.slice(0,2).toUpperCase()}
               </div>
-              <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{username}</span>
+              <span onClick={store_handle ? goToStore : undefined} style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:store_handle?'pointer':'default',color:store_handle?'#3b82f6':'var(--text3)'}}>{username}</span>
               {is_verified && <span title='Verified Seller' style={{fontSize:10,color:'var(--green)',fontWeight:700,flexShrink:0}}>✓</span>}
               {reputation_score > 0 && <span style={{color:'var(--amber)',flexShrink:0}}>★{Number(reputation_score).toFixed(1)}</span>}
             </div>

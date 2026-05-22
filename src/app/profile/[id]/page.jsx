@@ -92,11 +92,18 @@ export default function ProfilePage() {
           <div style={{fontSize:12,color:'var(--text3)',fontFamily:'monospace',marginBottom:8,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.wallet_address}</div>
           {user.bio && <div style={{fontSize:13,color:'var(--text2)',marginTop:4}}>{user.bio}</div>}
         </div>
-        {isOwn && (
-          <Link href="/settings" style={{background:'var(--surface2)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',borderRadius:8,padding:'8px 14px',fontSize:13,textDecoration:'none',flexShrink:0}}>
-            Edit Profile
-          </Link>
-        )}
+        <div style={{display:'flex',gap:8,flexShrink:0}}>
+          {user.store_handle && (
+            <Link href={'/store/'+user.store_handle} style={{background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',color:'#3b82f6',borderRadius:8,padding:'8px 14px',fontSize:13,fontWeight:600,textDecoration:'none',whiteSpace:'nowrap'}}>
+              Visit store →
+            </Link>
+          )}
+          {isOwn && (
+            <Link href="/settings" style={{background:'var(--surface2)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',borderRadius:8,padding:'8px 14px',fontSize:13,textDecoration:'none',whiteSpace:'nowrap'}}>
+              Edit Profile
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Stats grid */}
