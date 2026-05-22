@@ -77,6 +77,15 @@ export default function OrdersPage() {
     api.orders.mine(role).then(setOrders);
   }
 
+  async function handleReclaim(order) {
+    try {
+      const result = await api.orders.escrowCancel(order.id);
+      if (result.xumm) {
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'reclaim' });
+      }
+    } catch(e) { alert(e.message); }
+  }
+
   async function handlePay(order) {
     try {
       const result = await api.orders.xummPayload(order.id);
@@ -120,8 +129,8 @@ export default function OrdersPage() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}}
           onClick={e => { if(e.target===e.currentTarget){ closeXummModal(); } }}>
           <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:380,width:'100%'}}>
-            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Payment in Xumm' : 'Lock Payment in Escrow'}</div>
-            <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>{xummModal.mode==='release' ? 'Scan to release the escrow to the seller. Your delivery unlocks right after.' : 'Scan with Xumm to lock your payment in escrow.'}</div>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Payment in Xumm' : xummModal.mode==='reclaim' ? 'Reclaim Funds in Xumm' : 'Lock Payment in Escrow'}</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>{xummModal.mode==='release' ? 'Scan to release the escrow to the seller. Your delivery unlocks right after.' : xummModal.mode==='reclaim' ? 'Scan to cancel the escrow and return the funds to your wallet.' : 'Scan with Xumm to lock your payment in escrow.'}</div>
             {xummModal.qrUrl && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={xummModal.qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/></div>}
             {xummModal.deepLink && <a href={xummModal.deepLink} style={{display:'block',background:'var(--accent)',color:'#fff',textAlign:'center',padding:'10px',borderRadius:8,marginBottom:12,fontSize:13,fontWeight:600,textDecoration:'none'}}>Open in Xumm App</a>}
             <button onClick={closeXummModal}
@@ -210,10 +219,33 @@ export default function OrdersPage() {
                         style={{background:'rgba(239,68,68,0.08)',color:'#f87171',border:'1px solid rgba(239,68,68,0.15)',borderRadius:8,padding:'10px 14px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>⚠</button>
                     </div>
                     {locked && <div style={{fontSize:11,color:'var(--text3)',marginTop:6,textAlign:'center'}}>XRPL escrow requires a short hold before release. This protects both sides.</div>}
+                    <button onClick={() => { if(confirm('Reclaim your funds? This only works after the escrow hold period (if the seller never delivered).')) handleReclaim(order); }}
+                      style={{width:'100%',marginTop:8,background:'transparent',color:'var(--text3)',border:'none',fontSize:11,cursor:'pointer',textDecoration:'underline'}}>
+                      Seller didn't deliver? Reclaim your funds
+                    </button>
                     </div>
                     );
                   })()}
+                  {order.status==='refunded' && (
+                    <div style={{background:'rgba(239,68,68,0.06)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'12px 14px'}}>
+                      <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:8}}>Refund approved</div>
+                      <div style={{fontSize:12,color:'var(--text3)',marginBottom:10}}>You can reclaim your escrowed funds back to your wallet.</div>
+                      <button onClick={() => handleReclaim(order)} style={{width:'100%',background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Reclaim funds to wallet</button>
+                    </div>
+                  )}
                   {order.status==='completed' && <div style={{background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'12px',textAlign:'center',fontSize:13,fontWeight:600,color:'#34d399'}}>✓ Transaction completed!</div>}
+                  {role==='seller' && (order.status==='escrow_locked'||order.status==='delivered') && (
+                    <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--text2)'}}>
+                      <div style={{fontWeight:600,color:'var(--text)',marginBottom:4}}>💰 Buyer paid — funds secured in escrow</div>
+                      Deliver the item to the buyer now. Once they confirm receipt and release, the {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP lands in your wallet.
+                    </div>
+                  )}
+                  {role==='seller' && order.status==='pending' && (
+                    <div style={{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--text3)'}}>Waiting for the buyer to lock payment in escrow.</div>
+                  )}
+                  {role==='seller' && order.status==='completed' && (
+                    <div style={{fontSize:12,color:'var(--text3)',marginTop:4,textAlign:'center'}}>Funds released to your wallet 🎉</div>
+                  )}
                   {role==='buyer' && delivery[order.id] && delivery[order.id].isDigital && (
                     <div style={{marginTop:10}}>
                       {delivery[order.id].loading ? (
