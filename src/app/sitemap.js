@@ -19,7 +19,14 @@ export default async function sitemap() {
         changeFrequency: 'weekly',
         priority: 0.7,
       }));
-      return [...staticRoutes, ...listingRoutes];
+      const storeHandles = [...new Set(items.map(l => l.store_handle).filter(Boolean))];
+      const storeRoutes = storeHandles.map(h => ({
+        url: base + '/store/' + h,
+        lastModified: now,
+        changeFrequency: 'weekly',
+        priority: 0.6,
+      }));
+      return [...staticRoutes, ...listingRoutes, ...storeRoutes];
     }
   } catch (e) {}
   return staticRoutes;

@@ -4,13 +4,25 @@ function getToken() {
 }
 async function request(path, options = {}) {
   const token = getToken();
-  const res = await fetch(`/api${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  let res;
+  try {
+    res = await fetch(`/api${path}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (e) {
+    throw new Error('Network error — please check your connection and try again.');
+  }
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* non-JSON response */ }
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('Please sign in to continue.');
+    if (res.status === 403) throw new Error((data && data.error) || 'You do not have permission to do that.');
+    if (res.status === 404) throw new Error((data && data.error) || 'Not found.');
+    if (res.status >= 500) throw new Error('Something went wrong on our end. Please try again in a moment.');
+    throw new Error((data && data.error) || 'Request failed. Please try again.');
+  }
   return data;
 }
 export const api = {
