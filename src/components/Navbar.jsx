@@ -1,16 +1,47 @@
 'use client'; // v2
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../lib/store';
+import { api } from '../lib/api';
 import XummLoginModal from './XummLoginModal';
+
+const NOTIF_LABELS = {
+  sale_paid: 'New sale — payment locked in escrow',
+  payment_released: 'Payment released to your wallet',
+  new_offer: 'New offer on your listing',
+  offer_accepted: 'Your offer was accepted',
+  offer_declined: 'Your offer was declined',
+  new_message: 'New message',
+  new_inquiry: 'New inquiry on your listing',
+};
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
   const [showLogin, setShowLogin] = useState(false);
   const [showMenu,  setShowMenu]  = useState(false);
   const [search,    setSearch]    = useState('');
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [unread, setUnread] = useState(0);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const load = () => api.notifications.list().then(d => { if (active) { setNotifs(d.notifications || []); setUnread(d.unread || 0); } }).catch(() => {});
+    load();
+    const iv = setInterval(load, 30000);
+    return () => { active = false; clearInterval(iv); };
+  }, [user]);
+
+  function openNotifs() {
+    const next = !showNotifs;
+    setShowNotifs(next);
+    if (next && unread > 0) {
+      api.notifications.markAllRead().then(() => setUnread(0)).catch(() => {});
+    }
+  }
 
   function handleSearch(e) {
     e.preventDefault();
@@ -56,6 +87,28 @@ export default function Navbar() {
             XRP <span style={{color:'var(--green)'}}>$2.18</span>
           </div>
           {user ? (
+            <>
+            <div style={{position:'relative'}}>
+              <button onClick={openNotifs} aria-label="Notifications"
+                style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,cursor:'pointer',color:'#d4d6da',position:'relative',padding:0,flexShrink:0}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                {unread > 0 && <span style={{position:'absolute',top:-4,right:-4,minWidth:16,height:16,padding:'0 4px',background:'#ef4444',color:'#fff',fontSize:10,fontWeight:700,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>{unread>9?'9+':unread}</span>}
+              </button>
+              {showNotifs && (
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:300,maxHeight:380,overflowY:'auto',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
+                  <div style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:700,color:'var(--text)'}}>Notifications</div>
+                  {notifs.length === 0 ? (
+                    <div style={{padding:'24px 14px',textAlign:'center',fontSize:12,color:'var(--text3)'}}>No notifications yet</div>
+                  ) : notifs.map(n => (
+                    <div key={n.id} onClick={()=>{ setShowNotifs(false); const oid=n.payload&&n.payload.orderId; const lid=n.payload&&n.payload.listingId; router.push(oid?'/orders':lid?('/listing/'+lid):'/orders'); }}
+                      style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:n.is_read?'transparent':'rgba(59,130,246,0.06)'}}>
+                      <div style={{fontSize:12,color:'var(--text)',fontWeight:n.is_read?400:600}}>{NOTIF_LABELS[n.type] || n.type}</div>
+                      {n.payload && (n.payload.message || n.payload.listingTitle) && <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{n.payload.message || n.payload.listingTitle}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div style={{position:'relative'}}>
               <button onClick={()=>setShowMenu(v=>!v)}
                 style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#fff',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
@@ -82,6 +135,7 @@ export default function Navbar() {
                 </div>
               )}
               </div>
+            </>
           ) : (
             <button onClick={()=>setShowLogin(true)}
               style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>

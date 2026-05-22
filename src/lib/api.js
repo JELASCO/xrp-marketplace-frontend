@@ -32,8 +32,7 @@ export const api = {
   users: { get: (id) => request(`/users/${id}`), listings: (id) => request(`/users/${id}/listings`), reviews: (id) => request(`/users/${id}/reviews`), myStats: () => request('/me/stats'), update: (d) => request('/users/me', { method: 'PATCH', body: d }) },
   notifications: {
     list: () => request('/notifications'),
-    markRead: (id) => request('/notifications/' + id + '/read', { method: 'POST' }),
-    markAllRead: () => request('/notifications/read-all', { method: 'POST' })
+    markAllRead: () => request('/notifications/read', { method: 'POST' })
   },
   admin: { stats: () => request('/admin/stats'), disputes: () => request('/admin/disputes'), resolveDispute: (id,d) => request(`/disputes/${id}/resolve`, { method: 'POST', body: d }), banUser: (id,b) => request(`/admin/users/${id}/ban`, { method: 'PATCH', body: { banned: b } }), removeListing: (id) => request(`/admin/listings/${id}/remove`, { method: 'PATCH' }),
     users: () => request('/admin/users'),
