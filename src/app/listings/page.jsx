@@ -40,6 +40,7 @@ function ListingsContent() {
   const [inputQ, setInputQ] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [game, setGame] = useState('');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -66,6 +67,7 @@ function ListingsContent() {
     if (q) params.search = q;
     if (minPrice) params.minPrice = minPrice;
     if (maxPrice) params.maxPrice = maxPrice;
+    if (game) params.game = game;
     api.listings.list(params)
       .then(data => {
         setListings(data || []);
@@ -73,7 +75,7 @@ function ListingsContent() {
       })
       .catch(() => setListings([]))
       .finally(() => setLoading(false));
-  }, [cat, sort, q, minPrice, maxPrice]);
+  }, [cat, sort, q, minPrice, maxPrice, game]);
 
   const loadMore = () => {
     const next = offset + 24;
@@ -82,6 +84,7 @@ function ListingsContent() {
     if (q) params.search = q;
     if (minPrice) params.minPrice = minPrice;
     if (maxPrice) params.maxPrice = maxPrice;
+    if (game) params.game = game;
     api.listings.list(params).then(data => {
       setListings(l => [...l, ...(data || [])]);
       setOffset(next);
@@ -104,10 +107,10 @@ function ListingsContent() {
   };
 
   const clearFilters = () => {
-    setCat(''); setSort('newest'); setQ(''); setInputQ(''); setMinPrice(''); setMaxPrice('');
+    setCat(''); setSort('newest'); setQ(''); setInputQ(''); setMinPrice(''); setMaxPrice(''); setGame('');
   };
 
-  const hasActiveFilters = cat || q || minPrice || maxPrice || sort !== 'newest';
+  const hasActiveFilters = cat || q || minPrice || maxPrice || game || sort !== 'newest';
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -144,6 +147,13 @@ function ListingsContent() {
           <div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Max Price (XRP)</div>
             <input type="number" min="0" step="0.01" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="∞" style={{ width: 90, background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Game</div>
+            <select value={game} onChange={e => setGame(e.target.value)} style={{ background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}>
+              <option value="">All games</option>
+              {['CS2','Valorant','Fortnite','Dota 2','Rocket League','WoW','LoL','Apex Legends','Minecraft','Other'].map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
           </div>
           {hasActiveFilters && (
             <button onClick={clearFilters} style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>
