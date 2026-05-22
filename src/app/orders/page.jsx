@@ -26,6 +26,7 @@ export default function OrdersPage() {
   const [delivery, setDelivery] = useState({});
   const [escrowInfo, setEscrowInfo] = useState({});
   const [now, setNow] = useState(Date.now());
+  const [reviewState, setReviewState] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -84,6 +85,17 @@ export default function OrdersPage() {
         setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'reclaim' });
       }
     } catch(e) { alert(e.message); }
+  }
+
+  async function submitReview(orderId) {
+    const st = reviewState[orderId] || {};
+    if (!st.rating) { setReviewState(s => ({ ...s, [orderId]: { ...st, error: 'Pick a rating' } })); return; }
+    try {
+      await api.orders.review(orderId, { rating: st.rating, comment: st.comment || '' });
+      setReviewState(s => ({ ...s, [orderId]: { ...st, done: true } }));
+    } catch(e) {
+      setReviewState(s => ({ ...s, [orderId]: { ...st, error: e.message } }));
+    }
   }
 
   async function handlePay(order) {
@@ -259,6 +271,26 @@ export default function OrdersPage() {
                     </div>
                   )}
                   {order.status==='completed' && <div style={{background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'12px',textAlign:'center',fontSize:13,fontWeight:600,color:'#34d399'}}>✓ Transaction completed!</div>}
+                  {order.status==='completed' && role==='buyer' && (() => {
+                    const st = reviewState[order.id] || {};
+                    if (st.done) return <div style={{marginTop:10,fontSize:12,color:'var(--text3)',textAlign:'center'}}>★ Thanks for your review!</div>;
+                    return (
+                      <div style={{marginTop:10,background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:10,padding:14}}>
+                        <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:8}}>Rate this seller</div>
+                        <div style={{display:'flex',gap:4,marginBottom:10}}>
+                          {[1,2,3,4,5].map(n => (
+                            <button key={n} onClick={()=>setReviewState(s=>({...s,[order.id]:{...st,rating:n,error:null}}))}
+                              style={{background:'none',border:'none',cursor:'pointer',fontSize:24,lineHeight:1,padding:0,color:(st.rating||0)>=n?'#fbbf24':'var(--border2)'}}>★</button>
+                          ))}
+                        </div>
+                        <textarea value={st.comment||''} onChange={e=>setReviewState(s=>({...s,[order.id]:{...st,comment:e.target.value}}))}
+                          placeholder="Optional comment…" rows={2}
+                          style={{width:'100%',background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:8,padding:'8px 10px',color:'var(--text)',fontSize:13,boxSizing:'border-box',resize:'vertical',marginBottom:8,fontFamily:'inherit'}}/>
+                        {st.error && <div style={{fontSize:12,color:'#f87171',marginBottom:8}}>{st.error}</div>}
+                        <button onClick={()=>submitReview(order.id)} style={{width:'100%',background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'9px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Submit review</button>
+                      </div>
+                    );
+                  })()}
                   {role==='seller' && (order.status==='escrow_locked'||order.status==='delivered') && (
                     <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--text2)'}}>
                       <div style={{fontWeight:600,color:'var(--text)',marginBottom:4}}>💰 Buyer paid — funds secured in escrow</div>
