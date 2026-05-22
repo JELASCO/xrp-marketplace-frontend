@@ -24,12 +24,28 @@ export default function OrdersPage() {
   const [open, setOpen] = useState(null);
   const [xummModal, setXummModal] = useState(null);
   const [delivery, setDelivery] = useState({});
+  const [escrowInfo, setEscrowInfo] = useState({});
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
     api.orders.mine(role).then(setOrders).catch(() => setOrders([])).finally(() => setLoading(false));
   }, [user, role]);
+
+  // tick every second so the release countdown updates live
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const RIPPLE_EPOCH = 946684800;
+  function releaseSecondsLeft(orderId) {
+    const info = escrowInfo[orderId];
+    if (!info || !info.finishAfter) return null;
+    const finishUnixMs = (info.finishAfter + RIPPLE_EPOCH) * 1000;
+    return Math.max(0, Math.ceil((finishUnixMs - now) / 1000));
+  }
 
   function toggleOpen(orderId) {
     const next = open === orderId ? null : orderId;
@@ -39,6 +55,11 @@ export default function OrdersPage() {
       api.orders.delivery(orderId)
         .then(r => setDelivery(d => ({ ...d, [orderId]: r })))
         .catch(() => setDelivery(d => ({ ...d, [orderId]: { error: true } })));
+    }
+    if (next && escrowInfo[orderId] === undefined) {
+      api.orders.escrowStatus(orderId)
+        .then(r => { if (r.onChain && r.onChain.finishAfter) setEscrowInfo(e => ({ ...e, [orderId]: { finishAfter: r.onChain.finishAfter } })); })
+        .catch(() => {});
     }
   }
 
@@ -173,16 +194,25 @@ export default function OrdersPage() {
                 </button>
               </div>
             )}
-            {(order.status==='escrow_locked'||order.status==='delivered') && role==='buyer' && (
+            {(order.status==='escrow_locked'||order.status==='delivered') && role==='buyer' && (() => {
+                    const secsLeft = releaseSecondsLeft(order.id);
+                    const locked = secsLeft !== null && secsLeft > 0;
+                    const mins = secsLeft !== null ? Math.floor(secsLeft/60) : 0;
+                    const secs = secsLeft !== null ? secsLeft%60 : 0;
+                    return (
+                    <div>
                     <div style={{display:'flex',gap:8}}>
-                      <button onClick={() => handleConfirm(order)}
-                        style={{flex:1,background:'rgba(16,185,129,0.1)',color:'#34d399',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'10px',fontSize:13,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
-                        ✓ Received — Release Payment
+                      <button onClick={() => !locked && handleConfirm(order)} disabled={locked}
+                        style={{flex:1,background:locked?'var(--surface2)':'rgba(16,185,129,0.1)',color:locked?'var(--text3)':'#34d399',border:'1px solid '+(locked?'var(--border2)':'rgba(16,185,129,0.2)'),borderRadius:8,padding:'10px',fontSize:13,fontWeight:500,cursor:locked?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                        {locked ? `Release available in ${mins}:${String(secs).padStart(2,'0')}` : '✓ Received — Release Payment'}
                       </button>
-                      <button onClick={() => api.orders.dispute(order.id,{reason:'Issue'}).then(() => api.orders.mine(role).then(setOrders))}
+                      <button onClick={() => { if(confirm('Open a dispute for this order?')) api.orders.dispute(order.id,{reason:'Issue reported by buyer'}).then(() => api.orders.mine(role).then(setOrders)).catch(e=>alert(e.message)); }}
                         style={{background:'rgba(239,68,68,0.08)',color:'#f87171',border:'1px solid rgba(239,68,68,0.15)',borderRadius:8,padding:'10px 14px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>⚠</button>
                     </div>
-                  )}
+                    {locked && <div style={{fontSize:11,color:'var(--text3)',marginTop:6,textAlign:'center'}}>XRPL escrow requires a short hold before release. This protects both sides.</div>}
+                    </div>
+                    );
+                  })()}
                   {order.status==='completed' && <div style={{background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'12px',textAlign:'center',fontSize:13,fontWeight:600,color:'#34d399'}}>✓ Transaction completed!</div>}
                   {role==='buyer' && delivery[order.id] && delivery[order.id].isDigital && (
                     <div style={{marginTop:10}}>
