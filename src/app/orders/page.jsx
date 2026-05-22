@@ -23,12 +23,24 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(null);
   const [xummModal, setXummModal] = useState(null);
+  const [delivery, setDelivery] = useState({});
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
     api.orders.mine(role).then(setOrders).catch(() => setOrders([])).finally(() => setLoading(false));
   }, [user, role]);
+
+  function toggleOpen(orderId) {
+    const next = open === orderId ? null : orderId;
+    setOpen(next);
+    if (next && role === 'buyer' && delivery[orderId] === undefined) {
+      setDelivery(d => ({ ...d, [orderId]: { loading: true } }));
+      api.orders.delivery(orderId)
+        .then(r => setDelivery(d => ({ ...d, [orderId]: r })))
+        .catch(() => setDelivery(d => ({ ...d, [orderId]: { error: true } })));
+    }
+  }
 
   async function handleConfirm(order) {
     try {
@@ -90,7 +102,7 @@ export default function OrdersPage() {
           const stepIdx = STEP_IDX[order.status] || 0;
           return (
             <div key={order.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
-              <button onClick={() => setOpen(exp ? null : order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'16px 18px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
+              <button onClick={() => toggleOpen(order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'16px 18px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{order.listing_title||'Item'}</div>
                   <div style={{fontSize:11,color:'var(--text3)'}}>{new Date(order.created_at).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})}</div>
@@ -134,6 +146,34 @@ export default function OrdersPage() {
                     </div>
                   )}
                   {order.status==='completed' && <div style={{background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'12px',textAlign:'center',fontSize:13,fontWeight:600,color:'#34d399'}}>✓ Transaction completed!</div>}
+                  {role==='buyer' && delivery[order.id] && delivery[order.id].isDigital && (
+                    <div style={{marginTop:10}}>
+                      {delivery[order.id].loading ? (
+                        <div style={{fontSize:12,color:'var(--text3)',padding:'10px'}}>Checking delivery…</div>
+                      ) : delivery[order.id].unlocked ? (
+                        <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:10,padding:14}}>
+                          <div style={{fontSize:13,fontWeight:700,color:'var(--text)',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>📦 Your digital delivery</div>
+                          {delivery[order.id].content && (
+                            <div style={{marginBottom:delivery[order.id].link?10:0}}>
+                              <div style={{fontSize:11,color:'var(--text3)',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>Content</div>
+                              <div style={{display:'flex',gap:8,alignItems:'stretch'}}>
+                                <pre style={{flex:1,margin:0,background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',fontSize:13,color:'var(--text)',fontFamily:'monospace',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{delivery[order.id].content}</pre>
+                                <button onClick={()=>navigator.clipboard.writeText(delivery[order.id].content)} style={{background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'0 14px',fontSize:12,fontWeight:600,cursor:'pointer'}}>Copy</button>
+                              </div>
+                            </div>
+                          )}
+                          {delivery[order.id].link && (
+                            <div>
+                              <div style={{fontSize:11,color:'var(--text3)',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>Download</div>
+                              <a href={delivery[order.id].link} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',background:'var(--accent)',color:'#fff',textDecoration:'none',borderRadius:8,padding:'9px 16px',fontSize:13,fontWeight:600}}>Open download link →</a>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px',fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center',gap:8}}>🔒 {delivery[order.id].message || 'Delivery unlocks once payment is secured in escrow.'}</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

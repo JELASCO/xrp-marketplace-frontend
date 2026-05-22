@@ -158,6 +158,7 @@ export default function ListingDetailPage({ params }) {
         <div>
           <h1 style={{fontSize:28,fontWeight:700,color:'var(--text)',margin:'0 0 8px'}}>{listing.title}</h1>
           <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--text)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{Number(listing.price_xrp).toLocaleString()} <span style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>XRP</span></div>
+          {listing.is_digital && <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#3b82f6',marginBottom:16}}>⚡ Instant delivery · content unlocks right after escrow payment</div>}
           {listing.description && <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.6,marginBottom:20}}>{listing.description}</p>}
           <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
             <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff',fontSize:14}}>{listing.username?.slice(0,2).toUpperCase()}</div>

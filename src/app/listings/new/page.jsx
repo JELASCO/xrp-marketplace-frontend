@@ -25,7 +25,7 @@ export default function NewListingPage() {
   const router  = useRouter();
   const user    = useAuthStore(s => s.user);
   const fileRef = useRef(null);
-  const [form,     setForm]     = useState({ title:'', description:'', category:'skin', game:'CS2', priceXrp:'', images:[] });
+  const [form,     setForm]     = useState({ title:'', description:'', category:'skin', game:'CS2', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'' });
   const [loading,  setLoading]  = useState(false);
   const [uploading,setUploading]= useState(false);
   const [preview,  setPreview]  = useState(null);
@@ -130,6 +130,26 @@ export default function NewListingPage() {
               style={{width:'100%',padding:'10px',background:'var(--surface2)',border:'1px dashed rgba(255,255,255,0.15)',borderRadius:8,color:uploading?'var(--text3)':'var(--text2)',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               {uploading ? '⏳ Uploading...' : '📁 Choose image (max 5MB)'}
             </button>
+          </div>
+
+          <div style={{border:'1px solid var(--border)',borderRadius:10,padding:14,background:'var(--surface)'}}>
+            <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
+              <input type="checkbox" checked={form.isDigital} onChange={e=>setForm(f=>({...f,isDigital:e.target.checked}))} style={{width:18,height:18,cursor:'pointer'}}/>
+              <span style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>Digital product — instant delivery</span>
+            </label>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:6,marginLeft:28}}>Buyer automatically receives the content below once payment is secured in escrow. Hidden from everyone until then.</div>
+            {form.isDigital && (
+              <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:12}}>
+                <div>
+                  <label className="label">Delivery content <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(CD key, account login, code…)</span></label>
+                  <textarea className="input" rows={3} placeholder="e.g. Steam key: XXXXX-XXXXX-XXXXX" value={form.digitalContent} onChange={e=>setForm(f=>({...f,digitalContent:e.target.value}))} style={{resize:'vertical',fontFamily:'monospace',fontSize:13}}/>
+                </div>
+                <div>
+                  <label className="label">Download link <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional URL)</span></label>
+                  <input className="input" type="url" placeholder="https://drive.google.com/..." value={form.digitalLink} onChange={e=>setForm(f=>({...f,digitalLink:e.target.value}))}/>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && <div style={{background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171'}}>{error}</div>}
