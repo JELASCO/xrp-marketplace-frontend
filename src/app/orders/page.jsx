@@ -53,6 +53,14 @@ export default function OrdersPage() {
     } catch(e) { alert(e.message); }
   }
 
+  async function handleCancel(order) {
+    if (!confirm('Cancel this order? This only works before payment is locked in escrow.')) return;
+    try {
+      await api.orders.cancel(order.id);
+      api.orders.mine(role).then(setOrders);
+    } catch(e) { alert(e.message); }
+  }
+
   if (!user) return (
     <div style={{textAlign:'center',padding:'60px 20px'}}>
       <div style={{fontSize:40,marginBottom:12}}>🔒</div>
@@ -130,10 +138,15 @@ export default function OrdersPage() {
                       </div>
                     ))}
                   </div>
-                  {order.status==='awaiting_payment' && role==='buyer' && (
-              <button onClick={() => handleConfirm(order)} style={{width:'100%',padding:'11px 16px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',marginBottom:8}}>
-                ⚡ Pay with Xumm · {Number(order.total_xrp).toFixed(2)} XRP
-              </button>
+                  {(order.status==='pending'||order.status==='awaiting_payment') && role==='buyer' && (
+              <div style={{display:'flex',gap:8,marginBottom:8}}>
+                <button onClick={() => handleConfirm(order)} style={{flex:1,padding:'11px 16px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                  ⚡ Pay with Xumm · {Number(order.total_xrp).toFixed(2)} XRP
+                </button>
+                <button onClick={() => handleCancel(order)} style={{padding:'11px 16px',borderRadius:9,border:'1px solid var(--border2)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                  Cancel
+                </button>
+              </div>
             )}
             {(order.status==='escrow_locked'||order.status==='delivered') && role==='buyer' && (
                     <div style={{display:'flex',gap:8}}>
