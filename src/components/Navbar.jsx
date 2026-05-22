@@ -36,7 +36,7 @@ export default function Navbar() {
             </svg>
             <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
-          <form onSubmit={handleSearch} style={{flex:1,maxWidth:360,position:'relative'}}>
+          <form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',color:'#fff',borderRadius:8,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}
               placeholder="Search skins, coins, accounts..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8b8f96',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -66,7 +66,7 @@ export default function Navbar() {
               </button>
               {showMenu && (
                 <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
-                  {[{href:'/dashboard',label:'Dashboard'},{href:'/favorites',label:'Favorites'},{href:'/messages',label:'Messages'},{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Orders'},{href:'/settings',label:'Settings'}].map(i=>(
+                  {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List an Item'},{href:'/dashboard',label:'Dashboard'},{href:'/favorites',label:'Favorites'},{href:'/messages',label:'Messages'},{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Orders'},{href:'/settings',label:'Settings'}].map(i=>(
                     <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
                       style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--text2)',textDecoration:'none',transition:'all 0.15s'}}
                       onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
