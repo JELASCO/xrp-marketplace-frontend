@@ -42,11 +42,36 @@ export default function OrdersPage() {
     }
   }
 
+  async function closeXummModal() {
+    const m = xummModal;
+    setXummModal(null);
+    if (m && m.orderId) {
+      // sync on-chain escrow state into the order (covers both create and finish)
+      try { await api.orders.escrowStatus(m.orderId); } catch(e) {}
+      // refresh delivery for this order in case it just unlocked
+      if (delivery[m.orderId] !== undefined) {
+        try { const d = await api.orders.delivery(m.orderId); setDelivery(prev => ({ ...prev, [m.orderId]: d })); } catch(e) {}
+      }
+    }
+    api.orders.mine(role).then(setOrders);
+  }
+
+  async function handlePay(order) {
+    try {
+      const result = await api.orders.xummPayload(order.id);
+      if (result.uuid || result.qrUrl) {
+        setXummModal({ qrUrl: result.qrUrl, deepLink: result.deepLink, orderId: order.id, mode: 'pay' });
+      } else if (result.error) {
+        alert(result.error);
+      }
+    } catch(e) { alert(e.message); }
+  }
+
   async function handleConfirm(order) {
     try {
       const result = await api.orders.confirm(order.id);
       if (result.xumm) {
-        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id });
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'release' });
       } else {
         api.orders.mine(role).then(setOrders);
       }
@@ -72,15 +97,15 @@ export default function OrdersPage() {
     <div style={{maxWidth:680,margin:'0 auto'}}>
       {xummModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}}
-          onClick={e => { if(e.target===e.currentTarget){setXummModal(null);api.orders.mine(role).then(setOrders);} }}>
+          onClick={e => { if(e.target===e.currentTarget){ closeXummModal(); } }}>
           <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:380,width:'100%'}}>
-            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>Sign in Xumm to Release Payment</div>
-            <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>Scan with your Xumm app to complete the escrow</div>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Payment in Xumm' : 'Lock Payment in Escrow'}</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>{xummModal.mode==='release' ? 'Scan to release the escrow to the seller. Your delivery unlocks right after.' : 'Scan with Xumm to lock your payment in escrow.'}</div>
             {xummModal.qrUrl && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={xummModal.qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/></div>}
             {xummModal.deepLink && <a href={xummModal.deepLink} style={{display:'block',background:'var(--accent)',color:'#fff',textAlign:'center',padding:'10px',borderRadius:8,marginBottom:12,fontSize:13,fontWeight:600,textDecoration:'none'}}>Open in Xumm App</a>}
-            <button onClick={() => { setXummModal(null); api.orders.mine(role).then(setOrders); }}
+            <button onClick={closeXummModal}
               style={{width:'100%',background:'transparent',border:'1px solid var(--border2)',color:'var(--text2)',borderRadius:8,padding:'9px',fontSize:13,cursor:'pointer'}}>
-              Done
+              I've signed — refresh
             </button>
           </div>
         </div>
@@ -140,7 +165,7 @@ export default function OrdersPage() {
                   </div>
                   {(order.status==='pending'||order.status==='awaiting_payment') && role==='buyer' && (
               <div style={{display:'flex',gap:8,marginBottom:8}}>
-                <button onClick={() => handleConfirm(order)} style={{flex:1,padding:'11px 16px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                <button onClick={() => handlePay(order)} style={{flex:1,padding:'11px 16px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
                   ⚡ Pay with Xumm · {Number(order.total_xrp).toFixed(2)} XRP
                 </button>
                 <button onClick={() => handleCancel(order)} style={{padding:'11px 16px',borderRadius:9,border:'1px solid var(--border2)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
