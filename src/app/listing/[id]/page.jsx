@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
@@ -11,6 +12,7 @@ const STEPS = ['Awaiting payment','In escrow','Delivered','Completed'];
 
 export default function ListingDetailPage({ params }) {
   const { id } = params;
+  const router = useRouter();
   const user = useAuthStore(s => s.user);
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -63,21 +65,10 @@ export default function ListingDetailPage({ params }) {
     setBuying(true); setBuyError('');
     try {
       const o = await api.orders.create(id);
-      setOrder(o); setEscrowStep(1);
-      // Real Xaman payload + status polling
-      const xp = await api.orders.xummPayload(o.id);
-      setBuyXumm(xp);
-      if (xp && xp.deepLink) { try { window.open(xp.deepLink, '_blank', 'noopener'); } catch(_){} }
-      // Poll until signed (max 5 min)
-      const start = Date.now();
-      while (Date.now() - start < 5 * 60 * 1000) {
-        await new Promise(r => setTimeout(r, 3000));
-        const st = await api.orders.escrowStatus(o.id).catch(()=>null);
-        if (st && (st.status === 'escrow_locked' || st.status === 'in_escrow' || st.status === 'delivered' || st.status === 'completed')) { setEscrowStep(2); break; }
-        if (st && st.status === 'cancelled') { setBuyError('Payment was cancelled.'); break; }
-      }
-    } catch(e) { setBuyError(e.message); }
-    finally { setBuying(false); }
+      // All payment (fee + escrow), sync, and double-pay protection live on the orders page.
+      // Redirect there instead of maintaining a second payment flow here.
+      router.push('/orders');
+    } catch(e) { setBuyError(e.message); setBuying(false); }
   }
 
   async function handleConfirm() {
