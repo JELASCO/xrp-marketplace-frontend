@@ -45,8 +45,18 @@ export default function OrdersPage() {
   const RIPPLE_EPOCH = 946684800;
   function releaseSecondsLeft(orderId) {
     const info = escrowInfo[orderId];
-    if (!info || !info.finishAfter) return null;
-    const finishUnixMs = (info.finishAfter + RIPPLE_EPOCH) * 1000;
+    let finishAfter = info && info.finishAfter;
+    // Fallback to the value stored on the order itself (escrow_finish_after is a unix epoch)
+    if (!finishAfter) {
+      const ord = orders.find(o => o.id === orderId);
+      if (ord && ord.escrow_finish_after) {
+        const fa = Number(ord.escrow_finish_after);
+        // stored as unix epoch seconds; convert to ripple-epoch base used below
+        return Math.max(0, Math.ceil((fa * 1000 - now) / 1000));
+      }
+      return null;
+    }
+    const finishUnixMs = (finishAfter + RIPPLE_EPOCH) * 1000;
     return Math.max(0, Math.ceil((finishUnixMs - now) / 1000));
   }
 
