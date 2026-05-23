@@ -105,18 +105,22 @@ export default function OrdersPage() {
       const result = await api.orders.xummPayload(order.id);
       if (result.uuid || result.qrUrl) {
         setAttemptedPay(p => ({ ...p, [order.id]: true }));
-        setXummModal({
-          qrUrl: result.qrUrl,
-          deepLink: result.deepLink,
+        const base = {
           orderId: order.id,
-          mode: 'pay',
-          step: 1,
-          commission: result.commission || null,
           commissionXrp: result.commissionXrp || 0,
           sellerNet: result.sellerNet,
-        });
+          // keep the escrow payload to show AFTER the fee is paid
+          escrowQr: result.qrUrl,
+          escrowDeepLink: result.deepLink,
+        };
+        if (result.commission && result.commissionXrp > 0) {
+          // Step 1: pay the marketplace fee first (so it can't be skipped), step 2: lock escrow
+          setXummModal({ ...base, qrUrl: result.commission.qrUrl, deepLink: result.commission.deepLink, mode: 'commission', step: 1, hasFee: true });
+        } else {
+          // No fee configured — go straight to escrow
+          setXummModal({ ...base, qrUrl: result.qrUrl, deepLink: result.deepLink, mode: 'pay', step: 1, hasFee: false });
+        }
       } else if (result.error) {
-        // If an escrow already exists, switch this order into sync mode instead of letting them pay again
         if (/already been created/i.test(result.error)) setAttemptedPay(p => ({ ...p, [order.id]: true }));
         alert(result.error);
       }
@@ -132,10 +136,10 @@ export default function OrdersPage() {
     setSyncing(null);
   }
 
-  function proceedToCommission() {
+  function proceedToEscrow() {
     setXummModal(m => {
-      if (!m || !m.commission) return null;
-      return { ...m, qrUrl: m.commission.qrUrl, deepLink: m.commission.deepLink, mode: 'commission', step: 2 };
+      if (!m || !m.escrowQr) return null;
+      return { ...m, qrUrl: m.escrowQr, deepLink: m.escrowDeepLink, mode: 'pay', step: 2 };
     });
   }
 
@@ -171,16 +175,16 @@ export default function OrdersPage() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}}
           onClick={e => { if(e.target===e.currentTarget){ closeXummModal(); } }}>
           <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:380,width:'100%'}}>
-            {xummModal.mode==='pay' && xummModal.commission && <div style={{fontSize:11,fontWeight:600,color:'var(--accent)',marginBottom:8,letterSpacing:'0.04em'}}>STEP 1 OF 2</div>}
-            {xummModal.mode==='commission' && <div style={{fontSize:11,fontWeight:600,color:'var(--accent)',marginBottom:8,letterSpacing:'0.04em'}}>STEP 2 OF 2</div>}
+            {xummModal.hasFee && xummModal.mode==='commission' && <div style={{fontSize:11,fontWeight:600,color:'var(--accent)',marginBottom:8,letterSpacing:'0.04em'}}>STEP 1 OF 2 · FEE</div>}
+            {xummModal.hasFee && xummModal.mode==='pay' && <div style={{fontSize:11,fontWeight:600,color:'var(--accent)',marginBottom:8,letterSpacing:'0.04em'}}>STEP 2 OF 2 · ESCROW</div>}
             <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Payment in Xumm' : xummModal.mode==='reclaim' ? 'Reclaim Funds in Xumm' : xummModal.mode==='commission' ? 'Pay Marketplace Fee' : 'Lock Payment in Escrow'}</div>
             <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>{xummModal.mode==='release' ? 'Scan to release the escrow to the seller. Your delivery unlocks right after.' : xummModal.mode==='reclaim' ? 'Scan to cancel the escrow and return the funds to your wallet.' : xummModal.mode==='commission' ? `Scan to pay the ${Number(xummModal.commissionXrp).toFixed(2)} XRP marketplace fee. This completes your payment.` : `Scan to lock ${xummModal.sellerNet!=null?Number(xummModal.sellerNet).toFixed(2)+' XRP ':''}in escrow for the seller.`}</div>
             {xummModal.qrUrl && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={xummModal.qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/></div>}
             {xummModal.deepLink && <a href={xummModal.deepLink} style={{display:'block',background:'var(--accent)',color:'#fff',textAlign:'center',padding:'10px',borderRadius:8,marginBottom:12,fontSize:13,fontWeight:600,textDecoration:'none'}}>Open in Xumm App</a>}
-            {xummModal.mode==='pay' && xummModal.commission ? (
-              <button onClick={proceedToCommission}
+            {xummModal.mode==='commission' ? (
+              <button onClick={proceedToEscrow}
                 style={{width:'100%',background:'var(--accent)',border:'none',color:'#fff',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                I've signed — next: pay fee →
+                I've paid the fee — next: lock escrow →
               </button>
             ) : (
               <button onClick={closeXummModal}
