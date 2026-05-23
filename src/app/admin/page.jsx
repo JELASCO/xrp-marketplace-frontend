@@ -64,6 +64,13 @@ export default function AdminPage() {
     } catch(e) { alert('Hata: ' + e.message); }
   };
 
+  const grantPro = async (uid, days) => {
+    try {
+      const r = await api.admin.grantPro(uid, days);
+      setUsers(us => us.map(u => u.id === uid ? { ...u, pro_until: r.pro ? (r.proUntil || new Date(Date.now()+days*86400000).toISOString()) : null } : u));
+    } catch(e) { alert('Hata: ' + e.message); }
+  };
+
   if (loading) return <div style={{textAlign:'center',padding:'60px 20px',color:'var(--text3)'}}>Loading...</div>;
   if (!user) return <div style={{textAlign:'center',padding:'60px 20px',color:'var(--text3)'}}>Sign in required</div>;
   if (user.role !== 'admin') return <div style={{textAlign:'center',padding:'60px 20px',color:'#f87171'}}>Admin only</div>;
@@ -151,11 +158,15 @@ export default function AdminPage() {
                 <div style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>
                   {u.username}
                   {u.is_verified && <span style={{marginLeft:6,fontSize:11,color:'var(--green)'}}>✓ Verified</span>}
+                  {u.pro_until && new Date(u.pro_until) > new Date() && <span style={{marginLeft:6,fontSize:11,color:'var(--accent)'}}>⭐ Pro</span>}
                   {u.is_banned && <span style={{marginLeft:6,fontSize:11,color:'#f87171'}}>Banned</span>}
                 </div>
                 <div style={{fontSize:12,color:'var(--text3)'}}>{u.role} · ★ {Number(u.reputation_score||0).toFixed(1)}</div>
               </div>
-              <div style={{display:'flex',gap:8}}>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {u.pro_until && new Date(u.pro_until) > new Date()
+                  ? <button onClick={() => grantPro(u.id,0)} style={{background:'rgba(239,68,68,0.1)',color:'#f87171',border:'none',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>Revoke Pro</button>
+                  : <button onClick={() => grantPro(u.id,30)} style={{background:'rgba(59,130,246,0.12)',color:'var(--accent)',border:'none',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>+30d Pro</button>}
                 <button onClick={() => verifyUser(u.id,!u.is_verified)} style={{background:u.is_verified?'rgba(239,68,68,0.1)':'rgba(16,185,129,0.1)',color:u.is_verified?'#f87171':'var(--green)',border:'none',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:600,cursor:'pointer'}}>
                   {u.is_verified?'Unverify':'✓ Verify'}
                 </button>
