@@ -36,7 +36,13 @@ export const api = {
   },
   admin: { stats: () => request('/admin/stats'), disputes: () => request('/admin/disputes'), resolveDispute: (id,d) => request(`/disputes/${id}/resolve`, { method: 'POST', body: d }), banUser: (id,b) => request(`/admin/users/${id}/ban`, { method: 'PATCH', body: { banned: b } }), removeListing: (id) => request(`/admin/listings/${id}/remove`, { method: 'PATCH' }),
     users: () => request('/admin/users'),
-    verifyUser: (id, v) => request(`/admin/users/${id}/verify`, { method: 'PATCH', body: { verified: v } }) },
+    verifyUser: (id, v) => request(`/admin/users/${id}/verify`, { method: 'PATCH', body: { verified: v } }),
+    grantPro: (id, days) => request(`/admin/users/${id}/pro`, { method: 'PATCH', body: { days } }),
+    featureListing: (id, days) => request(`/admin/listings/${id}/feature`, { method: 'PATCH', body: { days } }) },
+  upgrades: {
+    pricing: () => request('/upgrades/pricing'),
+    payload: (kind, listingId) => request('/upgrades/payload', { method: 'POST', body: { kind, listingId } }),
+    verify: (paymentId) => request(`/upgrades/${paymentId}/verify`, { method: 'POST' }) },
   favorites: {
     list: () => request('/favorites'),
     ids: () => request('/favorites/ids'),

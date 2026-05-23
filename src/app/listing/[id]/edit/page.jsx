@@ -23,6 +23,31 @@ export default function EditListingPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [featureModal, setFeatureModal] = useState(null);
+  const [featPricing, setFeatPricing] = useState(null);
+  const [featVerifying, setFeatVerifying] = useState(false);
+
+  useEffect(() => { api.upgrades.pricing().then(setFeatPricing).catch(() => {}); }, []);
+
+  async function startFeature() {
+    setError('');
+    try {
+      const r = await api.upgrades.payload('featured', id);
+      if (r.uuid || r.qrUrl) setFeatureModal({ qrUrl: r.qrUrl, deepLink: r.deepLink, paymentId: r.paymentId, days: r.days });
+      else setError(r.error || 'Could not start payment');
+    } catch (e) { setError(e.message); }
+  }
+
+  async function verifyFeature() {
+    if (!featureModal) return;
+    setFeatVerifying(true); setError('');
+    try {
+      const r = await api.upgrades.verify(featureModal.paymentId);
+      if (r.ok) { setFeatureModal(null); router.push('/listing/' + id); }
+      else setError(r.error || 'Not verified yet');
+    } catch (e) { setError(e.message); }
+    setFeatVerifying(false);
+  }
 
   useEffect(() => {
     if (!hydrated) return;
@@ -111,6 +136,14 @@ export default function EditListingPage() {
         </button>
 
         <div style={{borderTop:'1px solid var(--border)',marginTop:8,paddingTop:20}}>
+          <div style={{fontSize:12,fontWeight:600,color:'var(--accent)',marginBottom:8}}>🔥 BOOST</div>
+          <div style={{fontSize:13,color:'var(--text2)',marginBottom:10}}>Feature this listing to pin it to the top of the marketplace{featPricing ? ` for ${featPricing.featured.days} days (${featPricing.featured.xrp} XRP)` : ''}.</div>
+          <button onClick={startFeature} style={{width:'100%',background:'rgba(245,158,11,0.12)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:8,padding:'11px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
+            Feature this listing
+          </button>
+        </div>
+
+        <div style={{borderTop:'1px solid var(--border)',marginTop:8,paddingTop:20}}>
           <div style={{fontSize:12,fontWeight:600,color:'var(--text2)',marginBottom:8}}>DANGER ZONE</div>
           {!confirmDelete ? (
             <button onClick={()=>setConfirmDelete(true)} style={{width:'100%',background:'transparent',color:'#f87171',border:'1px solid rgba(248,113,113,0.4)',borderRadius:8,padding:'11px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
@@ -127,6 +160,18 @@ export default function EditListingPage() {
           )}
         </div>
       </div>
+      {featureModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}} onClick={e=>{if(e.target===e.currentTarget)setFeatureModal(null);}}>
+          <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:360,width:'100%',textAlign:'center'}}>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>Feature for {featureModal.days} days</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>Scan with Xumm to pay. Your listing jumps to the top right after.</div>
+            {featureModal.qrUrl && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={featureModal.qrUrl} alt="QR" style={{width:192,height:192,display:'block'}}/></div>}
+            {featureModal.deepLink && <a href={featureModal.deepLink} style={{display:'block',background:'var(--accent)',color:'#fff',textDecoration:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,marginBottom:12}}>Open in Xumm App</a>}
+            <button onClick={verifyFeature} disabled={featVerifying} style={{width:'100%',background:featVerifying?'var(--surface2)':'rgba(245,158,11,0.12)',color:featVerifying?'var(--text3)':'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:8,padding:'11px',fontSize:13,fontWeight:600,cursor:featVerifying?'default':'pointer'}}>{featVerifying?'Checking…':"I've paid — activate"}</button>
+            <button onClick={()=>setFeatureModal(null)} style={{width:'100%',marginTop:8,background:'none',border:'none',color:'var(--text3)',fontSize:12,cursor:'pointer'}}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
