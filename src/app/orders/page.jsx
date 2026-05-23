@@ -27,6 +27,8 @@ export default function OrdersPage() {
   const [escrowInfo, setEscrowInfo] = useState({});
   const [now, setNow] = useState(Date.now());
   const [reviewState, setReviewState] = useState({});
+  const [attemptedPay, setAttemptedPay] = useState({}); // orderId -> true once user opened the pay flow
+  const [syncing, setSyncing] = useState(null); // orderId currently being synced
 
   useEffect(() => {
     if (!user) return;
@@ -102,6 +104,7 @@ export default function OrdersPage() {
     try {
       const result = await api.orders.xummPayload(order.id);
       if (result.uuid || result.qrUrl) {
+        setAttemptedPay(p => ({ ...p, [order.id]: true }));
         setXummModal({
           qrUrl: result.qrUrl,
           deepLink: result.deepLink,
@@ -113,9 +116,20 @@ export default function OrdersPage() {
           sellerNet: result.sellerNet,
         });
       } else if (result.error) {
+        // If an escrow already exists, switch this order into sync mode instead of letting them pay again
+        if (/already been created/i.test(result.error)) setAttemptedPay(p => ({ ...p, [order.id]: true }));
         alert(result.error);
       }
     } catch(e) { alert(e.message); }
+  }
+
+  async function handleSync(orderId) {
+    setSyncing(orderId);
+    try {
+      await api.orders.escrowStatus(orderId);
+      await api.orders.mine(role).then(setOrders);
+    } catch(e) { alert(e.message); }
+    setSyncing(null);
   }
 
   function proceedToCommission() {
@@ -231,6 +245,19 @@ export default function OrdersPage() {
                     ))}
                   </div>
                   {(order.status==='pending'||order.status==='awaiting_payment') && role==='buyer' && (
+              attemptedPay[order.id] ? (
+                <div style={{marginBottom:8}}>
+                  <div style={{background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'var(--text2)',marginBottom:8}}>
+                    Already signed in Xumm? Don't pay again — tap below to sync. If your wallet shows the XRP left your account, the escrow is on-chain; syncing will pick it up.
+                  </div>
+                  <div style={{display:'flex',gap:8}}>
+                    <button onClick={() => handleSync(order.id)} disabled={syncing===order.id} style={{flex:1,padding:'11px 16px',borderRadius:9,border:'none',background:syncing===order.id?'var(--surface2)':'var(--accent)',color:'#fff',fontSize:13,fontWeight:600,cursor:syncing===order.id?'default':'pointer'}}>
+                      {syncing===order.id ? 'Syncing…' : 'Sync escrow status'}
+                    </button>
+                    <button onClick={() => handleCancel(order)} style={{padding:'11px 16px',borderRadius:9,border:'1px solid var(--border2)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
               <div style={{display:'flex',gap:8,marginBottom:8}}>
                 <button onClick={() => handlePay(order)} style={{flex:1,padding:'11px 16px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
                   ⚡ Pay with Xumm · {Number(order.total_xrp).toFixed(2)} XRP
@@ -239,6 +266,7 @@ export default function OrdersPage() {
                   Cancel
                 </button>
               </div>
+              )
             )}
             {(order.status==='escrow_locked'||order.status==='delivered') && role==='buyer' && (() => {
                     const secsLeft = releaseSecondsLeft(order.id);
