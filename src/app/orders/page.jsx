@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
@@ -41,6 +41,20 @@ export default function OrdersPage() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Auto-open payment when arriving from a Buy click (orders?pay=ORDER_ID)
+  const autoPaidRef = useRef(false);
+  useEffect(() => {
+    if (autoPaidRef.current || !orders.length || typeof window === 'undefined') return;
+    const payId = new URLSearchParams(window.location.search).get('pay');
+    if (!payId) return;
+    const ord = orders.find(o => o.id === payId);
+    if (ord && (ord.status === 'pending' || ord.status === 'awaiting_payment')) {
+      autoPaidRef.current = true;
+      setOpen(payId);
+      handlePay(ord);
+    }
+  }, [orders]);
 
   const RIPPLE_EPOCH = 946684800;
   function releaseSecondsLeft(orderId) {

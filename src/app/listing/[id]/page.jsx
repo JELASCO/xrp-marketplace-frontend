@@ -65,9 +65,8 @@ export default function ListingDetailPage({ params }) {
     setBuying(true); setBuyError('');
     try {
       const o = await api.orders.create(id);
-      // All payment (fee + escrow), sync, and double-pay protection live on the orders page.
-      // Redirect there instead of maintaining a second payment flow here.
-      router.push('/orders');
+      // Payment/escrow/sync all live on the orders page. Pass the order id so it auto-opens payment.
+      router.push('/orders?pay=' + o.id);
     } catch(e) { setBuyError(e.message); setBuying(false); }
   }
 
