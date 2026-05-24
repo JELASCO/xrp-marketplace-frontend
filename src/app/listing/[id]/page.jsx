@@ -173,7 +173,11 @@ export default function ListingDetailPage({ params }) {
           </div>
           <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--text)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{Number(listing.price_xrp).toLocaleString()} <span style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>XRP</span>{listing.quantity > 1 && listing.quantity_sold != null && !isSold && <span style={{fontSize:13,fontWeight:600,color:'var(--text3)',marginLeft:10}}>{Math.max(0, listing.quantity - listing.quantity_sold)} in stock</span>}</div>
           {listing.is_digital && <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#3b82f6',marginBottom:16}}>⚡ Instant delivery · content unlocks right after escrow payment</div>}
-          {listing.description && <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.6,marginBottom:20}}>{listing.description}</p>}
+          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff',fontSize:14}}>{listing.username?.slice(0,2).toUpperCase()}</div>
+            <div style={{flex:1}}><div style={{color:'var(--text)',fontWeight:600,fontSize:14}}>{listing.username}{listing.is_verified && <span style={{marginLeft:6,fontSize:11,background:'rgba(16,185,129,0.15)',color:'var(--green)',borderRadius:5,padding:'1px 6px',fontWeight:700}}>✓ Verified</span>}</div><div style={{color:'var(--text3)',fontSize:12}}>{listing.views} views</div></div>
+            {listing.store_handle && <a href={'/store/'+listing.store_handle} style={{fontSize:13,fontWeight:600,color:'#3b82f6',textDecoration:'none',border:'1px solid rgba(59,130,246,0.3)',borderRadius:8,padding:'6px 12px',whiteSpace:'nowrap'}}>Visit store →</a>}
+          </div>
           {(listing.delivery_time || (listing.tags && listing.tags.length > 0)) && (
             <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:20,alignItems:'center'}}>
               {listing.delivery_time && <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'4px 10px',fontSize:12,color:'var(--text2)'}}>🚚 {({instant:'Instant delivery','1h':'Within 1 hour','24h':'Within 24 hours','1-3d':'1–3 days'})[listing.delivery_time] || listing.delivery_time}</span>}
@@ -182,11 +186,6 @@ export default function ListingDetailPage({ params }) {
               ))}
             </div>
           )}
-          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
-            <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff',fontSize:14}}>{listing.username?.slice(0,2).toUpperCase()}</div>
-            <div style={{flex:1}}><div style={{color:'var(--text)',fontWeight:600,fontSize:14}}>{listing.username}{listing.is_verified && <span style={{marginLeft:6,fontSize:11,background:'rgba(16,185,129,0.15)',color:'var(--green)',borderRadius:5,padding:'1px 6px',fontWeight:700}}>✓ Verified</span>}</div><div style={{color:'var(--text3)',fontSize:12}}>{listing.views} views</div></div>
-            {listing.store_handle && <a href={'/store/'+listing.store_handle} style={{fontSize:13,fontWeight:600,color:'#3b82f6',textDecoration:'none',border:'1px solid rgba(59,130,246,0.3)',borderRadius:8,padding:'6px 12px',whiteSpace:'nowrap'}}>Visit store →</a>}
-          </div>
 
           {!isSeller&&<div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}><button onClick={toggleFav} disabled={!user} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid '+(isFav?'rgba(248,113,113,0.5)':'rgba(255,255,255,0.08)'),background:isFav?'rgba(248,113,113,0.1)':'transparent',color:isFav?'#f87171':'var(--text2)',fontSize:13,fontWeight:600,cursor:user?'pointer':'not-allowed'}}>{isFav?'❤️ Saved':'🤍 Save'}</button>{user&&<button onClick={()=>setShowOfferModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(59,130,246,0.3)',background:'rgba(59,130,246,0.08)',color:'var(--accent)',fontSize:13,fontWeight:600,cursor:'pointer'}}>💰 Make Offer</button>}{user&&<button onClick={()=>setShowMsgModal(true)} style={{flex:1,padding:'9px 12px',borderRadius:10,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}>💬 Message Seller</button>}</div>}
           {isSeller ? (
@@ -213,6 +212,13 @@ export default function ListingDetailPage({ params }) {
           {buyError && (
             <div style={{marginTop:12,padding:'10px 12px',background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,color:'#f87171',fontSize:13}}>
               {buyError}
+            </div>
+          )}
+
+          {listing.description && (
+            <div style={{marginTop:24,borderTop:'1px solid var(--border)',paddingTop:20}}>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--text)',marginBottom:10}}>Description</div>
+              <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.7,margin:0,whiteSpace:'pre-wrap'}}>{listing.description}</p>
             </div>
           )}
         </div>
