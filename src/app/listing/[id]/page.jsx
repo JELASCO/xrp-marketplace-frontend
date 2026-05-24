@@ -18,6 +18,7 @@ export default function ListingDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
   const [activeImg, setActiveImg] = useState(0);
+  const [shareCopied, setShareCopied] = useState(false);
   const [buying, setBuying] = useState(false);
   const [isFav, setIsFav] = useState(false);
   const [similar, setSimilar] = useState([]);
@@ -42,7 +43,14 @@ export default function ListingDetailPage({ params }) {
   const [disputeSubmitted, setDisputeSubmitted] = useState(false);
 
   useEffect(() => {
-    api.listings.get(id).then(setListing).catch(()=>{}).finally(()=>setLoading(false));
+    api.listings.get(id).then(l => {
+      setListing(l);
+      if (l && l.category) {
+        api.listings.list({ category: l.category, limit: 6 })
+          .then(items => setSimilar((Array.isArray(items) ? items : []).filter(x => x.id !== l.id && x.status === 'active').slice(0, 4)))
+          .catch(() => {});
+      }
+    }).catch(()=>{}).finally(()=>setLoading(false));
   }, [id]);
 
   useEffect(() => {
@@ -156,7 +164,13 @@ export default function ListingDetailPage({ params }) {
           </div>
         </div>
         <div>
-          <h1 style={{fontSize:28,fontWeight:700,color:'var(--text)',margin:'0 0 8px'}}>{listing.title}</h1>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
+            <h1 style={{fontSize:28,fontWeight:700,color:'var(--text)',margin:'0 0 8px'}}>{listing.title}</h1>
+            <button onClick={()=>{ if(typeof navigator!=='undefined'&&navigator.clipboard){navigator.clipboard.writeText(window.location.href);setShareCopied(true);setTimeout(()=>setShareCopied(false),1500);} }}
+              title="Copy link" style={{flexShrink:0,marginTop:4,background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,padding:'6px 12px',fontSize:12,color:shareCopied?'var(--green)':'var(--text2)',cursor:'pointer',fontWeight:600}}>
+              {shareCopied ? '✓ Copied' : '🔗 Share'}
+            </button>
+          </div>
           <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--text)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{Number(listing.price_xrp).toLocaleString()} <span style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>XRP</span>{listing.quantity > 1 && listing.quantity_sold != null && !isSold && <span style={{fontSize:13,fontWeight:600,color:'var(--text3)',marginLeft:10}}>{Math.max(0, listing.quantity - listing.quantity_sold)} in stock</span>}</div>
           {listing.is_digital && <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#3b82f6',marginBottom:16}}>⚡ Instant delivery · content unlocks right after escrow payment</div>}
           {listing.description && <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.6,marginBottom:20}}>{listing.description}</p>}
