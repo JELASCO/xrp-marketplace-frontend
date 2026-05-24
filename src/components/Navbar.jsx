@@ -48,6 +48,20 @@ export default function Navbar() {
     if (search.trim()) router.push('/listings?q=' + encodeURIComponent(search.trim()));
   }
 
+  const [xrpPrice, setXrpPrice] = useState(null);
+  useEffect(() => {
+    let active = true;
+    const fetchPrice = () => {
+      fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
+        .then(r => r.json())
+        .then(d => { if (active && d && d.data && d.data.amount) setXrpPrice(parseFloat(d.data.amount)); })
+        .catch(() => {});
+    };
+    fetchPrice();
+    const iv = setInterval(fetchPrice, 60000); // refresh every minute
+    return () => { active = false; clearInterval(iv); };
+  }, []);
+
   return (
     <>
       <style>{`
@@ -84,7 +98,7 @@ export default function Navbar() {
             ))}
           </div>
           <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#fff',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
-            XRP <span style={{color:'var(--green)'}}>$2.18</span>
+            XRP <span style={{color:'var(--green)'}}>{xrpPrice ? '$' + xrpPrice.toFixed(xrpPrice < 10 ? 4 : 2) : '—'}</span>
           </div>
           {user ? (
             <>

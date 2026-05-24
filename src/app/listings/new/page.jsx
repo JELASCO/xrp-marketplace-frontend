@@ -94,7 +94,7 @@ export default function NewListingPage() {
             <label className="label">Category</label>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
               {CATS.map(c => (
-                <button key={c.key} type="button" onClick={() => setForm(f => ({...f, category:c.key}))}
+                <button key={c.key} type="button" onClick={() => setForm(f => ({...f, category:c.key, game: c.key === 'games' ? (f.game || 'CS2') : ''}))}
                   style={{padding:'10px 8px',borderRadius:8,cursor:'pointer',transition:'all 0.15s',display:'flex',flexDirection:'column',alignItems:'center',gap:4,border:'none',
                     background: form.category===c.key ? 'rgba(59,130,246,0.15)' : 'var(--surface2)',
                     outline: form.category===c.key ? '1px solid rgba(59,130,246,0.4)' : '1px solid var(--border)'}}>
@@ -109,11 +109,13 @@ export default function NewListingPage() {
             <input className="input" placeholder="e.g. AWP Dragon Lore Factory New" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
           </div>
 
+          {form.category === 'games' && (
           <div><label className="label">Game / Platform</label>
             <select className="input" value={form.game} onChange={e=>setForm(f=>({...f,game:e.target.value}))}>
               {GAMES.map(g=><option key={g}>{g}</option>)}
             </select>
           </div>
+          )}
 
           <div><label className="label">Description</label>
             <textarea className="input" rows={3} placeholder="Describe your item..." value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} style={{resize:'vertical'}}/>
