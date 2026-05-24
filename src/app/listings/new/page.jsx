@@ -42,19 +42,30 @@ export default function NewListingPage() {
   const sellerReceives = form.priceXrp ? (parseFloat(form.priceXrp) * 0.97).toFixed(6) : null;
 
   async function handleFileChange(e) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setError('Image must be under 5MB'); return; }
-    setPreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const remaining = 6 - form.images.length;
+    if (remaining <= 0) { setError('You can upload up to 6 images'); return; }
+    const toUpload = files.slice(0, remaining);
+    for (const file of toUpload) {
+      if (file.size > 5 * 1024 * 1024) { setError('Each image must be under 5MB'); continue; }
+    }
     setUploading(true);
     setError('');
     try {
-      const url = await uploadToImgbb(file);
-      setForm(f => ({ ...f, images: [url] }));
+      for (const file of toUpload) {
+        if (file.size > 5 * 1024 * 1024) continue;
+        const url = await uploadToImgbb(file);
+        setForm(f => ({ ...f, images: [...f.images, url] }));
+        setPreview(url);
+      }
     } catch(err) {
-      setError('Image upload failed. Try a URL instead.');
-      setPreview(null);
-    } finally { setUploading(false); }
+      setError('Image upload failed. Try again or use fewer images.');
+    } finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+  }
+
+  function removeImage(idx) {
+    setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
   }
 
   async function handleSubmit(e) {
@@ -123,19 +134,26 @@ export default function NewListingPage() {
           </div>
 
           <div>
-            <label className="label">Product Image <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional)</span></label>
-            <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleFileChange}/>
-            {preview || form.images[0] ? (
-              <div style={{position:'relative',marginBottom:8}}>
-                <img src={preview || form.images[0]} alt="preview" style={{width:'100%',maxHeight:200,objectFit:'cover',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)'}}/>
-                <button type="button" onClick={()=>{setPreview(null);setForm(f=>({...f,images:[]}));if(fileRef.current)fileRef.current.value='';}}
-                  style={{position:'absolute',top:6,right:6,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:12}}>✕</button>
+            <label className="label">Product Images <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(up to 6, first is the cover)</span></label>
+            <input ref={fileRef} type="file" accept="image/*" multiple style={{display:'none'}} onChange={handleFileChange}/>
+            {form.images.length > 0 && (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:8}}>
+                {form.images.map((url, i) => (
+                  <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden',border: i===0 ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)'}}>
+                    <img src={url} alt={'image '+(i+1)} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    {i===0 && <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(59,130,246,0.85)',color:'#fff',fontSize:10,fontWeight:600,textAlign:'center',padding:'2px 0'}}>COVER</div>}
+                    <button type="button" onClick={()=>removeImage(i)}
+                      style={{position:'absolute',top:4,right:4,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',borderRadius:'50%',width:22,height:22,cursor:'pointer',fontSize:11}}>✕</button>
+                  </div>
+                ))}
               </div>
-            ) : null}
-            <button type="button" onClick={()=>fileRef.current&&fileRef.current.click()} disabled={uploading}
-              style={{width:'100%',padding:'10px',background:'var(--surface2)',border:'1px dashed rgba(255,255,255,0.15)',borderRadius:8,color:uploading?'var(--text3)':'var(--text2)',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              {uploading ? '⏳ Uploading...' : '📁 Choose image (max 5MB)'}
-            </button>
+            )}
+            {form.images.length < 6 && (
+              <button type="button" onClick={()=>fileRef.current&&fileRef.current.click()} disabled={uploading}
+                style={{width:'100%',padding:'10px',background:'var(--surface2)',border:'1px dashed rgba(255,255,255,0.15)',borderRadius:8,color:uploading?'var(--text3)':'var(--text2)',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                {uploading ? '⏳ Uploading...' : `📁 Add image${form.images.length ? 's' : ''} (max 5MB each)`}
+              </button>
+            )}
           </div>
 
           <div style={{border:'1px solid var(--border)',borderRadius:10,padding:14,background:'var(--surface)'}}>

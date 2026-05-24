@@ -17,6 +17,7 @@ export default function ListingDetailPage({ params }) {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
+  const [activeImg, setActiveImg] = useState(0);
   const [buying, setBuying] = useState(false);
   const [isFav, setIsFav] = useState(false);
   const [similar, setSimilar] = useState([]);
@@ -137,9 +138,18 @@ export default function ListingDetailPage({ params }) {
       <div className="listing-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:32,marginTop:24}}>
         <div>
           <div style={{background:'var(--surface)',borderRadius:12,overflow:'hidden',aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid var(--border)',position:'relative'}}>
-            {img ? <img src={img} alt={listing.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:80}}>{emoji}</span>}
+            {listing.images && listing.images.length ? <img src={listing.images[activeImg] || listing.images[0]} alt={listing.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:80}}>{emoji}</span>}
             {isSold && <div style={{position:'absolute',top:12,right:12,background:'rgba(239,68,68,0.9)',color:'#fff',fontWeight:700,fontSize:12,padding:'4px 10px',borderRadius:6}}>SOLD</div>}
           </div>
+          {listing.images && listing.images.length > 1 && (
+            <div style={{display:'flex',gap:8,marginTop:10,flexWrap:'wrap'}}>
+              {listing.images.map((u, i) => (
+                <button key={i} onClick={()=>setActiveImg(i)} style={{width:60,height:60,borderRadius:8,overflow:'hidden',padding:0,cursor:'pointer',border: i===activeImg ? '2px solid var(--accent)' : '1px solid var(--border)',background:'none'}}>
+                  <img src={u} alt={'thumb '+(i+1)} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                </button>
+              ))}
+            </div>
+          )}
           <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
             <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,...cat}}>{CAT_LABELS[listing.category]||listing.category}</span>
             <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,background:'var(--border)',color:'var(--text2)'}}>{emoji} {listing.game}</span>
