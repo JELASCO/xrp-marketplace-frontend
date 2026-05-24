@@ -49,16 +49,27 @@ export default function Navbar() {
   }
 
   const [xrpPrice, setXrpPrice] = useState(null);
+  const [priceDir, setPriceDir] = useState(null); // 'up' | 'down' | null
   useEffect(() => {
     let active = true;
+    let last = null;
     const fetchPrice = () => {
       fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
         .then(r => r.json())
-        .then(d => { if (active && d && d.data && d.data.amount) setXrpPrice(parseFloat(d.data.amount)); })
+        .then(d => {
+          if (!active || !d || !d.data || !d.data.amount) return;
+          const p = parseFloat(d.data.amount);
+          if (last != null && p !== last) {
+            setPriceDir(p > last ? 'up' : 'down');
+            setTimeout(() => active && setPriceDir(null), 1200);
+          }
+          last = p;
+          setXrpPrice(p);
+        })
         .catch(() => {});
     };
     fetchPrice();
-    const iv = setInterval(fetchPrice, 60000); // refresh every minute
+    const iv = setInterval(fetchPrice, 15000); // refresh every 15s
     return () => { active = false; clearInterval(iv); };
   }, []);
 
@@ -98,7 +109,7 @@ export default function Navbar() {
             ))}
           </div>
           <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#fff',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
-            XRP <span style={{color:'var(--green)'}}>{xrpPrice ? '$' + xrpPrice.toFixed(xrpPrice < 10 ? 4 : 2) : '—'}</span>
+            XRP <span style={{color: priceDir==='up' ? '#34d399' : priceDir==='down' ? '#f87171' : 'var(--green)', transition:'color 0.3s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(xrpPrice < 10 ? 4 : 2) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
           </div>
           {user ? (
             <>
