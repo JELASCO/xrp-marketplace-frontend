@@ -8,6 +8,7 @@ export default function ProPage() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
   const hydrated = useAuthStore(s => s.hydrated);
+  const refreshUser = useAuthStore(s => s.refreshUser);
   const [pricing, setPricing] = useState(null);
   const [modal, setModal] = useState(null); // { qrUrl, deepLink, paymentId, days, kind }
   const [verifying, setVerifying] = useState(false);
@@ -34,7 +35,7 @@ export default function ProPage() {
     setVerifying(true); setError('');
     try {
       const r = await api.upgrades.verify(modal.paymentId);
-      if (r.ok) { setModal(null); setDone('Pro activated! Your lower fees and badge are now live.'); }
+      if (r.ok) { setModal(null); setDone('Pro activated! Your lower fees and badge are now live.'); if (refreshUser) await refreshUser(); }
       else setError(r.error || 'Not verified yet');
     } catch (e) { setError(e.message); }
     setVerifying(false);

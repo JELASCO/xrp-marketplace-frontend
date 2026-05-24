@@ -11,6 +11,7 @@ export const useAuthStore = create((set, get) => ({
     catch { localStorage.removeItem('xrpmarket_token'); set({ user: null, token: null, loading: false, hydrated: true }); }
   },
   setAuth: (token, user) => { localStorage.setItem('xrpmarket_token', token); set({ token, user }); },
+  refreshUser: async () => { try { const user = await api.auth.me(); set({ user }); return user; } catch { return null; } },
   logout: () => { localStorage.removeItem('xrpmarket_token'); set({ user: null, token: null }); },
   isLoggedIn: () => !!get().user,
 }));
