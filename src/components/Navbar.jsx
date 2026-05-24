@@ -1,7 +1,7 @@
 'use client'; // v2
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
 import XummLoginModal from './XummLoginModal';
@@ -25,6 +25,18 @@ export default function Navbar() {
   const [notifs, setNotifs] = useState([]);
   const [unread, setUnread] = useState(0);
   const router = useRouter();
+  const notifRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showNotifs && !showMenu) return;
+    function onDocClick(e) {
+      if (showNotifs && notifRef.current && !notifRef.current.contains(e.target)) setShowNotifs(false);
+      if (showMenu && menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [showNotifs, showMenu]);
 
   useEffect(() => {
     if (!user) return;
@@ -113,7 +125,7 @@ export default function Navbar() {
           </div>
           {user ? (
             <>
-            <div style={{position:'relative'}}>
+            <div ref={notifRef} style={{position:'relative'}}>
               <button onClick={openNotifs} aria-label="Notifications"
                 style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,cursor:'pointer',color:'#d4d6da',position:'relative',padding:0,flexShrink:0}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -134,7 +146,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            <div style={{position:'relative'}}>
+            <div ref={menuRef} style={{position:'relative'}}>
               <button onClick={()=>setShowMenu(v=>!v)}
                 style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#fff',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
                 <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#fff',flexShrink:0}}>
