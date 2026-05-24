@@ -91,10 +91,10 @@ export default function DashboardPage() {
       )}
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <Link href="/new" style={{ padding: '10px 18px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600 }}>+ List New Item</Link>
+        <Link href="/listings/new" style={{ padding: '10px 18px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600 }}>+ List New Item</Link>
         <Link href="/store/create" style={{ padding: '10px 18px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', textDecoration: 'none', borderRadius: 9, fontSize: 13 }}>🏪 Create Store</Link>
         <Link href="/orders" style={{ padding: '10px 18px', background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text)', textDecoration: 'none', borderRadius: 9, fontSize: 13 }}>View Orders</Link>
-        <Link href={'/user/'+user?.id} style={{ padding: '10px 18px', background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text)', textDecoration: 'none', borderRadius: 9, fontSize: 13 }}>View Profile</Link>
+        <Link href={'/profile/'+user?.id} style={{ padding: '10px 18px', background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text)', textDecoration: 'none', borderRadius: 9, fontSize: 13 }}>View Profile</Link>
       </div>
     </div>
   );
