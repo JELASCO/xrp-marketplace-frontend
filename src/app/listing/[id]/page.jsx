@@ -174,6 +174,14 @@ export default function ListingDetailPage({ params }) {
           <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--text)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{Number(listing.price_xrp).toLocaleString()} <span style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>XRP</span>{listing.quantity > 1 && listing.quantity_sold != null && !isSold && <span style={{fontSize:13,fontWeight:600,color:'var(--text3)',marginLeft:10}}>{Math.max(0, listing.quantity - listing.quantity_sold)} in stock</span>}</div>
           {listing.is_digital && <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#3b82f6',marginBottom:16}}>⚡ Instant delivery · content unlocks right after escrow payment</div>}
           {listing.description && <p style={{color:'var(--text2)',fontSize:14,lineHeight:1.6,marginBottom:20}}>{listing.description}</p>}
+          {(listing.delivery_time || (listing.tags && listing.tags.length > 0)) && (
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:20,alignItems:'center'}}>
+              {listing.delivery_time && <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'4px 10px',fontSize:12,color:'var(--text2)'}}>🚚 {({instant:'Instant delivery','1h':'Within 1 hour','24h':'Within 24 hours','1-3d':'1–3 days'})[listing.delivery_time] || listing.delivery_time}</span>}
+              {listing.tags && listing.tags.map((t,i)=>(
+                <span key={i} style={{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:20,padding:'3px 10px',fontSize:12,color:'var(--text3)'}}>#{t}</span>
+              ))}
+            </div>
+          )}
           <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
             <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff',fontSize:14}}>{listing.username?.slice(0,2).toUpperCase()}</div>
             <div style={{flex:1}}><div style={{color:'var(--text)',fontWeight:600,fontSize:14}}>{listing.username}{listing.is_verified && <span style={{marginLeft:6,fontSize:11,background:'rgba(16,185,129,0.15)',color:'var(--green)',borderRadius:5,padding:'1px 6px',fontWeight:700}}>✓ Verified</span>}</div><div style={{color:'var(--text3)',fontSize:12}}>{listing.views} views</div></div>

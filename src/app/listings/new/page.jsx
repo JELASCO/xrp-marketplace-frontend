@@ -25,7 +25,8 @@ export default function NewListingPage() {
   const router  = useRouter();
   const user    = useAuthStore(s => s.user);
   const fileRef = useRef(null);
-  const [form,     setForm]     = useState({ title:'', description:'', category:'games', game:'CS2', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'' });
+  const [form,     setForm]     = useState({ title:'', description:'', category:'games', game:'CS2', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'', deliveryTime:'', tags:[] });
+  const [tagInput, setTagInput] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [uploading,setUploading]= useState(false);
   const [preview,  setPreview]  = useState(null);
@@ -131,6 +132,36 @@ export default function NewListingPage() {
             <label className="label">Quantity in stock</label>
             <input className="input" type="number" step="1" min="1" placeholder="1" value={form.quantity} onChange={e=>setForm(f=>({...f,quantity:e.target.value}))}/>
             <div style={{fontSize:12,color:'var(--text3)',marginTop:5}}>How many of this item you have. Leave blank for 1. Each sale reduces stock; the listing shows "Sold out" only when stock reaches 0.</div>
+          </div>
+
+          <div>
+            <label className="label">Delivery time <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional)</span></label>
+            <select className="input" value={form.deliveryTime} onChange={e=>setForm(f=>({...f,deliveryTime:e.target.value}))}>
+              <option value="">Select…</option>
+              <option value="instant">Instant (automatic)</option>
+              <option value="1h">Within 1 hour</option>
+              <option value="24h">Within 24 hours</option>
+              <option value="1-3d">1–3 days</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="label">Tags <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional, up to 8)</span></label>
+            <div style={{display:'flex',gap:8}}>
+              <input className="input" value={tagInput} onChange={e=>setTagInput(e.target.value)}
+                onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); const v=tagInput.trim().toLowerCase(); if(v && form.tags.length<8 && !form.tags.includes(v)) setForm(f=>({...f,tags:[...f.tags,v]})); setTagInput(''); } }}
+                placeholder="Type a tag and press Enter"/>
+            </div>
+            {form.tags.length > 0 && (
+              <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}}>
+                {form.tags.map((t,i)=>(
+                  <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4,background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:20,padding:'3px 10px',fontSize:12,color:'var(--text2)'}}>
+                    #{t}
+                    <button type="button" onClick={()=>setForm(f=>({...f,tags:f.tags.filter((_,j)=>j!==i)}))} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',padding:0,fontSize:13}}>✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
