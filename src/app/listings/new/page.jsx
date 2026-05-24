@@ -6,7 +6,7 @@ import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
 const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key — replace with your own from imgbb.com
-const CATS=[{key:'skin',label:'Skins & Cosmetics',emoji:'🎨'},{key:'coin',label:'Coins & Currency',emoji:'💰'},{key:'bp',label:'Battle Pass',emoji:'🎖'},{key:'account',label:'Accounts',emoji:'🤖'},{key:'key',label:'CD Keys & Gift Cards',emoji:'🔑'},{key:'item',label:'In-Game Items',emoji:'🛡'},{key:'bundle',label:'Bundles',emoji:'📦'},{key:'template',label:'Templates & Tools',emoji:'📄'},{key:'art',label:'Digital Art',emoji:'🖼'},{key:'ebook',label:'Ebooks & Guides',emoji:'📚'},{key:'audio',label:'Music & Audio',emoji:'🎵'},{key:'software',label:'Software & Scripts',emoji:'💻'}];
+const CATS=[{key:'games',label:'Games',emoji:'🎮'},{key:'graphics',label:'Graphics & Art',emoji:'🎨'},{key:'software',label:'Software & Tools',emoji:'💻'},{key:'accounts',label:'Accounts',emoji:'👤'},{key:'other',label:'Other',emoji:'📦'}];
 const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
 const TITLE_MAX=120;
 const DESC_MAX=2000;
@@ -25,7 +25,7 @@ export default function NewListingPage() {
   const router  = useRouter();
   const user    = useAuthStore(s => s.user);
   const fileRef = useRef(null);
-  const [form,     setForm]     = useState({ title:'', description:'', category:'skin', game:'CS2', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'' });
+  const [form,     setForm]     = useState({ title:'', description:'', category:'games', game:'CS2', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'' });
   const [loading,  setLoading]  = useState(false);
   const [uploading,setUploading]= useState(false);
   const [preview,  setPreview]  = useState(null);
@@ -114,6 +114,12 @@ export default function NewListingPage() {
               <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'var(--text3)',fontWeight:600}}>XRP</span>
             </div>
             {sellerReceives && <div style={{fontSize:12,color:'var(--text3)',marginTop:5}}>You'll receive <span style={{color:'var(--green)'}}>{sellerReceives} XRP</span> after 3% platform fee</div>}
+          </div>
+
+          <div>
+            <label className="label">Quantity in stock</label>
+            <input className="input" type="number" step="1" min="1" placeholder="1" value={form.quantity} onChange={e=>setForm(f=>({...f,quantity:e.target.value}))}/>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:5}}>How many of this item you have. Leave blank for 1. Each sale reduces stock; the listing shows "Sold out" only when stock reaches 0.</div>
           </div>
 
           <div>

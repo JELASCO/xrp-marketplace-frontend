@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
-const CAT_COLORS = { skin:{bg:'rgba(139,92,246,0.12)',color:'#a78bfa'}, coin:{bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'}, bp:{bg:'rgba(245,158,11,0.12)',color:'#fbbf24'}, account:{bg:'var(--border)',color:'var(--text2)'}, physical:{bg:'var(--border)',color:'var(--text2)'}, nft:{bg:'rgba(16,185,129,0.12)',color:'#34d399'} };
-const CAT_LABELS = { skin:'Skin', coin:'Coin', bp:'Battle Pass', account:'Account', physical:'Physical', nft:'NFT' };
+const CAT_COLORS = { games:{bg:'rgba(59,130,246,0.12)',color:'#60a5fa'}, graphics:{bg:'rgba(139,92,246,0.12)',color:'#a78bfa'}, software:{bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'}, accounts:{bg:'var(--border)',color:'var(--text2)'}, other:{bg:'rgba(245,158,11,0.12)',color:'#fbbf24'} };
+const CAT_LABELS = { games:'Games', graphics:'Graphics & Art', software:'Software', accounts:'Accounts', other:'Other' };
 const GAME_EMOJIS = { 'CS2':'🔫','Valorant':'⚡','Fortnite':'🏗️','Roblox':'🎮','Minecraft':'⛏️','Apex Legends':'💀','Call of Duty':'💣' };
 const STEPS = ['Awaiting payment','In escrow','Delivered','Completed'];
 
@@ -126,7 +126,7 @@ export default function ListingDetailPage({ params }) {
   if (!listing) return <div style={{padding:32,color:'var(--text2)'}}>Listing not found</div>;
 
   const isSeller = user?.id === listing.seller_id;
-  const cat = CAT_COLORS[listing.category] || CAT_COLORS.account;
+  const cat = CAT_COLORS[listing.category] || CAT_COLORS.accounts;
   const emoji = GAME_EMOJIS[listing.game] || '🎮';
   const img = listing.images?.[0];
   const isSold = listing.status === 'sold';

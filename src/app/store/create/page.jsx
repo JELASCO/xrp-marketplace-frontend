@@ -23,7 +23,7 @@ const C = {
   blue: '#3b82f6', blueDark: '#2563eb', green: '#10b981',
 };
 
-const CATS = ['CS2 skins', 'Valorant', 'Fortnite', 'Dota 2', 'WoW gold', 'Accounts', 'Physical'];
+const CATS = ['CS2 skins', 'Valorant', 'Fortnite', 'Dota 2', 'WoW gold', 'Accounts', 'Graphics & Art', 'Software'];
 const RESPONSES = ['Within 4 hours (business hours)', 'Within 12 hours', 'Within 24 hours', 'Within 48 hours'];
 
 const sectionStyle = { background: C.bg, border: `1px solid ${C.line}`, borderRadius: 16, padding: 24, marginBottom: 16 };

@@ -7,11 +7,11 @@ import { useAuthStore } from '../lib/store';
 
 const CATS = [
   {key:'',label:'All',emoji:'🌐'},
-  {key:'skin',label:'Skins',emoji:'🎨'},
-  {key:'coin',label:'Coins',emoji:'💰'},
-  {key:'bp',label:'Battle Pass',emoji:'🏆'},
-  {key:'account',label:'Accounts',emoji:'👤'},
-  {key:'physical',label:'Physical',emoji:'📦'},
+  {key:'games',label:'Games',emoji:'🎮'},
+  {key:'graphics',label:'Graphics & Art',emoji:'🎨'},
+  {key:'software',label:'Software',emoji:'💻'},
+  {key:'accounts',label:'Accounts',emoji:'👤'},
+  {key:'other',label:'Other',emoji:'📦'},
 ];
 
 const STATS_DEFAULT = [
@@ -234,7 +234,7 @@ export default function HomePage() {
             {q:"What happens if a seller doesn't deliver?",a:'Every order has a delivery deadline. If the seller does not fulfill within the agreed window, you can cancel the escrow and the XRP returns to your wallet automatically. Verified sellers carry trust scores so you can avoid risky listings.'},
             {q:'How are fees calculated?',a:'A small marketplace fee (3%) is taken from each completed trade — paid as a separate on-chain payment at checkout, so the seller receives the rest. Beyond that you only pay the tiny XRPL network fee (~0.0001 XRP per transaction). No hidden costs, no withdrawal fees, no FX markups.'},
             {q:'Do I need a credit card or bank account?',a:'No. XRPHarbor is XRP-native — you trade exclusively in XRP. Get XRP from any exchange (Coinbase, Bitstamp, Bitso, etc.), send it to your Xaman wallet, and you are ready to trade. No KYC, no banking.'},
-            {q:'Which games and items are supported?',a:'All major titles — CS2, Valorant, Fortnite, Dota 2, Rocket League, WoW, LoL, and dozens more. Categories include skins, in-game currency, battle passes, accounts, CD keys, gift cards, and physical collectibles.'},
+            {q:'Which games and items are supported?',a:'All major titles — CS2, Valorant, Fortnite, Dota 2, Rocket League, WoW, LoL, and dozens more. Categories include games, graphics & art, software & tools, and accounts.'},
             {q:'How do disputes work?',a:'Disputes are reviewed by our moderation team alongside delivery proof and chat history. Because escrow is on-chain, funds stay locked until resolved. Most cases are settled within 24 hours. Repeat offenders are removed from the platform.'},
           ].map((item,i)=>(
             <details key={i} style={{borderBottom:'1px solid var(--border)',padding:'14px 0',cursor:'pointer'}}>

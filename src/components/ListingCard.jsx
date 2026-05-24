@@ -3,22 +3,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const CAT_COLORS = {
-  skin:    {bg:'rgba(139,92,246,0.12)',color:'#a78bfa'},
-  coin:    {bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'},
-  bp:      {bg:'rgba(245,158,11,0.12)',color:'#fbbf24'},
-  account: {bg:'var(--border)',color:'var(--text2)'},
-  physical:{bg:'var(--border)',color:'var(--text2)'},
-  nft:     {bg:'rgba(16,185,129,0.12)',color:'#34d399'},
+  games:    {bg:'rgba(59,130,246,0.12)',color:'#60a5fa'},
+  graphics: {bg:'rgba(139,92,246,0.12)',color:'#a78bfa'},
+  software: {bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'},
+  accounts: {bg:'var(--border)',color:'var(--text2)'},
+  other:    {bg:'rgba(245,158,11,0.12)',color:'#fbbf24'},
 };
-const CAT_LABELS = {skin:'Skin',coin:'Coin',bp:'Battle Pass',account:'Account',physical:'Physical',nft:'NFT',key:'Key',item:'Item',bundle:'Bundle',template:'Template',art:'Art',ebook:'Ebook',audio:'Audio',software:'Software'};
+const CAT_LABELS = {games:'Games',graphics:'Graphics & Art',software:'Software',accounts:'Accounts',other:'Other'};
 const GAME_EMOJIS = {};
 
 
 export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
-  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified, store_handle } = listing;
+  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified, store_handle, status, quantity, quantity_sold } = listing;
   const router = useRouter();
-  const cat   = CAT_COLORS[category] || CAT_COLORS.account;
+  const cat   = CAT_COLORS[category] || CAT_COLORS.accounts;
   const label = CAT_LABELS[category] || category;
+  const stockLeft = (quantity != null && quantity_sold != null) ? Math.max(0, quantity - quantity_sold) : null;
+  const soldOut = status === 'sold' || stockLeft === 0;
   const emoji = '';
   const goToStore = (e) => { e.preventDefault(); e.stopPropagation(); if (store_handle) router.push('/store/' + store_handle); };
   return (
@@ -32,13 +33,14 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         onMouseLeave={e=>{e.currentTarget.style.border=is_featured?'1px solid rgba(59,130,246,0.4)':'1px solid var(--border)';e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>
         {onToggleFavorite && <button onClick={(e)=>{e.preventDefault();e.stopPropagation();onToggleFavorite(id);}} style={{position:'absolute',top:8,right:8,zIndex:10,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.2)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}><span style={{fontSize:16,color:isFavorited?'#f87171':'var(--text2)'}}>{isFavorited?'♥':'♡'}</span></button>}
         <div style={{height:130,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
-          {images?.[0] ? <img src={images[0]} alt={title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:40}}>{emoji}</span>}
+          {images?.[0] ? <img src={images[0]} alt={title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:40}}>📦</span>}
           <div style={{position:'absolute',bottom:8,left:8,background:cat.bg,color:cat.color,borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>{label}</div>
           {is_featured && <div style={{position:'absolute',top:8,right:8,background:'rgba(245,158,11,0.2)',color:'#fbbf24',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>★ Featured</div>}
+          {soldOut && <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{background:'#ef4444',color:'#fff',borderRadius:6,padding:'4px 12px',fontSize:13,fontWeight:700}}>SOLD OUT</span></div>}
         </div>
         <div style={{padding:'12px 14px'}}>
           <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{title}</div>
-          <div style={{fontSize:11,color:'var(--text3)',marginBottom:10,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{game}</div>
+          <div style={{fontSize:11,color:'var(--text3)',marginBottom:10,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{game}{stockLeft != null && quantity > 1 && !soldOut ? ` · ${stockLeft} left` : ''}</div>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
             <span style={{fontSize:15,fontWeight:700,color:'var(--text)',whiteSpace:'nowrap'}}>{Number(price_xrp).toLocaleString()} <span style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>XRP</span></span>
             <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'var(--text3)',minWidth:0}}>
