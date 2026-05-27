@@ -49,6 +49,7 @@ export default function HomePage() {
 
   const user = useAuthStore(s=>s.user);
   const [listings,setListings] = useState([]);
+  const [featured,setFeatured] = useState([]);
   const [category,setCategory] = useState('');
   const [sort,setSort] = useState('created_at');
   const [loading,setLoading] = useState(true);
@@ -59,6 +60,17 @@ export default function HomePage() {
     if(category) params.category=category;
     api.listings.list(params).then(setListings).catch(()=>setListings([])).finally(()=>setLoading(false));
   },[category,sort]);
+
+  // Featured items (active, still within featured_until) — shown in a dedicated showcase
+  useEffect(()=>{
+    api.listings.list({limit:24}).then(items=>{
+      const now = Date.now();
+      const f = (Array.isArray(items)?items:[]).filter(l =>
+        l.is_featured && l.featured_until && new Date(l.featured_until).getTime() > now && l.status === 'active'
+      ).slice(0,8);
+      setFeatured(f);
+    }).catch(()=>{});
+  },[]);
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:32}}>
@@ -116,6 +128,20 @@ export default function HomePage() {
           </button>
         ))}
       </div>
+
+      {featured.length > 0 && (
+        <div style={{marginBottom:32}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:16}}>
+            <span style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>🔥 Featured Items</span>
+            <span style={{fontSize:11,fontWeight:600,color:'#fbbf24',background:'rgba(245,158,11,0.12)',borderRadius:6,padding:'2px 8px'}}>Promoted</span>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
+            {featured.map(l=>(
+              <ListingCard key={l.id} listing={l}/>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>

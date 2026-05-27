@@ -106,7 +106,7 @@ export default function Navbar() {
           </Link>
           <form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',color:'#fff',borderRadius:8,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}
-              placeholder="Search skins, coins, accounts..." value={search} onChange={e=>setSearch(e.target.value)}/>
+              placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8b8f96',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
