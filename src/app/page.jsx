@@ -50,16 +50,12 @@ export default function HomePage() {
   const user = useAuthStore(s=>s.user);
   const [listings,setListings] = useState([]);
   const [featured,setFeatured] = useState([]);
-  const [category,setCategory] = useState('');
-  const [sort,setSort] = useState('created_at');
   const [loading,setLoading] = useState(true);
 
   useEffect(()=>{
     setLoading(true);
-    const params={sort,limit:24};
-    if(category) params.category=category;
-    api.listings.list(params).then(setListings).catch(()=>setListings([])).finally(()=>setLoading(false));
-  },[category,sort]);
+    api.listings.list({sort:'created_at',limit:8}).then(setListings).catch(()=>setListings([])).finally(()=>setLoading(false));
+  },[]);
 
   // Featured items (active, still within featured_until) — shown in a dedicated showcase
   useEffect(()=>{
@@ -116,16 +112,14 @@ export default function HomePage() {
 
       {/* Supported Games section removed */}
 
-      <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
-        {CATS.map(c=>(
-          <button key={c.key} onClick={()=>setCategory(c.key)} style={{
-            display:'flex',alignItems:'center',gap:6,padding:'7px 16px',borderRadius:20,border:'none',fontSize:13,fontWeight:500,cursor:'pointer',whiteSpace:'nowrap',transition:'all 0.15s',
-            background:category===c.key?'rgba(59,130,246,0.15)':'var(--surface)',
-            color:category===c.key?'var(--accent2)':'var(--text2)',
-            outline:category===c.key?'1px solid rgba(59,130,246,0.3)':'1px solid var(--border)',
+      <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,marginBottom:8}}>
+        {CATS.filter(c=>c.key).map(c=>(
+          <Link key={c.key} href={'/listings?category='+c.key} style={{
+            display:'flex',alignItems:'center',gap:6,padding:'7px 16px',borderRadius:20,fontSize:13,fontWeight:500,whiteSpace:'nowrap',textDecoration:'none',
+            background:'var(--surface)',color:'var(--text2)',border:'1px solid var(--border)',
           }}>
             <span>{c.emoji}</span> {c.label}
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -145,17 +139,8 @@ export default function HomePage() {
 
       <div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>{category?CATS.find(c=>c.key===category)?.label+' Listings':'All Listings'}</span>
-            {!loading&&<span style={{fontSize:12,color:'var(--text3)'}}>{listings.length} items</span>}
-          </div>
-          <select style={{background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',borderRadius:8,padding:'6px 12px',fontSize:13,cursor:'pointer',outline:'none'}}
-            value={sort} onChange={e=>setSort(e.target.value)}>
-            <option value="created_at">Newest first</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="views">Most Popular</option>
-          </select>
+          <span style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>Latest Listings</span>
+          <Link href="/listings" style={{fontSize:13,color:'var(--accent2)',textDecoration:'none',fontWeight:600}}>Browse all →</Link>
         </div>
 
         {loading ? (
@@ -172,13 +157,18 @@ export default function HomePage() {
             </Link>
           </div>
         ) : (
+          <>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(185px,1fr))',gap:12}}>
-            {listings.map((l,i)=>(
+            {listings.slice(0,8).map((l,i)=>(
               <div key={l.id} className={`fade-up stagger-${Math.min(i%4+1,4)}`}>
                 <ListingCard listing={l}/>
               </div>
             ))}
           </div>
+          <div style={{textAlign:'center',marginTop:24}}>
+            <Link href="/listings" style={{display:'inline-flex',alignItems:'center',gap:6,background:'var(--surface)',border:'1px solid var(--border2)',color:'var(--text)',textDecoration:'none',borderRadius:10,padding:'11px 28px',fontSize:13,fontWeight:600}}>Browse all marketplace →</Link>
+          </div>
+          </>
         )}
       </div>
 

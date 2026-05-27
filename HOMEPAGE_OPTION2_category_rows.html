@@ -1,0 +1,119 @@
+<!--
+  XRPHarbor — Homepage layout OPTION 2: CATEGORY ROWS (reference / not live)
+  Saved for future use. To switch the homepage to this layout later, adapt
+  src/app/page.jsx: render Featured on top, then one horizontal row per category
+  (Games / Graphics & Art / Software / Accounts), each showing ~4 listings with a
+  "See all →" link that routes to /listings?category=KEY.
+
+  Colors below use the site's dark theme CSS variables (var(--surface), var(--text),
+  var(--accent) etc.) so it matches the real app. This is a static mockup of the
+  structure — in React, replace the placeholder cards with <ListingCard> components
+  and map over listings grouped by category.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XRPHarbor — Category Rows Homepage (reference)</title>
+<style>
+  :root{
+    --bg:#0a0b0d; --bg2:#111317; --surface:#15171c; --surface2:#1c1f26;
+    --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.1);
+    --text:#e9eaec; --text2:#a8acb3; --text3:#6b7280;
+    --accent:#3b82f6; --green:#34d399; --amber:#fbbf24;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;padding:24px 16px;}
+  .wrap{max-width:1200px;margin:0 auto;}
+  .hero{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;margin-bottom:24px;}
+  .hero .kicker{font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
+  .hero h1{font-size:30px;font-weight:800;margin-bottom:16px;line-height:1.2;}
+  .searchbar{display:flex;gap:8px;max-width:560px;}
+  .searchbar .inp{flex:1;height:42px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;display:flex;align-items:center;padding:0 14px;color:var(--text3);font-size:14px;}
+  .searchbar .btn{height:42px;padding:0 22px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;}
+  .section-head .title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .section-head .see{font-size:13px;color:var(--accent);text-decoration:none;}
+  .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-bottom:32px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .card.featured{border:2px solid rgba(245,158,11,0.4);}
+  .card .thumb{aspect-ratio:1;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:32px;position:relative;}
+  .card .badge{position:absolute;top:8px;right:8px;background:rgba(245,158,11,0.2);color:var(--amber);font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px;}
+  .card .body{padding:10px 12px;}
+  .card .name{font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card .price{font-size:15px;font-weight:700;}
+  .card .price span{font-size:11px;color:var(--accent);}
+  .pro{font-size:9px;font-weight:700;color:#fff;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:4px;padding:1px 5px;margin-left:4px;}
+  .promoted{font-size:11px;font-weight:600;color:var(--amber);background:rgba(245,158,11,0.12);border-radius:6px;padding:2px 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">Powered by XRP Ledger</div>
+    <h1>The Secure P2P Game Marketplace</h1>
+    <div class="searchbar">
+      <div class="inp">🔍&nbsp; Search…</div>
+      <button class="btn">Search</button>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div class="title">🔥 Featured Items <span class="promoted">Promoted</span></div>
+  </div>
+  <div class="row">
+    <div class="card featured"><div class="thumb">🖼<span class="badge">★ Featured</span></div><div class="body"><div class="name">CS2 Karambit Knife</div><div class="price">45 <span>XRP</span></div></div></div>
+    <div class="card featured"><div class="thumb">🖼<span class="badge">★ Featured</span></div><div class="body"><div class="name">WoW Gold 100k</div><div class="price">30 <span>XRP</span></div></div></div>
+    <div class="card featured"><div class="thumb">🖼<span class="badge">★ Featured</span></div><div class="body"><div class="name">Valorant Account</div><div class="price">60 <span>XRP</span></div></div></div>
+    <div class="card featured"><div class="thumb">🖼<span class="badge">★ Featured</span></div><div class="body"><div class="name">PoE Divine Orbs</div><div class="price">12 <span>XRP</span></div></div></div>
+  </div>
+
+  <div class="section-head">
+    <div class="title">🎮 Games</div>
+    <a class="see" href="/listings?category=games">See all →</a>
+  </div>
+  <div class="row">
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Fortnite Skin Bundle</div><div class="price">8 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">ARC Raiders Blueprint</div><div class="price">15 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Dota 2 Arcana Set</div><div class="price">5 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Rust Weapon Skin</div><div class="price">3 <span>XRP</span></div></div></div>
+  </div>
+
+  <div class="section-head">
+    <div class="title">🎨 Graphics &amp; Art</div>
+    <a class="see" href="/listings?category=graphics">See all →</a>
+  </div>
+  <div class="row">
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Logo Template Pack</div><div class="price">10 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Procreate Brush Set</div><div class="price">7 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">3D Character Model</div><div class="price">20 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Icon Bundle 500+</div><div class="price">6 <span>XRP</span></div></div></div>
+  </div>
+
+  <div class="section-head">
+    <div class="title">💻 Software &amp; Tools</div>
+    <a class="see" href="/listings?category=software">See all →</a>
+  </div>
+  <div class="row">
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Trading Bot Script</div><div class="price">25 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Notion Template</div><div class="price">4 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">VS Code Theme</div><div class="price">2 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Discord Bot</div><div class="price">18 <span>XRP</span></div></div></div>
+  </div>
+
+  <div class="section-head">
+    <div class="title">👤 Accounts</div>
+    <a class="see" href="/listings?category=accounts">See all →</a>
+  </div>
+  <div class="row">
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Steam Account L50</div><div class="price">40 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">LoL Diamond Acc</div><div class="price">35 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Genshin AR55</div><div class="price">50 <span>XRP</span></div></div></div>
+    <div class="card"><div class="thumb">🖼</div><div class="body"><div class="name">Fortnite OG Acc</div><div class="price">80 <span>XRP</span></div></div></div>
+  </div>
+
+</div>
+</body>
+</html>
