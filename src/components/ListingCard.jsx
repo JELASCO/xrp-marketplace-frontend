@@ -14,7 +14,7 @@ const GAME_EMOJIS = {};
 
 
 export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
-  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified, store_handle, status, quantity, quantity_sold } = listing;
+  const { id, title, category, game, price_xrp, images, is_featured, username, reputation_score, is_verified, store_handle, status, quantity, quantity_sold, seller_is_pro } = listing;
   const router = useRouter();
   const cat   = CAT_COLORS[category] || CAT_COLORS.accounts;
   const label = CAT_LABELS[category] || category;
@@ -49,6 +49,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               </div>
               <span onClick={store_handle ? goToStore : undefined} style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:store_handle?'pointer':'default',color:store_handle?'#3b82f6':'var(--text3)'}}>{username}</span>
               {is_verified && <span title='Verified Seller' style={{fontSize:10,color:'var(--green)',fontWeight:700,flexShrink:0}}>✓</span>}
+              {seller_is_pro && <span title='Pro Seller' style={{fontSize:9,fontWeight:700,color:'#fff',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',borderRadius:4,padding:'1px 4px',flexShrink:0}}>PRO</span>}
               {reputation_score > 0 && <span style={{color:'var(--amber)',flexShrink:0}}>★{Number(reputation_score).toFixed(1)}</span>}
             </div>
           </div>
