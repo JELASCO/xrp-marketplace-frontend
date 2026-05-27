@@ -197,7 +197,7 @@ export default function HomePage() {
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {[
-              {t:'0.5% platform fee',d:'Industry-leading rates. Compare to 10-15% on traditional marketplaces.'},
+              {t:'3% platform fee',d:'Just 1.5% for Pro sellers. Compare to 10-15% on traditional marketplaces.'},
               {t:'Instant XRP payout',d:'Funds hit your wallet in 3 seconds when buyer confirms delivery.'},
               {t:'Global buyers, zero borders',d:'195+ countries. No FX fees, no PayPal disputes, no bank holds.'},
             ].map((b,i)=>(
