@@ -160,7 +160,8 @@ export default function ListingDetailPage({ params }) {
           )}
           <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
             <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,...cat}}>{CAT_LABELS[listing.category]||listing.category}</span>
-            <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,background:'var(--border)',color:'var(--text2)'}}>{emoji} {listing.game}</span>
+            {listing.game && <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,background:'var(--border)',color:'var(--text2)'}}>{emoji} {listing.game}</span>}
+            {listing.platform && <span style={{padding:'4px 10px',borderRadius:6,fontSize:12,background:'var(--border)',color:'var(--text2)'}}>🖥 {listing.platform}</span>}
           </div>
         </div>
         <div>

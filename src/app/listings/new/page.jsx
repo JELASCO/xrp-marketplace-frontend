@@ -7,7 +7,8 @@ import { useAuthStore } from '../../../lib/store';
 
 const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key — replace with your own from imgbb.com
 const CATS=[{key:'games',label:'Games',emoji:'🎮'},{key:'graphics',label:'Graphics & Art',emoji:'🎨'},{key:'software',label:'Software & Tools',emoji:'💻'},{key:'accounts',label:'Accounts',emoji:'👤'},{key:'other',label:'Other',emoji:'📦'}];
-const GAMES = ['CS2','Valorant','Fortnite','Roblox','Apex Legends','Minecraft','Call of Duty','Other'];
+const GAMES = ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','World of Warcraft','Apex Legends','Roblox','Minecraft','Call of Duty','Old School RuneScape','RuneScape 3','Path of Exile','Diablo 4','Rust','Team Fortress 2','PUBG','Genshin Impact','Grand Theft Auto V','EA FC 24','Overwatch 2','Escape from Tarkov','New World','Lost Ark','Albion Online','Final Fantasy XIV','Warframe','Destiny 2','Other'];
+const PLATFORMS = ['PC','PlayStation','Xbox','Nintendo Switch','Mobile','Cross-platform','Other'];
 const TITLE_MAX=120;
 const DESC_MAX=2000;
 
@@ -25,7 +26,7 @@ export default function NewListingPage() {
   const router  = useRouter();
   const user    = useAuthStore(s => s.user);
   const fileRef = useRef(null);
-  const [form,     setForm]     = useState({ title:'', description:'', category:'games', game:'CS2', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'', deliveryTime:'', tags:[] });
+  const [form,     setForm]     = useState({ title:'', description:'', category:'games', game:'CS2', platform:'PC', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'', deliveryTime:'', tags:[] });
   const [tagInput, setTagInput] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [uploading,setUploading]= useState(false);
@@ -110,10 +111,17 @@ export default function NewListingPage() {
           </div>
 
           {form.category === 'games' && (
-          <div><label className="label">Game / Platform</label>
-            <select className="input" value={form.game} onChange={e=>setForm(f=>({...f,game:e.target.value}))}>
-              {GAMES.map(g=><option key={g}>{g}</option>)}
-            </select>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div><label className="label">Game</label>
+              <select className="input" value={form.game} onChange={e=>setForm(f=>({...f,game:e.target.value}))}>
+                {GAMES.map(g=><option key={g}>{g}</option>)}
+              </select>
+            </div>
+            <div><label className="label">Platform</label>
+              <select className="input" value={form.platform} onChange={e=>setForm(f=>({...f,platform:e.target.value}))}>
+                {PLATFORMS.map(p=><option key={p}>{p}</option>)}
+              </select>
+            </div>
           </div>
           )}
 
