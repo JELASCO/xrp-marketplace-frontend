@@ -150,6 +150,7 @@ export default function AdminPage() {
   const [disputes, setDisputes] = useState([]);
   const [users, setUsers] = useState([]);
   const [listings, setListings] = useState([]);
+  const [reports, setReports] = useState([]);
   const [listingFilter, setListingFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
@@ -161,11 +162,13 @@ export default function AdminPage() {
       api.admin.disputes().catch(()=>[]),
       api.admin.users().catch(()=>[]),
       api.listings.list({limit:200}).catch(()=>[]),
-    ]).then(([s,d,u,l])=>{
+      api.admin.listReports('pending').catch(()=>[]),
+    ]).then(([s,d,u,l,r])=>{
       setStats(s);
       setDisputes(Array.isArray(d)?d:[]);
       setUsers(Array.isArray(u)?u:[]);
       setListings(Array.isArray(l)?l:[]);
+      setReports(Array.isArray(r)?r:[]);
     }).finally(()=>setLoading(false));
   },[user]);
 
@@ -446,12 +449,38 @@ export default function AdminPage() {
       )}
 
       {tab==='reports' && (
-        <NeedsBackend
-          title='Abuse reports & moderation queue'
-          why='There is no abuse report system yet. Users currently have no way to flag a listing or a seller, so there is nothing for admins to review.'
-          workaround='Use the Users tab to ban bad actors directly, and Listings tab to remove problem listings.'
-          endpoints={['POST /api/reports (user-facing flag endpoint)','GET /api/admin/reports?status=pending','PATCH /api/admin/reports/:id/resolve']}
-        />
+        <Section title={'Pending reports ('+reports.length+')'} action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>User-submitted abuse flags awaiting review</span>}>
+          {reports.length===0 ? <Empty icon='✅' text='No pending reports — nothing to review'/> : (
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {reports.map(r=>(
+                <div key={r.id} style={{padding:'12px 14px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6,flexWrap:'wrap',gap:8}}>
+                    <div style={{minWidth:0,flex:1}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:4}}>
+                        <Pill color={r.target_type==='listing'?'blue':'yellow'}>{r.target_type}</Pill>
+                        <Pill color='red'>{r.reason}</Pill>
+                        <span style={{fontSize:11,color:'var(--xh-text3)'}}>{fmtDate(r.created_at)}</span>
+                      </div>
+                      <div style={{fontWeight:600,color:'var(--xh-text)',marginBottom:2}}>
+                        {r.target_type==='listing' ? (
+                          <Link href={'/listings/'+r.target_id} target='_blank' style={{color:'var(--xh-text)',textDecoration:'none'}}>{r.target_label || ('Listing #'+(r.target_id||'').slice(0,8))} ↗</Link>
+                        ) : (
+                          <span>{r.target_label || 'anon'} <span style={{fontSize:10.5,color:'var(--xh-text3)',fontFamily:'monospace',marginLeft:4}}>{(r.target_address||'').slice(0,16)}</span></span>
+                        )}
+                      </div>
+                      {r.details && <div style={{fontSize:12,color:'var(--xh-text2)',marginTop:6,padding:'8px 10px',background:'var(--xh-surface)',borderRadius:6,lineHeight:1.5}}>“{r.details}”</div>}
+                      <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:6}}>Reported by: <b style={{color:'var(--xh-text2)'}}>{r.reporter_username||'anon'}</b></div>
+                    </div>
+                    <div style={{display:'flex',gap:6,flexShrink:0}}>
+                      <button className='xh-btn-sm' onClick={()=>{const note=prompt('Resolution note (optional):','');api.admin.resolveReport(r.id,'resolved',note||'').then(()=>location.reload())}}>Resolve</button>
+                      <button className='xh-btn-sm xh-btn-warn' onClick={()=>{if(confirm('Dismiss this report? (use when the report is unfounded)'))api.admin.resolveReport(r.id,'dismissed','').then(()=>location.reload())}}>Dismiss</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
       )}
 
       {tab==='settings' && (
