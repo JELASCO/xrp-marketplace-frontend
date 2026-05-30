@@ -108,6 +108,11 @@ function Pill({children, color}) {
   return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:5,fontSize:10.5,fontWeight:600,background:c.bg,color:c.text,textTransform:'uppercase',letterSpacing:'0.04em'}}>{children}</span>;
 }
 
+function fmtDate(d) {
+  if (!d) return '—';
+  try { const dt = new Date(d); return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return d; }
+}
+
 export default function AdminPage() {
   const user = useAuthStore(s=>s.user);
   const hydrated = useAuthStore(s=>s.hydrated);
@@ -164,6 +169,9 @@ export default function AdminPage() {
     sold: listings.filter(l=>l.status==='sold').length,
     removed: listings.filter(l=>l.status==='removed').length,
   };
+  const completedOrders = listings.filter(l=>l.status==='sold' || (l.quantity_sold && l.quantity_sold>0));
+  const totalOrderVolume = completedOrders.reduce((sum,l)=> sum + (parseFloat(l.price_xrp)||0) * (l.quantity_sold||1), 0);
+  const totalFees = totalOrderVolume * 0.03;
 
   const trend = period==='24h' ? [3,5,4,7,6,9,8,11,9,12,10,14] : period==='7d' ? [12,18,15,22,19,24,21] : [45,52,48,61,58,65,72,68,75,82,78,85,91,88];
 
@@ -208,6 +216,7 @@ export default function AdminPage() {
           <button key={t.key} className='xh-tab' data-active={tab===t.key} onClick={()=>setTab(t.key)}>
             <span>{t.icon}</span> {t.label}
             {t.key==='escrows' && openDisputes.length>0 && <span className='xh-badge'>{openDisputes.length}</span>}
+            {t.key==='orders' && completedOrders.length>0 && <span style={{marginLeft:4,fontSize:11,color:'var(--xh-text3)'}}>({completedOrders.length})</span>}
           </button>
         ))}
       </div>
@@ -245,16 +254,19 @@ export default function AdminPage() {
             )}
           </Section>
 
-          <Section title={'Recent listings ('+listings.length+')'} action={<button className='xh-tab' onClick={()=>setTab('listings')} style={{padding:'4px 10px',fontSize:12}}>Manage →</button>}>
-            {listings.length===0 ? <Empty icon='📜' text='No listings yet'/> : (
+          <Section title={'Recent orders ('+completedOrders.length+')'} action={<button className='xh-tab' onClick={()=>setTab('orders')} style={{padding:'4px 10px',fontSize:12}}>View all →</button>}>
+            {completedOrders.length===0 ? <Empty icon='🛒' text='No completed orders yet'/> : (
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                {listings.slice(0,5).map(l=>(
+                {completedOrders.slice(0,5).map(l=>(
                   <div key={l.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13,gap:8}}>
                     <div style={{minWidth:0,flex:1}}>
                       <div style={{fontWeight:600,color:'var(--xh-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</div>
-                      <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>{(l.username||'anon')+' · '+l.price_xrp+' XRP · '+l.category}</div>
+                      <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>{(l.username||'anon')+' · sold '+(l.quantity_sold||1)+'×'}</div>
                     </div>
-                    <Pill color={l.status==='active'?'green':l.status==='sold'?'blue':'gray'}>{l.status}</Pill>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:13}}>{(parseFloat(l.price_xrp)*(l.quantity_sold||1)).toFixed(0)} XRP</div>
+                      <Pill color='green'>completed</Pill>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -298,6 +310,58 @@ export default function AdminPage() {
               </div>
             )}
           </Section>
+        </div>
+      )}
+
+      {tab==='orders' && (
+        <div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,marginBottom:20}}>
+            <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:10,padding:'14px 16px'}}>
+              <div style={{fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:4}}>Total orders</div>
+              <div style={{fontSize:22,fontWeight:800,color:'var(--xh-text)'}}>{completedOrders.length}</div>
+            </div>
+            <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:10,padding:'14px 16px'}}>
+              <div style={{fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:4}}>Order volume</div>
+              <div style={{fontSize:22,fontWeight:800,color:'var(--xh-text)'}}>{totalOrderVolume.toFixed(0)} XRP</div>
+            </div>
+            <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:10,padding:'14px 16px'}}>
+              <div style={{fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:4}}>Fees (est. 3%)</div>
+              <div style={{fontSize:22,fontWeight:800,color:'#16A34A'}}>{totalFees.toFixed(1)} XRP</div>
+            </div>
+            <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:10,padding:'14px 16px'}}>
+              <div style={{fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:4}}>Avg order</div>
+              <div style={{fontSize:22,fontWeight:800,color:'var(--xh-text)'}}>{completedOrders.length>0 ? (totalOrderVolume/completedOrders.length).toFixed(1) : '0'} XRP</div>
+            </div>
+          </div>
+
+          <Section title={'Completed orders ('+completedOrders.length+')'} action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Derived from sold listings</span>}>
+            {completedOrders.length===0 ? <Empty icon='🛒' text='No completed orders yet'/> : (
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {completedOrders.map(l=>(
+                  <div key={l.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13,gap:10,flexWrap:'wrap'}}>
+                    <div style={{minWidth:0,flex:1,display:'flex',alignItems:'center',gap:10}}>
+                      {l.images && l.images[0] && <img src={l.images[0]} alt='' style={{width:40,height:40,borderRadius:6,objectFit:'cover',flexShrink:0}}/>}
+                      <div style={{minWidth:0,flex:1}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                          <Link href={'/listings/'+l.id} target='_blank' style={{fontWeight:600,color:'var(--xh-text)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</Link>
+                          <Pill color='green'>{l.status==='sold'?'sold out':'completed'}</Pill>
+                          {l.seller_is_pro && <Pill color='yellow'>Pro seller</Pill>}
+                        </div>
+                        <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>{'seller: '+(l.username||'anon')+' · '+l.category+' · '+(l.quantity_sold||1)+' unit'+((l.quantity_sold||1)>1?'s':'')+' sold · '+fmtDate(l.updated_at||l.created_at)}</div>
+                      </div>
+                    </div>
+                    <div style={{textAlign:'right',minWidth:90}}>
+                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:14}}>{(parseFloat(l.price_xrp)*(l.quantity_sold||1)).toFixed(0)} XRP</div>
+                      <div style={{fontSize:10.5,color:'var(--xh-text3)',marginTop:2}}>{'fee: '+(parseFloat(l.price_xrp)*(l.quantity_sold||1)*(l.seller_is_pro?0.015:0.03)).toFixed(2)+' XRP'}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+          <div style={{fontSize:11.5,color:'var(--xh-text3)',padding:'8px 12px',background:'var(--xh-surface2)',borderRadius:8,marginTop:8,lineHeight:1.55}}>
+            <b style={{color:'var(--xh-text2)'}}>Note:</b> This view is reconstructed from sold listings + quantity_sold. For a proper orders table with buyer addresses, individual order IDs, and CSV export, a dedicated <code>/api/admin/orders</code> endpoint is still needed on the backend.
+          </div>
         </div>
       )}
 
@@ -360,15 +424,6 @@ export default function AdminPage() {
             endpoints={['GET /api/admin/escrows?status=funded|delivered|completed','GET /api/admin/escrows/:id (with XRPL tx hashes + chat thread)']}
           />
         </div>
-      )}
-
-      {tab==='orders' && (
-        <NeedsBackend
-          title='Order history'
-          why='Orders (completed trades) need their own collection on the backend so admins can search, filter, export CSV, and audit historical activity. Right now only escrows + listings are queryable, and there is no joined view of buyer + seller + amount + time.'
-          workaround='Listings tab shows sold listings (which represent completed orders) as a stopgap.'
-          endpoints={['GET /api/admin/orders?status=completed|refunded|disputed','GET /api/admin/orders/export.csv','GET /api/admin/orders/:id']}
-        />
       )}
 
       {tab==='reports' && (
