@@ -42,7 +42,9 @@ function MetricCard({label,value,delta,color,trend}) {
         </div>
         {trend && <Sparkline data={trend} color={color||'#1572E8'} width={70} height={28}/>}
       </div>
-      {delta && (<div style={{fontSize:11.5,color:isPositive?'#16A34A':'#DC2626',fontWeight:600}}>{delta} vs prev period</div>)}
+      {delta && (
+        <div style={{fontSize:11.5,color:isPositive?'#16A34A':'#DC2626',fontWeight:600}}>{delta} vs prev period</div>
+      )}
     </div>
   );
 }
@@ -106,29 +108,28 @@ function Pill({children, color}) {
   return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:5,fontSize:10.5,fontWeight:600,background:c.bg,color:c.text,textTransform:'uppercase',letterSpacing:'0.04em'}}>{children}</span>;
 }
 
-function SettingItem({icon, label, value, pill, hint, envKey, readonly=true}) {
-  return (
-    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'14px 16px',background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:10,marginBottom:8,gap:14,flexWrap:'wrap'}}>
-      <div style={{display:'flex',gap:12,minWidth:0,flex:1,alignItems:'flex-start'}}>
-        <div style={{width:34,height:34,borderRadius:8,background:'var(--xh-surface2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icon}</div>
-        <div style={{minWidth:0,flex:1}}>
-          <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-            <div style={{fontSize:13.5,fontWeight:600,color:'var(--xh-text)'}}>{label}</div>
-            {pill}
-            {readonly && <Pill color='gray'>read-only</Pill>}
-          </div>
-          {hint && <div style={{fontSize:11.5,color:'var(--xh-text3)',marginTop:3,lineHeight:1.5}}>{hint}</div>}
-          {envKey && <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:6,fontFamily:'monospace'}}>env: <code style={{background:'var(--xh-surface2)',padding:'1px 6px',borderRadius:4,color:'var(--xh-accent)'}}>{envKey}</code></div>}
-        </div>
-      </div>
-      <div style={{fontSize:14,fontWeight:700,color:'var(--xh-text)',fontFamily:'monospace',whiteSpace:'nowrap',textAlign:'right'}}>{value}</div>
-    </div>
-  );
-}
-
 function fmtDate(d) {
   if (!d) return '—';
   try { const dt = new Date(d); return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return d; }
+}
+
+function SettingItem({label, value, hint, pill, pillColor, envKey, icon}) {
+  return (
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'12px 14px',background:'var(--xh-surface2)',borderRadius:8,gap:12,flexWrap:'wrap'}}>
+      <div style={{minWidth:0,flex:1,display:'flex',alignItems:'flex-start',gap:10}}>
+        {icon && <div style={{fontSize:18,lineHeight:1,marginTop:2,opacity:0.7}}>{icon}</div>}
+        <div style={{minWidth:0,flex:1}}>
+          <div style={{fontSize:12.5,fontWeight:600,color:'var(--xh-text)',marginBottom:2,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>{label}{pill && <Pill color={pillColor||'gray'}>{pill}</Pill>}</div>
+          {hint && <div style={{fontSize:11,color:'var(--xh-text3)',marginBottom:4,lineHeight:1.45}}>{hint}</div>}
+          {envKey && <code style={{fontSize:10.5,color:'var(--xh-text3)',background:'var(--xh-bg2)',padding:'1px 6px',borderRadius:4,fontFamily:'monospace'}}>env: {envKey}</code>}
+        </div>
+      </div>
+      <div style={{textAlign:'right',minWidth:120}}>
+        <div style={{fontSize:13.5,fontWeight:700,color:'var(--xh-text)',fontFamily:typeof value==='string' && (value.startsWith('r') || value.includes('://') || value.includes('@'))?'monospace':'inherit',wordBreak:'break-all'}}>{value}</div>
+        <div style={{fontSize:10,color:'var(--xh-text3)',marginTop:2,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600}}>read-only</div>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminPage() {
@@ -455,52 +456,57 @@ export default function AdminPage() {
 
       {tab==='settings' && (
         <div>
-          <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:12,padding:'18px 20px',marginBottom:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-              <div style={{width:32,height:32,borderRadius:8,background:'var(--xh-tint)',color:'var(--xh-accent)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>⚙️</div>
-              <div>
-                <h3 style={{fontSize:15,fontWeight:700,color:'var(--xh-text)',margin:0}}>Platform configuration</h3>
-                <div style={{fontSize:11.5,color:'var(--xh-text3)',marginTop:2}}>Current live values — changes require redeploying with new env vars</div>
-              </div>
+          <Section title='Marketplace fees' action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Charged on each completed trade</span>}>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              <SettingItem icon='💸' label='Standard seller fee' value='3.0%' hint='Default platform fee charged to non-Pro sellers when an escrow releases.' envKey='PLATFORM_FEE_PCT'/>
+              <SettingItem icon='⭐' label='Pro seller fee' value='1.5%' pill='discount' pillColor='yellow' hint='Lower fee for Pro subscription holders — half of standard.' envKey='PRO_FEE_PCT'/>
             </div>
-          </div>
+          </Section>
 
-          <div style={{marginBottom:6,fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600,paddingLeft:4}}>Marketplace fees</div>
-          <SettingItem icon='💰' label='Standard seller fee' value='3.0%' pill={<Pill color='blue'>active</Pill>} hint='Taken from every completed trade as a separate on-chain payment at checkout.' envKey='PLATFORM_FEE_PCT'/>
-          <SettingItem icon='⭐' label='Pro seller fee' value='1.5%' pill={<Pill color='yellow'>pro</Pill>} hint='Discounted rate for Pro sellers. Grant Pro status from the Users tab.' envKey='PRO_FEE_PCT'/>
-          <div style={{marginTop:18,marginBottom:6,fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600,paddingLeft:4}}>XRPL network</div>
-          <SettingItem icon='🌐' label='Active network' value='Testnet' pill={<Pill color='yellow'>not mainnet</Pill>} hint='Set NODE_ENV=production and switch XRPL_NODE to wss://xrplcluster.com to go live on mainnet.' envKey='XRPL_NODE / NODE_ENV'/>
-          <SettingItem icon='🔗' label='WebSocket endpoint' value='altnet.rippletest' hint='Active XRPL JSON-RPC websocket. Switch to wss://xrplcluster.com for mainnet, or a private XRPL node URL.' envKey='XRPL_NODE'/>
-          <SettingItem icon='🔑' label='Platform wallet' value='configured' pill={<Pill color='green'>set</Pill>} hint='The XRPL address that receives platform fees from each trade. Stored server-side only — never exposed to the client for security.' envKey='PLATFORM_WALLET_ADDRESS'/>
-          <div style={{marginTop:18,marginBottom:6,fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600,paddingLeft:4}}>Escrow rules</div>
-          <SettingItem icon='⏱️' label='Auto-release window' value='7 days' hint='How long after seller marks delivered before the escrow auto-releases to the seller (if buyer takes no action).' envKey='ESCROW_AUTO_RELEASE_HOURS'/>
-          <SettingItem icon='⏳' label='Dispute window' value='24 hrs' hint='Window for buyer to open a dispute after delivery. Disputes pause auto-release.' envKey='DISPUTE_WINDOW_HOURS'/>
-          <div style={{marginTop:18,marginBottom:6,fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600,paddingLeft:4}}>Authentication</div>
-          <SettingItem icon='🐝' label='Xaman API key' value='configured' pill={<Pill color='green'>set</Pill>} hint='Xaman (formerly XUMM) wallet auth integration key. Get yours at apps.xaman.dev.' envKey='XUMM_API_KEY / XUMM_API_SECRET'/>
-          <SettingItem icon='🔐' label='JWT secret' value='configured' pill={<Pill color='green'>set</Pill>} hint='Server-side signing secret for session tokens. Rotate periodically.' envKey='JWT_SECRET'/>
-          <div style={{marginTop:18,marginBottom:6,fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.08em',fontWeight:600,paddingLeft:4}}>Live platform stats (read-only)</div>
-          <SettingItem icon='📊' label='Lifetime volume' value={stats ? Math.round(stats.volume_xrp||0).toLocaleString()+' XRP' : '—'} hint='Total XRP traded across all completed escrows.' readonly={false}/>
-          <SettingItem icon='💵' label='Estimated fees collected' value={stats ? Math.round((stats.volume_xrp||0)*0.03).toLocaleString()+' XRP' : '—'} hint='Total platform commission collected (3% of volume).' readonly={false}/>
-          <SettingItem icon='👥' label='Total users' value={stats ? (stats.total_users||0).toLocaleString() : '—'} hint='Wallets that have signed in at least once.' readonly={false}/>
-          <div style={{marginTop:24,background:'var(--xh-surface2)',border:'1px solid var(--xh-border)',borderRadius:10,padding:'16px 18px'}}>
+          <Section title='XRPL network'>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              <SettingItem icon='🌐' label='Network' value='Testnet' pill='not mainnet' pillColor='yellow' hint='All escrows currently run on the XRP Ledger testnet. Mainnet switch will move funds to real XRP.' envKey='XRPL_NODE / NODE_ENV'/>
+              <SettingItem icon='🔗' label='XRPL endpoint' value='altnet.rippletest' hint='Public testnet WebSocket node used for escrow create / fulfill / cancel.' envKey='XRPL_NODE'/>
+              <SettingItem icon='👛' label='Platform wallet' value='configured' pill='set' pillColor='green' hint='The XRPL address that collects platform fees. Set via env var — only the seed should ever live in Railway secrets.' envKey='PLATFORM_WALLET_ADDRESS'/>
+            </div>
+          </Section>
+
+          <Section title='Escrow rules'>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              <SettingItem icon='⏱️' label='Auto-release window' value='7 days' hint='If neither buyer nor seller acts, the escrow auto-releases to the seller after this many hours. Buyer can dispute before that.' envKey='ESCROW_AUTO_RELEASE_HOURS'/>
+              <SettingItem icon='⚠️' label='Dispute window' value='24 hrs' hint='How long a buyer has after delivery to open a dispute. After this, escrow can auto-release.' envKey='DISPUTE_WINDOW_HOURS'/>
+            </div>
+          </Section>
+
+          <Section title='Authentication'>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              <SettingItem icon='🔑' label='Xaman API key' value='configured' pill='set' pillColor='green' hint='Used to sign XUMM/Xaman wallet sign-in requests. Stored as a Railway secret, never exposed to the frontend.' envKey='XUMM_API_KEY / XUMM_API_SECRET'/>
+              <SettingItem icon='🛡️' label='JWT signing secret' value='configured' pill='set' pillColor='green' hint='Signs session tokens issued after wallet sign-in. Rotating this logs every user out.' envKey='JWT_SECRET'/>
+            </div>
+          </Section>
+
+          <Section title='Live platform stats' action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Read-only, derived from current data</span>}>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              <SettingItem icon='📊' label='Lifetime volume' value={(stats?Math.round(stats.volume_xrp||0).toLocaleString():'0')+' XRP'} hint='Total value of all escrows ever released.'/>
+              <SettingItem icon='💰' label='Estimated platform fees' value={(stats?Math.round((stats.volume_xrp||0)*0.03).toLocaleString():'0')+' XRP'} hint='Calculated at 3% standard rate. Actual collected fees depend on Pro seller mix.'/>
+              <SettingItem icon='👥' label='Total users' value={users.length.toString()} hint='Wallets that have completed sign-in at least once.'/>
+            </div>
+          </Section>
+
+          <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:12,padding:'18px 20px'}}>
             <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-              <div style={{fontSize:18}}>🔧</div>
+              <div style={{fontSize:18,lineHeight:1}}>ℹ️</div>
               <div style={{fontSize:14,fontWeight:700,color:'var(--xh-text)'}}>How to change a setting</div>
             </div>
-            <ol style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.7,paddingLeft:18,margin:0}}>
-              <li>Open the backend service on Railway → <b>Variables</b> tab.</li>
-              <li>Edit the env var (e.g. <code style={{background:'var(--xh-surface)',padding:'1px 6px',borderRadius:4,fontSize:11.5}}>PLATFORM_FEE_PCT</code>) and save.</li>
-              <li>Railway will auto-redeploy the backend in ~30 seconds.</li>
-              <li>If the value affects frontend display, redeploy on Vercel too (or restart Next.js cache).</li>
-            </ol>
-            <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
-              <a href='https://railway.com/project/d8f62bea-7586-4def-a550-56cf48bbabfd' target='_blank' rel='noopener' className='xh-btn-sm'>Open Railway →</a>
-              <a href='https://vercel.com/jelascos-projects/xrp-marketplace-frontend' target='_blank' rel='noopener' className='xh-btn-sm'>Open Vercel →</a>
+            <div style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.6,marginBottom:12}}>All values above are loaded from environment variables at backend boot. To change one, edit the variable in Railway and redeploy the backend service. Frontend will pick up the new behaviour on its next Vercel build.</div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              <a href='https://railway.com/project/d8f62bea-7586-4def-a550-56cf48bbabfd' target='_blank' rel='noopener noreferrer' className='xh-btn-sm' style={{textDecoration:'none'}}>→ Open Railway</a>
+              <a href='https://vercel.com/jelascos-projects/xrp-marketplace-frontend' target='_blank' rel='noopener noreferrer' className='xh-btn-sm' style={{textDecoration:'none'}}>→ Open Vercel</a>
             </div>
           </div>
 
-          <div style={{marginTop:16,padding:'12px 14px',background:'var(--xh-surface)',border:'1px dashed var(--xh-border2)',borderRadius:8,fontSize:11.5,color:'var(--xh-text3)',lineHeight:1.55}}>
-            <b style={{color:'var(--xh-text2)'}}>Future:</b> If you want to edit these values inline (without redeploying), add <code style={{color:'var(--xh-accent)',background:'var(--xh-surface2)',padding:'1px 6px',borderRadius:4}}>GET /api/admin/settings</code> + <code style={{color:'var(--xh-accent)',background:'var(--xh-surface2)',padding:'1px 6px',borderRadius:4}}>PATCH /api/admin/settings</code> on the backend with a settings table. The read-only/editable inputs above are already wired up to switch over.
+          <div style={{fontSize:11.5,color:'var(--xh-text3)',padding:'10px 12px',background:'var(--xh-surface2)',borderRadius:8,marginTop:10,lineHeight:1.55,border:'1px dashed var(--xh-border2)'}}>
+            <b style={{color:'var(--xh-text2)'}}>Roadmap:</b> Inline editing of these values will be available when <code>GET/PATCH /api/admin/settings</code> ships on the backend. Until then, this page is a single place to confirm what the platform is actually configured with.
           </div>
         </div>
       )}
