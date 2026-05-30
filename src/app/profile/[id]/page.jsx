@@ -98,6 +98,27 @@ export default function ProfilePage() {
               Visit store →
             </Link>
           )}
+          {currentUser && user && currentUser.id !== user.id && (
+            <button
+              type='button'
+              onClick={async()=>{
+                const reasons = ['scam','impersonation','harassment','spam','other'];
+                const reason = prompt('Why are you reporting this user?\n\nOptions: '+reasons.join(', '), 'scam');
+                if (!reason || !reasons.includes(reason.trim().toLowerCase())) { if(reason!==null) alert('Please pick one of: '+reasons.join(', ')); return; }
+                const details = prompt('Add more details (optional, max 2000 chars):','') || '';
+                try {
+                  await api.reports.create({ target_type:'user', target_id: user.id, reason: reason.trim().toLowerCase(), details });
+                  alert('Thanks — your report has been submitted. Admins will review it.');
+                } catch(e) {
+                  alert(e.message || 'Could not submit report.');
+                }
+              }}
+              style={{background:'transparent',border:'1px solid var(--xh-border2, #D2DBE6)',color:'var(--xh-text2, #4A5568)',padding:'6px 12px',borderRadius:8,fontSize:13,cursor:'pointer',fontWeight:500,whiteSpace:'nowrap'}}
+              title='Report this user to moderators'
+            >
+              ⚠️ Report
+            </button>
+          )}
           {isOwn && (
             <Link href="/settings" style={{background:'var(--surface2)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',borderRadius:8,padding:'8px 14px',fontSize:13,textDecoration:'none',whiteSpace:'nowrap'}}>
               Edit Profile
