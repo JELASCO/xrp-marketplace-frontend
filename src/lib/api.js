@@ -38,7 +38,7 @@ export const api = {
     users: () => request('/admin/users'),
     verifyUser: (id, v) => request(`/admin/users/${id}/verify`, { method: 'PATCH', body: { verified: v } }),
     grantPro: (id, days) => request(`/admin/users/${id}/pro`, { method: 'PATCH', body: { days } }),
-    featureListing: (id, days) => request(`/admin/listings/${id}/feature`, { method: 'PATCH', body: { days } }) },
+    featureListing: (id, days) => request(`/admin/listings/${id}/feature`, { method: 'PATCH', body: { days } }), listReports: (status='pending') => request('/admin/reports?status=' + encodeURIComponent(status)), resolveReport: (id, action, note) => request('/admin/reports/' + id + '/resolve', { method: 'PATCH', body: { action, note } }) },
   upgrades: {
     pricing: () => request('/upgrades/pricing'),
     payload: (kind, listingId) => request('/upgrades/payload', { method: 'POST', body: { kind, listingId } }),
@@ -73,4 +73,5 @@ export const api = {
     get: (handle) => request('/stores/' + handle),
     remove: () => request('/stores/me', { method: 'DELETE' }),
   },
+  reports: { create: (data) => request('/reports', { method: 'POST', body: data }) },
 };
