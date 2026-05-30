@@ -171,6 +171,27 @@ export default function ListingDetailPage({ params }) {
               title="Copy link" style={{flexShrink:0,marginTop:4,background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,padding:'6px 12px',fontSize:12,color:shareCopied?'var(--green)':'var(--text2)',cursor:'pointer',fontWeight:600}}>
               {shareCopied ? '✓ Copied' : '🔗 Share'}
             </button>
+            {user && listing.seller_id !== user.id && (
+              <button
+                type='button'
+                onClick={async()=>{
+                  const reasons = ['scam','prohibited_item','misleading','duplicate','impersonation','other'];
+                  const reason = prompt('Why are you reporting this listing?\n\nOptions: '+reasons.join(', '), 'scam');
+                  if (!reason || !reasons.includes(reason.trim().toLowerCase())) { if(reason!==null) alert('Please pick one of: '+reasons.join(', ')); return; }
+                  const details = prompt('Add more details (optional, max 2000 chars):','') || '';
+                  try {
+                    await api.reports.create({ target_type:'listing', target_id: listing.id, reason: reason.trim().toLowerCase(), details });
+                    alert('Thanks — your report has been submitted. Admins will review it.');
+                  } catch(e) {
+                    alert(e.message || 'Could not submit report.');
+                  }
+                }}
+                style={{background:'transparent',border:'1px solid var(--xh-border2, #D2DBE6)',color:'var(--xh-text2, #4A5568)',padding:'6px 12px',borderRadius:8,fontSize:13,cursor:'pointer',fontWeight:500}}
+                title='Report this listing to moderators'
+              >
+                ⚠️ Report
+              </button>
+            )}
           </div>
           <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--text)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{Number(listing.price_xrp).toLocaleString()} <span style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>XRP</span>{listing.quantity > 1 && listing.quantity_sold != null && !isSold && <span style={{fontSize:13,fontWeight:600,color:'var(--text3)',marginLeft:10}}>{Math.max(0, listing.quantity - listing.quantity_sold)} in stock</span>}</div>
           {listing.is_digital && <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#3b82f6',marginBottom:16}}>⚡ Instant delivery · content unlocks right after escrow payment</div>}
