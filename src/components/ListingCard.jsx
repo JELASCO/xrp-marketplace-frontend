@@ -34,8 +34,8 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         {onToggleFavorite && <button onClick={(e)=>{e.preventDefault();e.stopPropagation();onToggleFavorite(id);}} style={{position:'absolute',top:8,right:8,zIndex:10,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.2)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}><span style={{fontSize:16,color:isFavorited?'#f87171':'var(--text2)'}}>{isFavorited?'♥':'♡'}</span></button>}
         <div style={{height:130,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
           {images?.[0] ? <img src={images[0]} alt={title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:40}}>📦</span>}
-          <div style={{position:'absolute',bottom:8,left:8,background:cat.bg,color:cat.color,borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>{label}</div>
-          {is_featured && <div style={{position:'absolute',top:8,right:8,background:'rgba(245,158,11,0.2)',color:'#fbbf24',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>★ Featured</div>}
+          <div style={{position:'absolute',top:8,left:8,background:cat.bg,color:cat.color,borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>{label}</div>
+          {is_featured && <div style={{position:'absolute',top:36,left:8,background:'rgba(245,158,11,0.95)',color:'#fff',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>★ Featured</div>}
           {soldOut && <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{background:'#ef4444',color:'#fff',borderRadius:6,padding:'4px 12px',fontSize:13,fontWeight:700}}>SOLD OUT</span></div>}
         </div>
         <div style={{padding:'12px 14px'}}>
