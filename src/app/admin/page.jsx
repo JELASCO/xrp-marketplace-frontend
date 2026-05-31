@@ -110,7 +110,7 @@ function Pill({children, color}) {
 
 function fmtDate(d) {
   if (!d) return '—';
-  try { const dt = new Date(d); return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return d; }
+  try { const dt = new Date(d); return dt.toLocaleDateString('en-US') + ' ' + dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return d; }
 }
 
 function SettingItem({label, value, hint, pill, pillColor, envKey, icon}) {
@@ -251,8 +251,8 @@ export default function AdminPage() {
             ))}
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12,marginBottom:20}}>
-            <MetricCard label='Volume (XRP)' value={stats ? Math.round(stats.volume_xrp||0).toLocaleString() : '—'} delta='+12.4%' color='#1572E8' trend={trend}/>
-            <MetricCard label='Fees collected' value={stats ? (Math.round((stats.volume_xrp||0)*0.03)).toLocaleString() : '—'} delta='+12.4%' color='#16A34A' trend={trend.map(v=>v*0.6)}/>
+            <MetricCard label='Volume (XRP)' value={stats ? Math.round(stats.volume_xrp||0).toLocaleString('en-US') : '—'} delta='+12.4%' color='#1572E8' trend={trend}/>
+            <MetricCard label='Fees collected' value={stats ? (Math.round((stats.volume_xrp||0)*0.03)).toLocaleString('en-US') : '—'} delta='+12.4%' color='#16A34A' trend={trend.map(v=>v*0.6)}/>
             <MetricCard label='Active listings' value={stats ? (stats.active_listings||0).toString() : '—'} delta='+4' color='#9333EA' trend={trend.map(v=>v*1.2)}/>
             <MetricCard label='Open disputes' value={openDisputes.length.toString()} delta={openDisputes.length>0?'needs review':'all clear'} color='#DC2626' trend={[1,0,2,1,3,2,openDisputes.length||1]}/>
           </div>
@@ -516,8 +516,8 @@ export default function AdminPage() {
 
           <Section title='Live platform stats' action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Read-only, derived from current data</span>}>
             <div style={{display:'flex',flexDirection:'column',gap:6}}>
-              <SettingItem icon='📊' label='Lifetime volume' value={(stats?Math.round(stats.volume_xrp||0).toLocaleString():'0')+' XRP'} hint='Total value of all escrows ever released.'/>
-              <SettingItem icon='💰' label='Estimated platform fees' value={(stats?Math.round((stats.volume_xrp||0)*0.03).toLocaleString():'0')+' XRP'} hint='Calculated at 3% standard rate. Actual collected fees depend on Pro seller mix.'/>
+              <SettingItem icon='📊' label='Lifetime volume' value={(stats?Math.round(stats.volume_xrp||0).toLocaleString('en-US'):'0')+' XRP'} hint='Total value of all escrows ever released.'/>
+              <SettingItem icon='💰' label='Estimated platform fees' value={(stats?Math.round((stats.volume_xrp||0)*0.03).toLocaleString('en-US'):'0')+' XRP'} hint='Calculated at 3% standard rate. Actual collected fees depend on Pro seller mix.'/>
               <SettingItem icon='👥' label='Total users' value={users.length.toString()} hint='Wallets that have completed sign-in at least once.'/>
             </div>
           </Section>
