@@ -42,7 +42,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{title}</div>
           <div style={{fontSize:11,color:'var(--text3)',marginBottom:10,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{game}{stockLeft != null && quantity > 1 && !soldOut ? ` · ${stockLeft} left` : ''}</div>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-            <span style={{fontSize:15,fontWeight:700,color:'var(--text)',whiteSpace:'nowrap'}}>{Number(price_xrp).toLocaleString()} <span style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>XRP</span></span>
+            <span style={{fontSize:15,fontWeight:700,color:'var(--text)',whiteSpace:'nowrap'}}>{Number(price_xrp).toLocaleString('en-US')} <span style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>XRP</span></span>
             <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'var(--text3)',minWidth:0}}>
               <div onClick={store_handle ? goToStore : undefined} style={{width:18,height:18,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:7,fontWeight:700,color:'#fff',flexShrink:0,cursor:store_handle?'pointer':'default'}}>
                 {username?.slice(0,2).toUpperCase()}
