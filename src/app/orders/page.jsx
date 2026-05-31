@@ -247,10 +247,10 @@ export default function OrdersPage() {
               <button onClick={() => toggleOpen(order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'16px 18px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{order.listing_title||'Item'}</div>
-                  <div style={{fontSize:11,color:'var(--text3)'}}>{new Date(order.created_at).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})}</div>
+                  <div style={{fontSize:11,color:'var(--text3)'}}>{new Date(order.created_at).toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'})}</div>
                 </div>
                 <div style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-                  <span style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{Number(order.total_xrp).toLocaleString()} XRP</span>
+                  <span style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{Number(order.total_xrp).toLocaleString('en-US')} XRP</span>
                   <span style={{fontSize:11,fontWeight:500,padding:'3px 8px',borderRadius:20,background:st.bg,color:st.color}}>{st.label}</span>
                   <span style={{color:'var(--text3)',fontSize:10}}>{exp?'▲':'▼'}</span>
                 </div>
