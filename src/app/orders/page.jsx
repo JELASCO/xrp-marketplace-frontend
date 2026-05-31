@@ -245,6 +245,11 @@ export default function OrdersPage() {
           return (
             <div key={order.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
               <button onClick={() => toggleOpen(order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'16px 18px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
+                {order.images && order.images[0] ? (
+                  <img src={order.images[0]} alt='' style={{width:48,height:48,borderRadius:8,objectFit:'cover',flexShrink:0,background:'var(--surface)'}}/>
+                ) : (
+                  <div style={{width:48,height:48,borderRadius:8,background:'var(--surface)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>📦</div>
+                )}
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{order.listing_title||'Item'}</div>
                   <div style={{fontSize:11,color:'var(--text3)'}}>{new Date(order.created_at).toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'})}</div>
