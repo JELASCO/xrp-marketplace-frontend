@@ -72,7 +72,7 @@ export default function ProPage() {
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Priority placement in search</li>
           </ul>
           {proActive
-            ? <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>Active until {new Date(user.proUntil).toLocaleDateString()}. Buying again extends it.</div>
+            ? <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>Active until {new Date(user.proUntil).toLocaleDateString('en-US')}. Buying again extends it.</div>
             : null}
           <button onClick={buyPro} style={{ width: '100%', marginTop: proActive ? 10 : 0, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
             {proActive ? 'Extend Pro' : 'Get Pro'}
