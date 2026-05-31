@@ -9,13 +9,14 @@ export default function DashboardPage() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
   const loading = useAuthStore(s => s.loading);
+  const hydrated = useAuthStore(s => s.hydrated);
   const [stats, setStats] = useState(null);
   const [offers, setOffers] = useState([]);
   const [error, setError] = useState('');
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
-    if (loading) return;
+    if (!hydrated || loading) return;
     if (!user) { router.push('/'); return; }
     setLoadingStats(true);
     Promise.all([
