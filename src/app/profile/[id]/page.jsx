@@ -19,7 +19,7 @@ function timeAgo(d) {
 
 function formatJoined(d) {
   if (!d) return '';
-  return new Date(d).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
 export default function ProfilePage() {
