@@ -91,9 +91,9 @@ export default function Navbar() {
         * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; }
         @media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}
       `}</style>
-      <nav style={{background:'#000',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(255,255,255,0.08)',position:'sticky',top:0,zIndex:50,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}>
+      <nav style={{background:'#f5f6f8',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(0,0,0,0.08)',position:'sticky',top:0,zIndex:50,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
-          <Link href="/" style={{fontWeight:800,fontSize:18,color:'#fff',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
+          <Link href="/" style={{fontWeight:800,fontSize:18,color:'#14161a',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
             <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
               <circle cx="32" cy="14" r="5" stroke="#fff" strokeWidth="3.5" fill="none"/>
               <line x1="32" y1="19" x2="32" y2="50" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
@@ -105,7 +105,7 @@ export default function Navbar() {
             <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
           <form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
-            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',color:'#fff',borderRadius:8,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}
+            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',color:'#14161a',borderRadius:8,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}
               placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8b8f96',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -113,26 +113,26 @@ export default function Navbar() {
           </form>
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
-              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#d4d6da',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
+              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#14161a',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
                 onMouseEnter={e=>{e.currentTarget.style.color='#fff';e.currentTarget.style.background='rgba(255,255,255,0.06)';e.currentTarget.style.border='1px solid rgba(255,255,255,0.1)'}}
                 onMouseLeave={e=>{e.currentTarget.style.color='#d4d6da';e.currentTarget.style.background='transparent';e.currentTarget.style.border='1px solid transparent'}}>
                 {l.label}
               </Link>
             ))}
           </div>
-          <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#fff',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
+          <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#14161a',background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
             XRP <span style={{color: priceDir==='up' ? '#34d399' : priceDir==='down' ? '#f87171' : 'var(--green)', transition:'color 0.3s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(xrpPrice < 10 ? 4 : 2) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
           </div>
           {user ? (
             <>
             <div ref={notifRef} style={{position:'relative'}}>
               <button onClick={openNotifs} aria-label="Notifications"
-                style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,cursor:'pointer',color:'#d4d6da',position:'relative',padding:0,flexShrink:0}}>
+                style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',borderRadius:8,cursor:'pointer',color:'#14161a',position:'relative',padding:0,flexShrink:0}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                {unread > 0 && <span style={{position:'absolute',top:-4,right:-4,minWidth:16,height:16,padding:'0 4px',background:'#ef4444',color:'#fff',fontSize:10,fontWeight:700,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>{unread>9?'9+':unread}</span>}
+                {unread > 0 && <span style={{position:'absolute',top:-4,right:-4,minWidth:16,height:16,padding:'0 4px',background:'#ef4444',color:'#14161a',fontSize:10,fontWeight:700,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>{unread>9?'9+':unread}</span>}
               </button>
               {showNotifs && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:300,maxHeight:380,overflowY:'auto',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:300,maxHeight:380,overflowY:'auto',background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
                   <div style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:700,color:'var(--text)'}}>Notifications</div>
                   {notifs.length === 0 ? (
                     <div style={{padding:'24px 14px',textAlign:'center',fontSize:12,color:'var(--text3)'}}>No notifications yet</div>
@@ -148,14 +148,14 @@ export default function Navbar() {
             </div>
             <div ref={menuRef} style={{position:'relative'}}>
               <button onClick={()=>setShowMenu(v=>!v)}
-                style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#fff',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
-                <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#fff',flexShrink:0}}>
+                style={{display:'flex',alignItems:'center',gap:8,background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#14161a',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
+                <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#14161a',flexShrink:0}}>
                   {user.username?.slice(0,2).toUpperCase()}
                 </div>
-                <span style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#fff'}}>{user.username}</span>
+                <span style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#14161a'}}>{user.username}</span>
               </button>
               {showMenu && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
                   {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List an Item'},{href:'/dashboard',label:'Dashboard'},{href:'/pro',label:'⭐ Upgrade to Pro'},{href:'/favorites',label:'Favorites'},{href:'/messages',label:'Messages'},{href:`/profile/${user.id}`,label:'My Profile'},{href:'/orders',label:'My Orders'},{href:'/settings',label:'Settings'}].map(i=>(
                     <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
                       style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--text2)',textDecoration:'none',transition:'all 0.15s'}}
@@ -175,7 +175,7 @@ export default function Navbar() {
             </>
           ) : (
             <button onClick={()=>setShowLogin(true)}
-              style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+              style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#14161a',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
  Connect Xumm
             </button>
           )}
@@ -215,16 +215,16 @@ function NotificationsBell() {
 
   return (
     <div style={{position:'relative'}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,cursor:'pointer',color:'var(--text2)',position:'relative',padding:0}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:8,cursor:'pointer',color:'var(--text2)',position:'relative',padding:0}}>
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
         {unread > 0 && (
-          <span style={{position:'absolute',top:-4,right:-4,background:'var(--red)',color:'#fff',fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px',border:'2px solid #0a0d13'}}>{unread > 9 ? '9+' : unread}</span>
+          <span style={{position:'absolute',top:-4,right:-4,background:'var(--red)',color:'#14161a',fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px',border:'2px solid #0a0d13'}}>{unread > 9 ? '9+' : unread}</span>
         )}
       </button>
       {open && (
         <>
           <div onClick={()=>setOpen(false)} style={{position:'fixed',inset:0,zIndex:99}}/>
-          <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:340,maxWidth:'90vw',maxHeight:440,overflow:'hidden',display:'flex',flexDirection:'column',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
+          <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:340,maxWidth:'90vw',maxHeight:440,overflow:'hidden',display:'flex',flexDirection:'column',background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderBottom:'1px solid var(--border)'}}>
               <span style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>Notifications</span>
               {unread > 0 && (
