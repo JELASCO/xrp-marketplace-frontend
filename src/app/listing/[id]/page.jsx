@@ -193,7 +193,7 @@ export default function ListingDetailPage({ params }) {
               </button>
             )}
           </div>
-          <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--text)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{Number(listing.price_xrp).toLocaleString()} <span style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>XRP</span>{listing.quantity > 1 && listing.quantity_sold != null && !isSold && <span style={{fontSize:13,fontWeight:600,color:'var(--text3)',marginLeft:10}}>{Math.max(0, listing.quantity - listing.quantity_sold)} in stock</span>}</div>
+          <div style={{fontSize:32,fontWeight:800,color: isSold ? 'var(--text3)' : 'var(--text)',marginBottom:16,textDecoration: isSold ? 'line-through' : 'none'}}>{Number(listing.price_xrp).toLocaleString('en-US')} <span style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>XRP</span>{listing.quantity > 1 && listing.quantity_sold != null && !isSold && <span style={{fontSize:13,fontWeight:600,color:'var(--text3)',marginLeft:10}}>{Math.max(0, listing.quantity - listing.quantity_sold)} in stock</span>}</div>
           {listing.is_digital && <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'#3b82f6',marginBottom:16}}>⚡ Instant delivery · content unlocks right after escrow payment</div>}
           <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
             <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff',fontSize:14}}>{listing.username?.slice(0,2).toUpperCase()}</div>
@@ -263,7 +263,7 @@ export default function ListingDetailPage({ params }) {
               </div>
               <div style={{ padding: '10px 12px' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{Number(l.price_xrp).toLocaleString()} <span style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>XRP</span></div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{Number(l.price_xrp).toLocaleString('en-US')} <span style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>XRP</span></div>
               </div>
             </a>
           ))}
