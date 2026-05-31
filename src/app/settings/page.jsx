@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
   const loading = useAuthStore(s => s.loading);
+  const hydrated = useAuthStore(s => s.hydrated);
   const fetchMe = useAuthStore(s => s.fetchMe);
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
@@ -33,7 +34,7 @@ export default function SettingsPage() {
   const [prefs, setPrefs] = useState({ new_order:true, order_completed:true, dispute_opened:true, dispute_resolved:true, new_review:true });
 
   useEffect(() => {
-    if (loading) return;
+    if (!hydrated || loading) return;
     if (!user) { router.push('/'); return; }
     setUsername(user.username || '');
     setBio(user.bio || '');
