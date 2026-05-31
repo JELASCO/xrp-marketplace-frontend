@@ -227,11 +227,45 @@ export default function HomePage() {
       </div>
 
       {/* FOOTER */}
-      <footer style={{textAlign:'center',padding:'28px 16px',marginTop:24,borderTop:'1px solid var(--xh-border)',color:'var(--xh-text3)',fontSize:12.5,display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:'center'}}>
-        <div>© 2026 XRPHarbor · Built on the XRP Ledger</div>
-        <div style={{display:'flex',gap:16}}>
-          <a href="/tos" style={{color:'var(--xh-text3)',textDecoration:'none'}}>Terms</a>
-          <a href="/privacy" style={{color:'var(--xh-text3)',textDecoration:'none'}}>Privacy</a>
+      <footer style={{marginTop:48,paddingTop:40,borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))'}}>
+        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:32,maxWidth:1200,margin:'0 auto',padding:'0 16px',fontSize:14}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,fontWeight:700,fontSize:16}}>⚓ <span>XRP<span style={{color:'var(--xh-accent, #3b82f6)'}}>Harbor</span></span></div>
+            <p style={{color:'var(--xh-text3, #6b7280)',lineHeight:1.6,margin:0,maxWidth:320}}>The safe harbor for gaming assets. P2P trading with XRPL escrow protection.</p>
+            <div style={{display:'flex',gap:14,marginTop:16}}>
+              <a href="https://x.com/xrpharbor" target="_blank" rel="noopener" aria-label="X / Twitter" style={{color:'var(--xh-text3, #6b7280)',textDecoration:'none',fontSize:18}}>𝕏</a>
+              <a href="https://discord.gg/xrpharbor" target="_blank" rel="noopener" aria-label="Discord" style={{color:'var(--xh-text3, #6b7280)',textDecoration:'none',fontSize:18}}>💬</a>
+              <a href="https://github.com/JELASCO" target="_blank" rel="noopener" aria-label="GitHub" style={{color:'var(--xh-text3, #6b7280)',textDecoration:'none',fontSize:18}}>⚙️</a>
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Marketplace</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <Link href="/listings" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Browse</Link>
+              <Link href="/listings/new" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>List item</Link>
+              <Link href="/pro" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>XRPHarbor Pro</Link>
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Resources</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <a href="#how-it-works" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>How escrow works</a>
+              <Link href="/tos#fees" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Fees</Link>
+              <a href="mailto:support@xrpharbor.com" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Support</a>
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Legal</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <Link href="/tos" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Terms</Link>
+              <Link href="/privacy" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Privacy</Link>
+              <a href="mailto:contact@xrpharbor.com" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Contact</a>
+            </div>
+          </div>
+        </div>
+        <div style={{maxWidth:1200,margin:'32px auto 0',padding:'24px 16px 32px',borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12,fontSize:13,color:'var(--xh-text3, #6b7280)'}}>
+          <div>© 2026 XRPHarbor · Built on the XRP Ledger</div>
+          <div>Trade at your own risk · No financial advice</div>
         </div>
       </footer>
     </div>
