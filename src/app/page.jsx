@@ -66,7 +66,7 @@ export default function HomePage() {
     }).catch(()=>{});
   },[]);
 
-  const fmtNum = n => (n||0).toLocaleString();
+  const fmtNum = n => (n||0).toLocaleString('en-US');
   const fmtXrp = n => n > 999 ? (n/1000).toFixed(1)+'k' : Math.round(n||0).toString();
 
   return (
