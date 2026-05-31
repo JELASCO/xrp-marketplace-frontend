@@ -7,6 +7,7 @@ import { useAuthStore } from '../../lib/store';
 export default function MessagesPage() {
   const router = useRouter();
   const user = useAuthStore(s => s.user);
+  const hydrated = useAuthStore(s => s.hydrated);
   const [convos, setConvos] = useState([]);
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -16,6 +17,7 @@ export default function MessagesPage() {
   const bottomRef = useRef(null);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push('/'); return; }
     api.contact.inquiries()
       .then(data => setConvos(data || []))
