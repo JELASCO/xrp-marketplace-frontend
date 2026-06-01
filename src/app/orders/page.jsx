@@ -29,6 +29,7 @@ export default function OrdersPage() {
   const [reviewState, setReviewState] = useState({});
   const [attemptedPay, setAttemptedPay] = useState({}); // orderId -> true once user opened the pay flow
   const [syncing, setSyncing] = useState(null); // orderId currently being synced
+  const [delivering, setDelivering] = useState(null); // orderId currently being marked delivered
 
   useEffect(() => {
     if (!user) return;
@@ -176,6 +177,15 @@ export default function OrdersPage() {
         api.orders.mine(role).then(setOrders);
       }
     } catch(e) { alert(e.message); }
+  }
+
+  async function handleDeliver(order) {
+    setDelivering(order.id);
+    try {
+      await api.orders.deliver(order.id);
+      await api.orders.mine(role).then(setOrders);
+    } catch(e) { alert(e.message); }
+    finally { setDelivering(null); }
   }
 
   async function handleCancel(order) {
@@ -355,7 +365,14 @@ export default function OrdersPage() {
                   {role==='seller' && (order.status==='escrow_locked'||order.status==='delivered') && (
                     <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--text2)'}}>
                       <div style={{fontWeight:600,color:'var(--text)',marginBottom:4}}>💰 Buyer paid — funds secured in escrow</div>
-                      Deliver the item to the buyer now. Once they confirm receipt and release, the {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP lands in your wallet.
+                      {order.status==='delivered' ? (
+                        <div>You marked this delivered. Waiting for the buyer to confirm receipt and release the {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP to your wallet.</div>
+                      ) : (<>
+                        <div style={{marginBottom:10}}>Deliver the item to the buyer now, then mark it delivered. Once they confirm receipt and release, the {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP lands in your wallet.</div>
+                        <button onClick={() => handleDeliver(order)} disabled={delivering===order.id} style={{width:'100%',background:delivering===order.id?'var(--surface2)':'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:delivering===order.id?'default':'pointer',fontFamily:'inherit'}}>
+                          {delivering===order.id ? 'Marking...' : 'Mark as delivered'}
+                        </button>
+                      </>)}
                     </div>
                   )}
                   {role==='seller' && order.status==='pending' && (
