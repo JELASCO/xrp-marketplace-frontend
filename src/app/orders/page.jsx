@@ -8,6 +8,8 @@ const STATUS_MAP = {
   pending:       {label:'Pending',   color:'var(--text2)', bg:'var(--border)'},
   awaiting_payment: {label:'Awaiting Payment', color:'var(--amber)', bg:'rgba(245,158,11,0.12)'}, escrow_locked: {label:'In Escrow', color:'var(--accent2)', bg:'rgba(59,130,246,0.12)'},
   delivered:     {label:'Delivered', color:'var(--accent2)', bg:'rgba(59,130,246,0.12)'},
+  release_approved: {label:'Release Approved', color:'#34d399', bg:'rgba(16,185,129,0.12)'},
+  refund_approved:  {label:'Refund Approved', color:'var(--accent2)', bg:'rgba(59,130,246,0.12)'},
   completed:     {label:'Completed', color:'#34d399', bg:'rgba(16,185,129,0.12)'},
   disputed:      {label:'Disputed',  color:'#fbbf24', bg:'rgba(245,158,11,0.12)'},
   refunded:      {label:'Refunded',  color:'var(--text2)', bg:'var(--border)'},
@@ -110,6 +112,15 @@ export default function OrdersPage() {
       const result = await api.orders.escrowCancel(order.id);
       if (result.xumm) {
         setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'reclaim' });
+      }
+    } catch(e) { alert(e.message); }
+  }
+
+  async function handleClaim(order) {
+    try {
+      const result = await api.orders.claim(order.id);
+      if (result.xumm) {
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'release' });
       }
     } catch(e) { alert(e.message); }
   }
@@ -334,12 +345,22 @@ export default function OrdersPage() {
                     </div>
                     );
                   })()}
-                  {order.status==='refunded' && (
+                  {order.status==='refund_approved' && role==='buyer' && (
                     <div style={{background:'rgba(239,68,68,0.06)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'12px 14px'}}>
-                      <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:8}}>Refund approved</div>
-                      <div style={{fontSize:12,color:'var(--text3)',marginBottom:10}}>You can reclaim your escrowed funds back to your wallet.</div>
-                      <button onClick={() => handleReclaim(order)} style={{width:'100%',background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Reclaim funds to wallet</button>
+                      <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:8}}>Refund approved by support</div>
+                      <div style={{fontSize:12,color:'var(--text3)',marginBottom:10}}>Reclaim your escrowed funds back to your wallet. Available once the on-chain hold period passes.</div>
+                      <button onClick={() => handleReclaim(order)} style={{width:'100%',background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Reclaim refund to wallet</button>
                     </div>
+                  )}
+                  {order.status==='release_approved' && role==='seller' && (
+                    <div style={{background:'rgba(16,185,129,0.06)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'12px 14px'}}>
+                      <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:8}}>Release approved by support</div>
+                      <div style={{fontSize:12,color:'var(--text3)',marginBottom:10}}>The dispute was resolved in your favour. Claim the escrowed {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP to your wallet.</div>
+                      <button onClick={() => handleClaim(order)} style={{width:'100%',background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Claim funds to wallet</button>
+                    </div>
+                  )}
+                  {order.status==='refunded' && (
+                    <div style={{background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'12px',textAlign:'center',fontSize:13,fontWeight:600,color:'#34d399'}}>Refund completed</div>
                   )}
                   {order.status==='completed' && <div style={{background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'12px',textAlign:'center',fontSize:13,fontWeight:600,color:'#34d399'}}>✓ Transaction completed!</div>}
                   {order.status==='completed' && role==='buyer' && (() => {
