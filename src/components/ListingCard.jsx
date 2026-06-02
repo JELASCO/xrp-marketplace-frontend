@@ -10,7 +10,12 @@ const CAT_COLORS = {
   other:    {bg:'rgba(245,158,11,0.12)',color:'#fbbf24'},
 };
 const CAT_LABELS = {games:'Games',graphics:'Graphics & Art',software:'Software',accounts:'Accounts',other:'Other'};
-const GAME_EMOJIS = {};
+const CAT_ICONS = {games:'🎮',graphics:'🎨',software:'💻',accounts:'👤',other:'📦'};
+const catFallbackBg = (c) => {
+  const m = {games:'59,130,246',graphics:'139,92,246',software:'20,184,166',accounts:'120,130,145',other:'245,158,11'};
+  const rgb = m[c] || m.other;
+  return `linear-gradient(135deg, rgba(${rgb},0.10), rgba(${rgb},0.03))`;
+};
 
 
 export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
@@ -33,7 +38,12 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         onMouseLeave={e=>{e.currentTarget.style.border=is_featured?'1px solid rgba(59,130,246,0.4)':'1px solid var(--border)';e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>
         {onToggleFavorite && <button onClick={(e)=>{e.preventDefault();e.stopPropagation();onToggleFavorite(id);}} style={{position:'absolute',top:8,right:8,zIndex:10,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.2)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}><span style={{fontSize:16,color:isFavorited?'#f87171':'var(--text2)'}}>{isFavorited?'♥':'♡'}</span></button>}
         <div style={{height:130,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
-          {images?.[0] ? <img src={images[0]} alt={title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:40}}>📦</span>}
+          {images?.[0]
+            ? <img src={images[0]} alt={title} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+            : <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,background:catFallbackBg(category)}}>
+                <span style={{fontSize:34,opacity:0.55}}>{CAT_ICONS[category] || CAT_ICONS.other}</span>
+                <span style={{fontSize:10,fontWeight:600,color:cat.color,opacity:0.7,letterSpacing:0.3}}>{label}</span>
+              </div>}
           <div style={{position:'absolute',top:8,left:8,background:cat.bg,color:cat.color,borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>{label}</div>
           {is_featured && <div style={{position:'absolute',top:36,left:8,background:'rgba(245,158,11,0.95)',color:'#fff',borderRadius:20,padding:'2px 8px',fontSize:11,fontWeight:600}}>★ Featured</div>}
           {soldOut && <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{background:'#ef4444',color:'#fff',borderRadius:6,padding:'4px 12px',fontSize:13,fontWeight:700}}>SOLD OUT</span></div>}
