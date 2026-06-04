@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
+import XummLoginModal from '../../../components/XummLoginModal';
 
 const CAT_COLORS = { games:{bg:'rgba(59,130,246,0.12)',color:'#60a5fa'}, graphics:{bg:'rgba(139,92,246,0.12)',color:'#a78bfa'}, software:{bg:'rgba(20,184,166,0.12)',color:'#2dd4bf'}, accounts:{bg:'var(--border)',color:'var(--text2)'}, other:{bg:'rgba(245,158,11,0.12)',color:'#fbbf24'} };
 const CAT_LABELS = { games:'Games', graphics:'Graphics & Art', software:'Software', accounts:'Accounts', other:'Other' };
@@ -14,6 +15,7 @@ export default function ListingDetailPage({ params }) {
   const { id } = params;
   const router = useRouter();
   const user = useAuthStore(s => s.user);
+  const [showLogin, setShowLogin] = useState(false);
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
@@ -70,7 +72,7 @@ export default function ListingDetailPage({ params }) {
   }, [id, user]);
 
   const handleOffer=async()=>{if(!user||!listing||!offerAmount)return;setOfferSending(true);try{const res=await api.offers.send(listing.id,parseFloat(offerAmount),offerMsg.trim()||undefined);if(res.xumm){setOfferXumm(res.xumm);setOfferSent(true);}else{setOfferSent(true);setTimeout(()=>{setOfferSent(false);setShowOfferModal(false);},2000);}}catch(e){alert(e.message||'Failed');}finally{setOfferSending(false);}};const toggleFav=async()=>{if(!user)return;const n=!isFav;setIsFav(n);if(n)await api.favorites.add(listing.id).catch(()=>setIsFav(false));else await api.favorites.remove(listing.id).catch(()=>setIsFav(true));};const handleMessage=async()=>{if(!user||!listing||!msgInput.trim())return;setMsgSending(true);try{await api.contact.send(listing.id,msgInput.trim());setMsgSent(true);setMsgInput('');setTimeout(()=>{setMsgSent(false);setShowMsgModal(false);},2000);}catch(e){alert(e.message||'Failed');}finally{setMsgSending(false);}};async function handleBuy() {
-    if (!user) return setBuyError('Please sign in first');
+    if (!user) { setShowLogin(true); return; }
     setBuying(true); setBuyError('');
     try {
       const o = await api.orders.create(id);
@@ -270,6 +272,7 @@ export default function ListingDetailPage({ params }) {
         </div>
       </div>
     )}
+      {showLogin && <XummLoginModal onClose={()=>setShowLogin(false)}/>}
 </div>
   );
 }
