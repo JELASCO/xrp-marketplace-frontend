@@ -114,8 +114,8 @@ export default function Navbar() {
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
               <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#14161a',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
-                onMouseEnter={e=>{e.currentTarget.style.color='#fff';e.currentTarget.style.background='rgba(255,255,255,0.06)';e.currentTarget.style.border='1px solid rgba(255,255,255,0.1)'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='#d4d6da';e.currentTarget.style.background='transparent';e.currentTarget.style.border='1px solid transparent'}}>
+                onMouseEnter={e=>{e.currentTarget.style.color='var(--accent)';e.currentTarget.style.background='rgba(59,130,246,0.08)';e.currentTarget.style.border='1px solid rgba(59,130,246,0.15)'}}
+                onMouseLeave={e=>{e.currentTarget.style.color='#14161a';e.currentTarget.style.background='transparent';e.currentTarget.style.border='1px solid transparent'}}>
                 {l.label}
               </Link>
             ))}
