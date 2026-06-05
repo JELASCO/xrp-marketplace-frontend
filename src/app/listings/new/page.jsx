@@ -176,6 +176,7 @@ export default function NewListingPage() {
 
           <div>
             <label className="label">Product Images <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(up to 6, first is the cover)</span></label>
+            <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>Recommended 4:3, at least 1000×750px. PNG or JPG, max 5 MB each.</div>
             <input ref={fileRef} type="file" accept="image/*" multiple style={{display:'none'}} onChange={handleFileChange}/>
             {form.images.length > 0 && (
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:8}}>
