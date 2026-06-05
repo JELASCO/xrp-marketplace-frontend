@@ -235,9 +235,9 @@ export default function CreateStorePage() {
                 <input type="file" id="banner-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleBannerFile(e.target.files?.[0])} />
                 <div onClick={() => document.getElementById('banner-upload').click()} style={{ aspectRatio: '3 / 1', background: bannerUrl ? `center/cover no-repeat url(${bannerUrl})` : C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4, color: C.muted, cursor: 'pointer' }}>
                   {!bannerUrl && <><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{banner ? banner.name : 'Drop an image or click to browse'}</div>
-                  <div style={{ fontSize: 11, color: C.muted }}>3:1 ratio recommended (1500×500). PNG or JPG, up to 5 MB.</div></>}
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{banner ? banner.name : 'Drop an image or click to browse'}</div></>}
                 </div>
+                <div style={hintStyle}>Recommended 1500×500px (3:1). PNG or JPG, up to 5 MB.</div>
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Tagline</label>
