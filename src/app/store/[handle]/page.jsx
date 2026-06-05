@@ -33,7 +33,7 @@ export default function StorefrontPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 0 60px' }}>
-      <div style={{ aspectRatio: '4 / 1', maxHeight: 280, width: '100%', background: store.bannerUrl ? `center/cover no-repeat url(${store.bannerUrl})` : 'linear-gradient(135deg,#3b82f6,#8b5cf6)', borderRadius: 16, marginBottom: 0 }} />
+      <div style={{ aspectRatio: '3 / 1', maxHeight: 340, width: '100%', background: store.bannerUrl ? `center/cover no-repeat url(${store.bannerUrl})` : 'linear-gradient(135deg,#3b82f6,#8b5cf6)', borderRadius: 16, marginBottom: 0 }} />
 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, padding: '0 24px', marginTop: 16, marginBottom: 24, flexWrap: 'wrap' }}>
         <div style={{ width: 96, height: 96, borderRadius: 20, background: store.logoUrl ? `center/cover no-repeat url(${store.logoUrl})` : 'linear-gradient(135deg,#3b82f6,#8b5cf6)', border: '4px solid var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
