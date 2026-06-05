@@ -37,7 +37,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         onMouseEnter={e=>{e.currentTarget.style.border='1px solid var(--border2)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.4)';}}
         onMouseLeave={e=>{e.currentTarget.style.border=is_featured?'1px solid rgba(59,130,246,0.4)':'1px solid var(--border)';e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>
         {onToggleFavorite && <button onClick={(e)=>{e.preventDefault();e.stopPropagation();onToggleFavorite(id);}} style={{position:'absolute',top:8,right:8,zIndex:10,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.2)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}><span style={{fontSize:16,color:isFavorited?'#f87171':'var(--text2)'}}>{isFavorited?'♥':'♡'}</span></button>}
-        <div style={{height:130,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
+        <div style={{aspectRatio:'4 / 3',background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
           {images?.[0]
             ? <img src={images[0]} alt={title} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
             : <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,background:catFallbackBg(category)}}>
