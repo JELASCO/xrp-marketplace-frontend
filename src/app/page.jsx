@@ -140,7 +140,7 @@ export default function HomePage() {
           {v: stats ? fmtNum(stats.active_listings) : '—', l:'Active listings'},
           {v: stats ? fmtNum(stats.items_traded) : '—', l:'Trades settled'},
           {v: stats ? fmtNum(stats.total_users) : '—', l:'Traders'},
-          {v: '99.4%', l:'Dispute-free', green:true},
+          {v: '100%', l:'Escrow-protected', green:true},
         ].map((s,i)=>(
           <div key={i} style={{textAlign:'center'}}>
             <div style={{fontSize:26,fontWeight:800,letterSpacing:'-0.02em',color: s.green ? '#16A34A' : 'var(--xh-text)'}}>{s.v}</div>
