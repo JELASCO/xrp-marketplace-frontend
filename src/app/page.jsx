@@ -8,7 +8,7 @@ import { useAuthStore } from '../lib/store';
 const CATS = [
   {key:'games',label:'Games',emoji:'🎮'},
   {key:'graphics',label:'Graphics & Art',emoji:'🎨'},
-  {key:'software',label:'Software',emoji:'💻'},
+  {key:'software',label:'Software & Tools',emoji:'💻'},
   {key:'accounts',label:'Accounts',emoji:'👤'},
   {key:'other',label:'Other',emoji:'📦'},
 ];
