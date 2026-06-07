@@ -8,18 +8,11 @@ import ListingCard from '../../components/ListingCard';
 
 const CATS = [
   { key: '', label: 'All', emoji: '🌐' },
-  { key: 'skin', label: 'Skins & Cosmetics', emoji: '🎨' },
-  { key: 'coin', label: 'Coins & Currency', emoji: '💰' },
-  { key: 'bp', label: 'Battle Pass', emoji: '🎖' },
-  { key: 'account', label: 'Accounts', emoji: '🤖' },
-  { key: 'key', label: 'CD Keys & Gift Cards', emoji: '🔑' },
-  { key: 'item', label: 'In-Game Items', emoji: '🛡' },
-  { key: 'bundle', label: 'Bundles', emoji: '📦' },
-  { key: 'template', label: 'Templates & Tools', emoji: '📄' },
-  { key: 'art', label: 'Digital Art', emoji: '🖼' },
-  { key: 'ebook', label: 'Ebooks & Guides', emoji: '📚' },
-  { key: 'audio', label: 'Music & Audio', emoji: '🎵' },
-  { key: 'software', label: 'Software & Scripts', emoji: '💻' },
+  { key: 'games', label: 'Games', emoji: '🎮' },
+  { key: 'graphics', label: 'Graphics & Art', emoji: '🎨' },
+  { key: 'software', label: 'Software & Tools', emoji: '💻' },
+  { key: 'accounts', label: 'Accounts', emoji: '👤' },
+  { key: 'other', label: 'Other', emoji: '📦' },
 ];
 
 const SORTS = [
