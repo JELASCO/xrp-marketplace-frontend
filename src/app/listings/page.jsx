@@ -34,6 +34,11 @@ function ListingsContent() {
   const searchParams = useSearchParams();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const catScrollRef = useRef(null);
+  const [catEdges, setCatEdges] = useState({ left: false, right: false });
+  function updateCatEdges() { const el = catScrollRef.current; if (!el) return; setCatEdges({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 }); }
+  function scrollCats(dir) { const el = catScrollRef.current; if (el) el.scrollBy({ left: dir * 220, behavior: 'smooth' }); }
+  useEffect(() => { updateCatEdges(); const el = catScrollRef.current; if (!el) return; const on = () => updateCatEdges(); el.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on); return () => { el.removeEventListener('scroll', on); window.removeEventListener('resize', on); }; }, []);
   const [cat, setCat] = useState('');
   const [sort, setSort] = useState('newest');
   const [q, setQ] = useState('');
@@ -163,13 +168,23 @@ function ListingsContent() {
         </div>
       )}
 
-      {/* Category tabs - horizontal scroll */}
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 20, scrollbarWidth: 'none' }}>
-        {CATS.map(c => (
-          <button key={c.key} onClick={() => setCat(c.key)} style={{ flexShrink: 0, background: cat === c.key ? 'var(--accent)' : 'var(--surface)', color: cat === c.key ? '#fff' : 'var(--text2)', border: '1px solid ' + (cat === c.key ? 'var(--accent)' : 'var(--border)'), borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: cat === c.key ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
-            {c.emoji} {c.label}
-          </button>
-        ))}
+      {/* Category tabs - horizontal scroll with edge fade + arrows */}
+      <div style={{ position: 'relative', marginBottom: 20 }}>
+        {catEdges.left && (<>
+          <div style={{ position:'absolute', left:0, top:0, bottom:8, width:44, background:'linear-gradient(to right, var(--bg), transparent)', pointerEvents:'none', zIndex:2 }} />
+          <button onClick={() => scrollCats(-1)} aria-label="Scroll categories left" style={{ position:'absolute', left:0, top:'calc(50% - 4px)', transform:'translateY(-50%)', zIndex:3, width:28, height:28, borderRadius:'50%', border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', cursor:'pointer', fontSize:15, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
+        </>)}
+        <div ref={catScrollRef} style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
+          {CATS.map(c => (
+            <button key={c.key} onClick={() => setCat(c.key)} style={{ flexShrink: 0, background: cat === c.key ? 'var(--accent)' : 'var(--surface)', color: cat === c.key ? '#fff' : 'var(--text2)', border: '1px solid ' + (cat === c.key ? 'var(--accent)' : 'var(--border)'), borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: cat === c.key ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
+              {c.emoji} {c.label}
+            </button>
+          ))}
+        </div>
+        {catEdges.right && (<>
+          <div style={{ position:'absolute', right:0, top:0, bottom:8, width:44, background:'linear-gradient(to left, var(--bg), transparent)', pointerEvents:'none', zIndex:2 }} />
+          <button onClick={() => scrollCats(1)} aria-label="Scroll categories right" style={{ position:'absolute', right:0, top:'calc(50% - 4px)', transform:'translateY(-50%)', zIndex:3, width:28, height:28, borderRadius:'50%', border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', cursor:'pointer', fontSize:15, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
+        </>)}
       </div>
 
       {/* Results header */}
