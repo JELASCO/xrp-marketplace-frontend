@@ -222,8 +222,25 @@ export default function OrdersPage() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}}
           onClick={e => { if(e.target===e.currentTarget){ closeXummModal(); } }}>
           <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:380,width:'100%'}}>
-            {xummModal.hasFee && xummModal.mode==='commission' && <div style={{fontSize:11,fontWeight:600,color:'var(--accent)',marginBottom:8,letterSpacing:'0.04em'}}>STEP 1 OF 2 · FEE</div>}
-            {xummModal.hasFee && xummModal.mode==='pay' && <div style={{fontSize:11,fontWeight:600,color:'var(--accent)',marginBottom:8,letterSpacing:'0.04em'}}>STEP 2 OF 2 · ESCROW</div>}
+            {xummModal.hasFee && (xummModal.mode==='commission'||xummModal.mode==='pay') && (() => {
+              const curIdx = xummModal.mode==='commission' ? 0 : 1;
+              return (
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
+                  {[{l:'Marketplace fee'},{l:'Lock in escrow'}].map((st,idx) => {
+                    const active = idx===curIdx, done = idx<curIdx;
+                    return (
+                      <div key={idx} style={{display:'flex',alignItems:'center',gap:8,flex:idx<1?1:'none'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <div style={{width:22,height:22,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,border:'1px solid '+(done?'var(--green)':active?'var(--accent)':'var(--border2)'),background:done?'var(--green)':active?'var(--accent)':'var(--surface2)',color:done||active?'#fff':'var(--text3)'}}>{done?'✓':idx+1}</div>
+                          <span style={{fontSize:11,fontWeight:active?700:500,color:active?'var(--text)':'var(--text3)',whiteSpace:'nowrap'}}>{st.l}</span>
+                        </div>
+                        {idx<1 && <div style={{flex:1,height:2,borderRadius:1,background:done?'var(--green)':'var(--border2)'}}/>}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Payment in Xumm' : xummModal.mode==='reclaim' ? 'Reclaim Funds in Xumm' : xummModal.mode==='commission' ? 'Pay Marketplace Fee' : 'Lock Payment in Escrow'}</div>
             <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>{xummModal.mode==='release' ? 'Scan to release the escrow to the seller. Your delivery unlocks right after.' : xummModal.mode==='reclaim' ? 'Scan to cancel the escrow and return the funds to your wallet.' : xummModal.mode==='commission' ? `Scan to pay the ${Number(xummModal.commissionXrp).toFixed(2)} XRP marketplace fee. This completes your payment.` : `Scan to lock ${xummModal.sellerNet!=null?Number(xummModal.sellerNet).toFixed(2)+' XRP ':''}in escrow for the seller.`}</div>
             {xummModal.qrUrl && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={xummModal.qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/></div>}
