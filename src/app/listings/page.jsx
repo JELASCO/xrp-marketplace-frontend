@@ -55,7 +55,7 @@ function ListingsContent() {
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.get('q')) { setQ(p.get('q')); setInputQ(p.get('q')); }
-    if (p.get('cat')) setCat(p.get('cat'));
+    { const c0 = p.get('cat') || p.get('category'); if (c0) setCat(c0); }
   }, []);
 
   useEffect(() => {
