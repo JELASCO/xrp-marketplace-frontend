@@ -15,6 +15,8 @@ const NOTIF_LABELS = {
   new_message: 'New message',
   new_inquiry: 'New inquiry on your listing',
 };
+const NOTIF_ICONS = { sale_paid:'💰', payment_released:'✅', new_offer:'🏷️', offer_accepted:'🤝', offer_declined:'❌', new_message:'💬', new_inquiry:'❓' };
+function notifTimeAgo(d){ if(!d) return ''; const sec=Math.floor((Date.now()-new Date(d).getTime())/1000); if(sec<60) return 'just now'; if(sec<3600) return Math.floor(sec/60)+'m ago'; if(sec<86400) return Math.floor(sec/3600)+'h ago'; return Math.floor(sec/86400)+'d ago'; }
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
@@ -138,9 +140,13 @@ export default function Navbar() {
                     <div style={{padding:'24px 14px',textAlign:'center',fontSize:12,color:'var(--text3)'}}>No notifications yet</div>
                   ) : notifs.map(n => (
                     <div key={n.id} onClick={()=>{ setShowNotifs(false); const oid=n.payload&&n.payload.orderId; const lid=n.payload&&n.payload.listingId; router.push(oid?'/orders':lid?('/listing/'+lid):'/orders'); }}
-                      style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:n.is_read?'transparent':'rgba(59,130,246,0.06)'}}>
-                      <div style={{fontSize:12,color:'var(--text)',fontWeight:n.is_read?400:600}}>{NOTIF_LABELS[n.type] || n.type}</div>
-                      {n.payload && (n.payload.message || n.payload.listingTitle) && <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{n.payload.message || n.payload.listingTitle}</div>}
+                      style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:n.is_read?'transparent':'rgba(59,130,246,0.06)',display:'flex',gap:10,alignItems:'flex-start'}}>
+                      <span style={{fontSize:16,lineHeight:1.2,flexShrink:0}}>{NOTIF_ICONS[n.type] || '🔔'}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,color:'var(--text)',fontWeight:n.is_read?400:600}}>{NOTIF_LABELS[n.type] || n.type}</div>
+                        {n.payload && (n.payload.message || n.payload.listingTitle) && <div style={{fontSize:11,color:'var(--text3)',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{n.payload.message || n.payload.listingTitle}</div>}
+                        <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>{notifTimeAgo(n.created_at)}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
