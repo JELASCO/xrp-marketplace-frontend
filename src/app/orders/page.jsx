@@ -17,6 +17,8 @@ const STATUS_MAP = {
 };
 const STEPS = ['Awaiting payment', 'In escrow', 'Delivered', 'Completed'];
 const STEP_IDX = { pending:0, escrow_locked:1, delivered:2, completed:3 };
+const XRPL_TX = 'https://testnet.xrpl.org/transactions/';
+const shortHash = (h) => h ? h.slice(0,8) + '…' + h.slice(-6) : '';
 
 export default function OrdersPage() {
   const user = useAuthStore(s => s.user);
@@ -283,21 +285,32 @@ export default function OrdersPage() {
               </button>
               {exp && (
                 <div style={{padding:'0 18px 18px',borderTop:'1px solid rgba(255,255,255,0.04)'}}>
-                  <div style={{display:'flex',alignItems:'center',marginBottom:16,paddingTop:16}}>
+                  <div style={{display:'flex',alignItems:'flex-start',marginBottom:8,paddingTop:16}}>
                     {STEPS.map((s,i) => (
-                      <div key={s} style={{display:'flex',alignItems:'center',flex:i<STEPS.length-1?1:'none'}}>
-                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                      <div key={s} style={{display:'flex',alignItems:'flex-start',flex:i<STEPS.length-1?1:'none'}}>
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,width:62}}>
                           <div style={{width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,border:'2px solid',
                             background:i<stepIdx?'var(--green)':i===stepIdx?'var(--accent)':'var(--surface2)',
                             borderColor:i<stepIdx?'var(--green)':i===stepIdx?'var(--accent)':'var(--border2)',
                             color:i<=stepIdx?'#fff':'var(--text3)'}}>
                             {i<stepIdx?'✓':i+1}
                           </div>
+                          <div style={{fontSize:10,fontWeight:500,textAlign:'center',lineHeight:1.2,color:i<=stepIdx?'var(--text2)':'var(--text3)'}}>{s}</div>
                         </div>
-                        {i<STEPS.length-1 && <div style={{flex:1,height:2,margin:'0 4px',marginBottom:14,background:i<stepIdx?'var(--green)':'rgba(255,255,255,0.08)'}}/>}
+                        {i<STEPS.length-1 && <div style={{flex:1,height:2,margin:'0 2px',marginTop:13,background:i<stepIdx?'var(--green)':'var(--border)'}}/>}
                       </div>
                     ))}
                   </div>
+                  {(order.escrow_tx_hash || order.finish_tx_hash || order.cancel_tx_hash) && (
+                    <div style={{marginBottom:16,paddingTop:6}}>
+                      <div style={{fontSize:10,fontWeight:600,color:'var(--text3)',letterSpacing:'0.05em',marginBottom:8}}>ON-CHAIN PROOF</div>
+                      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                        {order.escrow_tx_hash && <a href={XRPL_TX+order.escrow_tx_hash} target="_blank" rel="noopener" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>🔒 Payment locked in escrow</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.escrow_tx_hash)} ↗</span></a>}
+                        {order.finish_tx_hash && <a href={XRPL_TX+order.finish_tx_hash} target="_blank" rel="noopener" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>✅ Payment released to seller</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.finish_tx_hash)} ↗</span></a>}
+                        {order.cancel_tx_hash && <a href={XRPL_TX+order.cancel_tx_hash} target="_blank" rel="noopener" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>↩️ Funds refunded to buyer</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.cancel_tx_hash)} ↗</span></a>}
+                      </div>
+                    </div>
+                  )}
                   {(order.status==='pending'||order.status==='awaiting_payment') && role==='buyer' && (
               attemptedPay[order.id] ? (
                 <div style={{marginBottom:8}}>
