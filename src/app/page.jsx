@@ -42,6 +42,7 @@ export default function HomePage() {
   const dark = theme === 'dark';
 
   const [stats, setStats] = useState(null);
+  const [heroQ, setHeroQ] = useState('');
   useEffect(() => {
     fetch('/api/stats').then(r=>r.json()).then(setStats).catch(()=>{});
   }, []);
@@ -124,6 +125,10 @@ export default function HomePage() {
         <p style={{fontSize:16.5,color:'var(--xh-text2)',maxWidth:620,margin:'0 auto 32px',lineHeight:1.55}}>
           Buy and sell game accounts, skins, in-game currency and digital goods. Every trade locked in XRPL escrow until both sides confirm.
         </p>
+        <form onSubmit={(e)=>{e.preventDefault(); const t=heroQ.trim(); window.location.href='/listings'+(t?('?q='+encodeURIComponent(t)):'');}} style={{maxWidth:560,margin:'0 auto 22px',display:'flex',gap:8}}>
+          <input value={heroQ} onChange={e=>setHeroQ(e.target.value)} placeholder="Search game accounts, skins, items…" aria-label="Search listings" style={{flex:1,height:48,borderRadius:12,border:'1px solid var(--xh-border)',background:'var(--xh-surface)',color:'var(--xh-text)',padding:'0 16px',fontSize:15,outline:'none'}} />
+          <button type="submit" className="xh-btn-primary" style={{height:48,borderRadius:12,whiteSpace:'nowrap'}}>🔍 Search</button>
+        </form>
         <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
           <Link href="/listings" className="xh-btn-primary">Browse marketplace</Link>
           {user ? (
