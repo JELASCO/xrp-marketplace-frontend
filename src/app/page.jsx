@@ -197,20 +197,25 @@ export default function HomePage() {
       </div>
 
       {/* HOW ESCROW KEEPS YOU SAFE */}
-      <div style={{background:'var(--xh-bg2)',borderRadius:18,padding:'40px 28px',marginBottom:36}}>
-        <h2 style={{fontSize:22,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:32,letterSpacing:'-0.02em'}}>How escrow keeps you safe</h2>
+      <div id="how-it-works" style={{background:'var(--xh-bg2)',borderRadius:18,padding:'40px 28px',marginBottom:36}}>
+        <h2 style={{fontSize:22,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>How escrow protects every trade</h2>
+        <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Non-custodial, on-chain buyer protection — powered by XRP Ledger escrow.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:24}}>
           {[
-            {step:'1',title:'Buyer locks XRP',desc:'Funds are held in an on-chain XRPL escrow — neither side can touch them.',color:'#DBEAFE'},
-            {step:'2',title:'Seller delivers',desc:'The account, skins or goods are handed over through the platform.',color:'#FEF3C7'},
-            {step:'3',title:'Funds release',desc:'Buyer confirms and escrow releases to the seller. Disputes go to review.',color:'#D1FAE5'},
+            {step:'1',emoji:'🔒',title:'Buyer locks payment',desc:'XRP is held in an on-chain XRPL escrow — neither the platform nor the seller can touch it.',color:'#DBEAFE'},
+            {step:'2',emoji:'📦',title:'Seller delivers',desc:'The account, skins or goods are handed over, then the buyer confirms receipt.',color:'#FEF3C7'},
+            {step:'3',emoji:'✅',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.',color:'#D1FAE5'},
           ].map(s=>(
             <div key={s.step} style={{textAlign:'center'}}>
-              <div style={{width:56,height:56,borderRadius:14,background:dark?'rgba(59,130,246,0.15)':s.color,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
-              <div style={{fontSize:14,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>{s.step} · {s.title}</div>
+              <div style={{width:56,height:56,borderRadius:14,background:dark?'rgba(59,130,246,0.15)':s.color,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>{s.emoji}</div>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>Step {s.step} · {s.title}</div>
               <div style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.6,maxWidth:280,margin:'0 auto'}}>{s.desc}</div>
             </div>
           ))}
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:28,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
+          <span style={{fontSize:18}}>🛡️</span>
+          <span style={{fontSize:13,color:'var(--xh-accent)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
         </div>
       </div>
 
