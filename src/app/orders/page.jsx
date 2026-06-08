@@ -17,7 +17,7 @@ const STATUS_MAP = {
 };
 const STEPS = ['Awaiting payment', 'In escrow', 'Delivered', 'Completed'];
 const STEP_IDX = { pending:0, escrow_locked:1, delivered:2, completed:3 };
-const XRPL_TX = 'https://testnet.xrpl.org/transactions/';
+const XRPL_TX = 'https://livenet.xrpl.org/transactions/';
 const shortHash = (h) => h ? h.slice(0,8) + '…' + h.slice(-6) : '';
 
 export default function OrdersPage() {
