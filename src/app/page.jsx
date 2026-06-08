@@ -245,7 +245,6 @@ export default function HomePage() {
             <div style={{display:'flex',gap:14,marginTop:16}}>
               <a href="https://x.com/xrpharbor" target="_blank" rel="noopener" aria-label="X / Twitter" style={{color:'var(--xh-text3, #6b7280)',textDecoration:'none',fontSize:18}}>𝕏</a>
               <a href="https://discord.gg/xrpharbor" target="_blank" rel="noopener" aria-label="Discord" style={{color:'var(--xh-text3, #6b7280)',textDecoration:'none',fontSize:18}}>💬</a>
-              <a href="https://github.com/JELASCO" target="_blank" rel="noopener" aria-label="GitHub" style={{color:'var(--xh-text3, #6b7280)',textDecoration:'none',fontSize:18}}>⚙️</a>
             </div>
           </div>
           <div>
