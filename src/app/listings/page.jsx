@@ -146,7 +146,7 @@ function ListingsContent() {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Max Price (XRP)</div>
             <input type="number" min="0" step="0.01" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="∞" style={{ width: 90, background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
           </div>
-          <div>
+          <div style={{ display: (cat === '' || cat === 'games') ? undefined : 'none' }}>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Game</div>
             <select value={game} onChange={e => setGame(e.target.value)} style={{ background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}>
               <option value="">All games</option>
@@ -169,7 +169,7 @@ function ListingsContent() {
         </>)}
         <div ref={catScrollRef} style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
           {CATS.map(c => (
-            <button key={c.key} onClick={() => setCat(c.key)} style={{ flexShrink: 0, background: cat === c.key ? 'var(--accent)' : 'var(--surface)', color: cat === c.key ? '#fff' : 'var(--text2)', border: '1px solid ' + (cat === c.key ? 'var(--accent)' : 'var(--border)'), borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: cat === c.key ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
+            <button key={c.key} onClick={() => { setCat(c.key); if (c.key && c.key !== 'games') setGame(''); }} style={{ flexShrink: 0, background: cat === c.key ? 'var(--accent)' : 'var(--surface)', color: cat === c.key ? '#fff' : 'var(--text2)', border: '1px solid ' + (cat === c.key ? 'var(--accent)' : 'var(--border)'), borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: cat === c.key ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
               {c.emoji} {c.label}
             </button>
           ))}
