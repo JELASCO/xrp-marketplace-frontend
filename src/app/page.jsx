@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -94,6 +95,23 @@ export default function HomePage() {
         .xh-btn-secondary:hover{background:var(--xh-surface2)}
         .xh-pill{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:22px;font-size:13.5px;font-weight:500;background:var(--xh-surface);color:var(--xh-text2);border:1px solid var(--xh-border);text-decoration:none;white-space:nowrap;transition:border-color .15s,color .15s}
         .xh-pill:hover{border-color:var(--xh-accent);color:var(--xh-text)}
+        .xh-display{font-family:'Syne',-apple-system,sans-serif}
+        .xh-mono{font-family:'DM Mono',monospace}
+        @keyframes xhsail{0%,12%{left:24px;transform:translateY(0)}40%,55%{left:calc(50% - 9px);transform:translateY(-2px)}85%,100%{left:calc(100% - 44px);transform:translateY(0)}}
+        @keyframes xhdrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+        .xh-hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:48px 0 44px}
+        .xh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+        .xh-chips a{font-size:12.5px;font-weight:500;color:var(--xh-text2);border:1px solid var(--xh-border);border-radius:999px;padding:6px 13px;background:var(--xh-surface);text-decoration:none;transition:all .15s}
+        .xh-chips a:hover{color:var(--xh-accent);border-color:var(--xh-accent)}
+        .xh-node{position:absolute;top:14px;width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#10264a;border:1px solid #2c4571;transition:transform .2s,border-color .2s}
+        .xh-node:hover{transform:translateY(-3px);border-color:#3b82f6}
+        .xh-node svg{width:19px;height:19px;stroke:#7eb0ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+        .xh-node.done{background:rgba(16,185,129,.16);border-color:rgba(16,185,129,.45)}
+        .xh-node.done svg{stroke:#34d399}
+        .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
+        .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
+        @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}}
+        @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg{animation:none !important}}
       `}</style>
 
       {/* Theme toggle */}
@@ -113,30 +131,68 @@ export default function HomePage() {
         {dark ? '☀️' : '🌙'}
       </button>
 
-      {/* HERO */}
-      <div style={{textAlign:'center',padding:'56px 16px 40px',position:'relative'}}>
-        <div style={{display:'inline-flex',alignItems:'center',gap:8,padding:'7px 16px',borderRadius:99,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',fontSize:12.5,fontWeight:600,color:'var(--xh-accent)',marginBottom:24}}>
-          🛡️ Escrow-protected · Powered by the XRP Ledger
+      {/* HERO — split: copy left, escrow waterline right */}
+      <div className="xh-hero-grid">
+        <div>
+          <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:8,padding:'7px 15px',borderRadius:99,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',fontSize:12,letterSpacing:'0.05em',fontWeight:500,color:'var(--xh-accent)',marginBottom:22}}>
+            ⚓ NON-CUSTODIAL · ON-CHAIN ESCROW
+          </div>
+          <h1 className="xh-display" style={{fontSize:'clamp(32px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.07,color:'var(--xh-text)',marginBottom:16}}>
+            Trade gaming assets.<br/>Your XRP stays{' '}
+            <span style={{color:'var(--xh-accent)',whiteSpace:'nowrap',position:'relative'}}>anchored
+              <svg style={{position:'absolute',left:0,right:0,bottom:-4,width:'100%',height:10}} viewBox="0 0 120 10" preserveAspectRatio="none"><path d="M0 5 Q 15 0 30 5 T 60 5 T 90 5 T 120 5" fill="none" stroke="currentColor" strokeOpacity=".35" strokeWidth="3"/></svg>
+            </span>
+          </h1>
+          <p style={{fontSize:16.5,color:'var(--xh-text2)',maxWidth:520,marginBottom:24,lineHeight:1.55}}>
+            Game accounts, skins, in-game currency and digital goods — every trade locked in an XRP Ledger escrow that neither the seller nor the platform can touch.
+          </p>
+          <form onSubmit={(e)=>{e.preventDefault(); const t=heroQ.trim(); window.location.href='/listings'+(t?('?q='+encodeURIComponent(t)):'');}} style={{maxWidth:520,display:'flex',gap:8}}>
+            <input value={heroQ} onChange={e=>setHeroQ(e.target.value)} placeholder="Search game accounts, skins, items…" aria-label="Search listings" style={{flex:1,height:48,borderRadius:12,border:'1px solid var(--xh-border)',background:'var(--xh-surface)',color:'var(--xh-text)',padding:'0 16px',fontSize:15,outline:'none'}} />
+            <button type="submit" className="xh-btn-primary" style={{height:48,borderRadius:12,whiteSpace:'nowrap'}}>Search</button>
+          </form>
+          <div className="xh-chips">
+            {['Steam account','Valorant skins','Game keys','Design assets'].map(c=>(
+              <Link key={c} href={'/listings?q='+encodeURIComponent(c)}>{c}</Link>
+            ))}
+          </div>
+          <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:24}}>
+            <Link href="/listings" className="xh-btn-primary">Browse marketplace</Link>
+            {user ? (
+              <Link href="/listings/new" className="xh-btn-secondary">Start selling</Link>
+            ) : (
+              <Link href="/login" className="xh-btn-secondary">Start selling</Link>
+            )}
+          </div>
         </div>
-        <h1 style={{fontSize:'clamp(34px,5vw,52px)',fontWeight:800,letterSpacing:'-0.025em',lineHeight:1.1,color:'var(--xh-text)',marginBottom:18,maxWidth:880,marginLeft:'auto',marginRight:'auto'}}>
-          The safe harbor for{' '}
-          <span style={{background:'linear-gradient(90deg, var(--xh-accent) 0%, #38BDF8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>gaming assets</span>
-        </h1>
-        <p style={{fontSize:16.5,color:'var(--xh-text2)',maxWidth:620,margin:'0 auto 32px',lineHeight:1.55}}>
-          Buy and sell game accounts, skins, in-game currency and digital goods. Every trade locked in XRPL escrow until both sides confirm.
-        </p>
-        <form onSubmit={(e)=>{e.preventDefault(); const t=heroQ.trim(); window.location.href='/listings'+(t?('?q='+encodeURIComponent(t)):'');}} style={{maxWidth:560,margin:'0 auto 22px',display:'flex',gap:8}}>
-          <input value={heroQ} onChange={e=>setHeroQ(e.target.value)} placeholder="Search game accounts, skins, items…" aria-label="Search listings" style={{flex:1,height:48,borderRadius:12,border:'1px solid var(--xh-border)',background:'var(--xh-surface)',color:'var(--xh-text)',padding:'0 16px',fontSize:15,outline:'none'}} />
-          <button type="submit" className="xh-btn-primary" style={{height:48,borderRadius:12,whiteSpace:'nowrap'}}>🔍 Search</button>
-        </form>
-        <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
-          <Link href="/listings" className="xh-btn-primary">Browse marketplace</Link>
-          {user ? (
-            <Link href="/listings/new" className="xh-btn-secondary">Start selling</Link>
-          ) : (
-            <Link href="/login" className="xh-btn-secondary">Start selling</Link>
-          )}
-        </div>
+
+        {/* SIGNATURE: escrow waterline card (fixed dark — works in both themes) */}
+        <aside aria-label="How escrow works" style={{background:'#0b1b33',borderRadius:20,padding:'26px 26px 0',color:'#cfe0ff',boxShadow:'0 30px 60px -20px rgba(11,27,51,.45)',position:'relative',overflow:'hidden'}}>
+          <div className="xh-display" style={{fontWeight:700,fontSize:17,color:'#fff',marginBottom:4}}>Every trade crosses the harbor</div>
+          <div style={{fontSize:13,color:'#8fa6cc',marginBottom:16}}>Watch how your payment travels — start to finish, on-chain.</div>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',fontSize:10.5,letterSpacing:'0.08em',color:'#7e96bf',padding:'0 4px'}}>
+            <span>BUYER&nbsp;DOCK</span><span>SELLER&nbsp;DOCK</span>
+          </div>
+          <div style={{position:'relative',height:140,marginTop:8}}>
+            <div style={{position:'absolute',top:36,left:16,right:16,height:2,background:'repeating-linear-gradient(90deg,#33507e 0 8px,transparent 8px 16px)'}}/>
+            <div className="xh-node" style={{left:6}} title="EscrowCreate"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+            <div className="xh-node" style={{left:'calc(50% - 23px)'}} title="Delivery"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg></div>
+            <div className="xh-node done" style={{right:6}} title="EscrowFinish"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <span className="xh-sail" style={{position:'absolute',top:20,fontSize:17,left:18,animation:'xhsail 9s ease-in-out infinite'}}>⛵</span>
+            <div className="xh-node-label" style={{left:-28}}><b>Payment locked</b>EscrowCreate on XRPL</div>
+            <div className="xh-node-label" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
+            <div className="xh-node-label" style={{right:-28}}><b>Escrow releases</b>seller paid automatically</div>
+          </div>
+          <div style={{position:'relative',height:50,margin:'0 -26px'}}>
+            <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:50,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 30 Q 75 10 150 30 T 300 30 T 450 30 T 600 30 T 750 30 T 900 30 T 1050 30 T 1200 30 V54 H0 Z" fill="#10264a"/>
+              <path d="M0 38 Q 75 22 150 38 T 300 38 T 450 38 T 600 38 T 750 38 T 900 38 T 1050 38 T 1200 38 V54 H0 Z" fill="#16335f" opacity=".8"/>
+            </svg>
+          </div>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'#7e96bf',borderTop:'1px solid #21385f',margin:'0 -26px',padding:'11px 26px',background:'#091628'}}>
+            <span>XRPL ESCROW · <span style={{color:'#10b981'}}>NON-CUSTODIAL</span></span>
+            <a href="#how-it-works" style={{color:'#7e96bf',textDecoration:'none'}}>how it works ↓</a>
+          </div>
+        </aside>
       </div>
 
       {/* STATS BAR */}
