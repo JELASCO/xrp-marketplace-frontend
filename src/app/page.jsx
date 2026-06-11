@@ -94,7 +94,7 @@ export default function HomePage() {
         .xh-btn-secondary:hover{background:var(--xh-surface2)}
         .xh-pill{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:22px;font-size:13.5px;font-weight:500;background:var(--xh-surface);color:var(--xh-text2);border:1px solid var(--xh-border);text-decoration:none;white-space:nowrap;transition:border-color .15s,color .15s}
         .xh-pill:hover{border-color:var(--xh-accent);color:var(--xh-text)}
-        .xh-display{font-family:'Syne',-apple-system,sans-serif}
+        .xh-display{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif}
         .xh-mono{font-family:'DM Mono',monospace}
         @keyframes xhsail{0%,12%{left:24px;transform:translateY(0)}40%,55%{left:calc(50% - 9px);transform:translateY(-2px)}85%,100%{left:calc(100% - 44px);transform:translateY(0)}}
         @keyframes xhdrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -136,11 +136,9 @@ export default function HomePage() {
           <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:8,padding:'7px 15px',borderRadius:99,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',fontSize:12,letterSpacing:'0.05em',fontWeight:500,color:'var(--xh-accent)',marginBottom:22}}>
             ⚓ NON-CUSTODIAL · ON-CHAIN ESCROW
           </div>
-          <h1 className="xh-display" style={{fontSize:'clamp(32px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.07,color:'var(--xh-text)',marginBottom:16}}>
-            Trade gaming assets.<br/>Your XRP stays{' '}
-            <span style={{color:'var(--xh-accent)',whiteSpace:'nowrap',position:'relative'}}>anchored
-              <svg style={{position:'absolute',left:0,right:0,bottom:-4,width:'100%',height:10}} viewBox="0 0 120 10" preserveAspectRatio="none"><path d="M0 5 Q 15 0 30 5 T 60 5 T 90 5 T 120 5" fill="none" stroke="currentColor" strokeOpacity=".35" strokeWidth="3"/></svg>
-            </span>
+          <h1 className="xh-display" style={{fontSize:'clamp(32px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.1,color:'var(--xh-text)',marginBottom:16}}>
+            The safe harbor for{' '}
+            <span style={{background:'linear-gradient(90deg, var(--xh-accent) 0%, #38BDF8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>digital assets</span>
           </h1>
           <p style={{fontSize:16.5,color:'var(--xh-text2)',maxWidth:520,marginBottom:24,lineHeight:1.55}}>
             Game accounts, skins, in-game currency and digital goods — every trade locked in an XRP Ledger escrow that neither the seller nor the platform can touch.
