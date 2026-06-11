@@ -6,12 +6,20 @@ import ListingCard from '../components/ListingCard';
 import { useAuthStore } from '../lib/store';
 
 const CATS = [
-  {key:'games',label:'Games',emoji:'🎮'},
-  {key:'graphics',label:'Graphics & Art',emoji:'🎨'},
-  {key:'software',label:'Software & Tools',emoji:'💻'},
-  {key:'accounts',label:'Accounts',emoji:'👤'},
-  {key:'other',label:'Other',emoji:'📦'},
+  {key:'games',label:'Games',emoji:'🎮',sub:'accounts · keys · currency'},
+  {key:'graphics',label:'Graphics & Art',emoji:'🎨',sub:'assets · commissions'},
+  {key:'software',label:'Software & Tools',emoji:'💻',sub:'licenses · scripts'},
+  {key:'accounts',label:'Accounts',emoji:'👤',sub:'social · subscriptions'},
+  {key:'other',label:'Other',emoji:'📦',sub:'everything digital'},
 ];
+
+const CAT_ICONS = {
+  games: <svg viewBox="0 0 24 24"><path d="M6 11h4M8 9v4M15 10h.01M18 12h.01M17.3 5H6.7a4.7 4.7 0 0 0-4.6 5.6l1 5.3A2.6 2.6 0 0 0 7.7 17l1.6-2h5.4l1.6 2a2.6 2.6 0 0 0 4.6-1.1l1-5.3A4.7 4.7 0 0 0 17.3 5Z"/></svg>,
+  graphics: <svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 1 9-9c0 2-1.5 3-3 3h-2a2 2 0 0 0-2 2c0 1 .5 1.5.5 2.5S13.5 21 12 21Z"/><circle cx="7.5" cy="11" r=".6"/><circle cx="10.5" cy="7.5" r=".6"/><circle cx="15" cy="8" r=".6"/></svg>,
+  software: <svg viewBox="0 0 24 24"><path d="m8 9-3 3 3 3M16 9l3 3-3 3M13 7l-2 10"/></svg>,
+  accounts: <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>,
+  other: <svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg>,
+};
 
 function SkeletonCard({h=130}) {
   return (
@@ -45,6 +53,16 @@ export default function HomePage() {
   const [heroQ, setHeroQ] = useState('');
   useEffect(() => {
     fetch('/api/stats').then(r=>r.json()).then(setStats).catch(()=>{});
+  }, []);
+
+  const [xrpPrice, setXrpPrice] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
+      .then(r=>r.json()).then(d=>{ if (alive && d?.data?.amount) setXrpPrice(parseFloat(d.data.amount)); }).catch(()=>{});
+    load();
+    const t = setInterval(load, 15000);
+    return () => { alive = false; clearInterval(t); };
   }, []);
 
   const user = useAuthStore(s=>s.user);
@@ -109,8 +127,16 @@ export default function HomePage() {
         .xh-node.done svg{stroke:#34d399}
         .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
         .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
-        @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}}
-        @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg{animation:none !important}}
+        .xh-cat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:40px}
+        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block}
+        .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
+        .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
+        .xh-cat .ico svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+        .xh-cat:hover .ico{background:var(--xh-accent);color:#fff;transform:scale(1.06)}
+        .xh-ticker-in{animation:xhscroll 30s linear infinite}
+        @keyframes xhscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+        @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg,.xh-ticker-in{animation:none !important}}
       `}</style>
 
       {/* Theme toggle */}
@@ -192,6 +218,19 @@ export default function HomePage() {
         </aside>
       </div>
 
+      {/* LIVE TICKER */}
+      <div style={{background:'#0b1b33',borderRadius:12,overflow:'hidden',marginBottom:36}} aria-hidden="true">
+        <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:48,whiteSpace:'nowrap',padding:'11px 0',fontSize:12,color:'#9db4da',width:'max-content'}}>
+          {(() => { const it = [
+            xrpPrice ? `XRP/USD $${xrpPrice.toFixed(4)}` : 'XRPL · MAINNET',
+            'XRPL MAINNET · LEDGER CLOSE ~3–4s',
+            'PLATFORM FEE 2% · ONLY ON COMPLETED TRADES',
+            'NON-CUSTODIAL · ESCROW-PROTECTED',
+            'EVERY TRADE VERIFIABLE ON LEDGER',
+          ]; return [...it, ...it].map((t,i)=>(<span key={i}>{t}</span>)); })()}
+        </div>
+      </div>
+
       {/* STATS BAR */}
       <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
         {[
@@ -207,11 +246,13 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* CATEGORY PILLS */}
-      <div style={{display:'flex',gap:10,flexWrap:'wrap',justifyContent:'center',marginBottom:40}}>
+      {/* CATEGORY CARDS */}
+      <div className="xh-cat-grid">
         {CATS.map(c=>(
-          <Link key={c.key} href={'/listings?category='+c.key} className="xh-pill">
-            <span>{c.emoji}</span> {c.label}
+          <Link key={c.key} href={'/listings?category='+c.key} className="xh-cat">
+            <span className="ico">{CAT_ICONS[c.key]}</span>
+            <span style={{display:'block',fontSize:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
+            <span className="xh-mono" style={{fontSize:11,color:'var(--xh-text3)'}}>{c.sub}</span>
           </Link>
         ))}
       </div>
