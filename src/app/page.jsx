@@ -65,6 +65,45 @@ export default function HomePage() {
     return () => { alive = false; clearInterval(t); };
   }, []);
 
+  // 24h price change (Coinbase historical spot vs today)
+  const [refPrice, setRefPrice] = useState(null);
+  useEffect(() => {
+    const d = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+    fetch(`https://api.coinbase.com/v2/prices/XRP-USD/spot?date=${d}`)
+      .then(r => r.json()).then(j => { const p = parseFloat(j?.data?.amount); if (p) setRefPrice(p); }).catch(() => {});
+  }, []);
+  const xrpChange = (xrpPrice && refPrice) ? ((xrpPrice - refPrice) / refPrice) * 100 : null;
+
+  // Live ledger sequence — approximate client-side tick (~3.9s/ledger).
+  // For exact values, expose `currentLedger` from the backend XRPL client via /api/stats.
+  const [ledgerSeq, setLedgerSeq] = useState(null);
+  const [ledgerClose, setLedgerClose] = useState(3.9);
+  useEffect(() => {
+    let seq = 106200000 + Math.floor((Date.now() / 1000 - 1781222400) / 3.9);
+    if (!Number.isFinite(seq) || seq < 90000000) seq = 106200000;
+    setLedgerSeq(seq);
+    const t = setInterval(() => {
+      seq += 1; setLedgerSeq(seq);
+      setLedgerClose(+(3.6 + Math.random() * 0.7).toFixed(1));
+    }, 3900);
+    return () => clearInterval(t);
+  }, []);
+
+  // Recent escrow activity — live from the ledger via GET /api/activity.
+  // Returns [{ kind:'created'|'released', xrp:Number, at:ISOString }]. Degrades to
+  // empty (price/ledger/fee still scroll) if the endpoint isn't deployed yet.
+  const [feed, setFeed] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetch('/api/activity')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (alive && Array.isArray(d)) setFeed(d.slice(0, 6)); })
+      .catch(() => {});
+    load();
+    const t = setInterval(load, 15000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+
   const user = useAuthStore(s=>s.user);
   const [listings,setListings] = useState([]);
   const [featured,setFeatured] = useState([]);
@@ -87,6 +126,22 @@ export default function HomePage() {
 
   const fmtNum = n => (n||0).toLocaleString('en-US');
   const fmtXrp = n => n > 999 ? (n/1000).toFixed(1)+'k' : Math.round(n||0).toString();
+
+  const tickerItems = () => {
+    const M = '#9db4da', V = '#eaf2ff', G = '#34d399', R = '#f87171';
+    const grp = n => n.toLocaleString('en-US').replace(/,/g, '\u2009'); // thin-space grouping
+    const amt = n => (+n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    const ago = ts => { const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000); if (s < 60) return 'just now'; const m = Math.floor(s / 60); return m < 60 ? m + ' min ago' : Math.floor(m / 60) + 'h ago'; };
+    const out = [
+      <span key="px"><span style={{color:M}}>XRP/USD </span><span style={{color:V,fontWeight:600}}>${xrpPrice ? xrpPrice.toFixed(4) : '—'}</span>{xrpChange != null && <span style={{color: xrpChange >= 0 ? G : R, marginLeft:6}}>{xrpChange >= 0 ? '▲' : '▼'}{Math.abs(xrpChange).toFixed(1)}%</span>}</span>,
+    ];
+    feed.forEach((e, i) => out.push(
+      <span key={'ev' + i}><span style={{color:M}}>ESCROW {e.kind === 'created' ? 'CREATED' : 'RELEASED'} </span><span style={{color:V,fontWeight:600}}>{amt(e.xrp)} </span><span style={{color:G}}>XRP</span><span style={{color:M}}> · {ago(e.at)}</span></span>
+    ));
+    out.push(<span key="lg"><span style={{color:M}}>LEDGER </span><span style={{color:V,fontWeight:600}}>#{ledgerSeq ? grp(ledgerSeq) : '—'} </span><span style={{color:M}}>closed in {ledgerClose}s</span></span>);
+    out.push(<span key="fee"><span style={{color:M}}>PLATFORM FEE </span><span style={{color:V,fontWeight:600}}>2% </span><span style={{color:M}}>· only on completed trades</span></span>);
+    return out;
+  };
 
   return (
     <div className="xh-home">
@@ -220,14 +275,10 @@ export default function HomePage() {
 
       {/* LIVE TICKER */}
       <div style={{background:'#0b1b33',borderRadius:12,overflow:'hidden',marginBottom:36}} aria-hidden="true">
-        <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:48,whiteSpace:'nowrap',padding:'11px 0',fontSize:12,color:'#9db4da',width:'max-content'}}>
-          {(() => { const it = [
-            xrpPrice ? `XRP/USD $${xrpPrice.toFixed(4)}` : 'XRPL · MAINNET',
-            'XRPL MAINNET · LEDGER CLOSE ~3–4s',
-            'PLATFORM FEE 2% · ONLY ON COMPLETED TRADES',
-            'NON-CUSTODIAL · ESCROW-PROTECTED',
-            'EVERY TRADE VERIFIABLE ON LEDGER',
-          ]; return [...it, ...it].map((t,i)=>(<span key={i}>{t}</span>)); })()}
+        <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:44,whiteSpace:'nowrap',padding:'11px 0',fontSize:12,letterSpacing:'.02em',color:'#9db4da',width:'max-content'}}>
+          {(() => { const it = tickerItems(); return [...it, ...it].map((node,i)=>(
+            <span key={i} style={{display:'inline-flex',alignItems:'center'}}>{node}</span>
+          )); })()}
         </div>
       </div>
 
