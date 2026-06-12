@@ -275,7 +275,7 @@ export default function HomePage() {
       {/* LATEST */}
       <div style={{marginBottom:48}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-          <span style={{fontSize:18,fontWeight:700,color:'var(--xh-text)'}}>Latest listings</span>
+          <span style={{fontSize:18,fontWeight:700,color:'var(--xh-text)'}}>Fresh off the boat</span>
           <Link href="/listings" style={{fontSize:13,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600}}>Browse all →</Link>
         </div>
         {loading ? (
@@ -283,10 +283,11 @@ export default function HomePage() {
             {Array.from({length:8}).map((_,i)=><SkeletonCard key={i}/>)}
           </div>
         ) : listings.length===0 ? (
-          <div style={{textAlign:'center',padding:'48px 20px',background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14}}>
-            <div style={{fontSize:36,marginBottom:12}}>🏪</div>
-            <div style={{fontSize:15,fontWeight:600,color:'var(--xh-text)',marginBottom:6}}>No listings yet</div>
-            <div style={{fontSize:13,color:'var(--xh-text2)'}}>Be the first to list an item.</div>
+          <div style={{textAlign:'center',padding:'48px 20px',background:'rgba(21,114,232,0.04)',border:'1.5px dashed var(--xh-accent)',borderRadius:14}}>
+            <div style={{fontSize:34,marginBottom:12}}>⚓</div>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:6}}>The harbor just opened</div>
+            <div style={{fontSize:13,color:'var(--xh-text2)',marginBottom:16}}>Be one of the first sellers on mainnet — 0 listing fees.</div>
+            <Link href={user ? '/listings/new' : '/login'} className="xh-btn-primary" style={{padding:'10px 22px',fontSize:13.5}}>+ List an item</Link>
           </div>
         ) : (
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12}}>
@@ -297,37 +298,38 @@ export default function HomePage() {
 
       {/* HOW ESCROW KEEPS YOU SAFE */}
       <div id="how-it-works" style={{background:'var(--xh-bg2)',borderRadius:18,padding:'40px 28px',marginBottom:36}}>
-        <h2 style={{fontSize:22,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>How escrow protects every trade</h2>
-        <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Non-custodial, on-chain buyer protection — powered by XRP Ledger escrow.</p>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:24}}>
+        <h2 className="xh-display" style={{fontSize:23,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>Trust the ledger, not us</h2>
+        <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Every step is a real XRPL transaction you can verify yourself.</p>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:16}}>
           {[
-            {step:'1',emoji:'🔒',title:'Buyer locks payment',desc:'XRP is held in an on-chain XRPL escrow — neither the platform nor the seller can touch it.',color:'#DBEAFE'},
-            {step:'2',emoji:'📦',title:'Seller delivers',desc:'The account, skins or goods are handed over, then the buyer confirms receipt.',color:'#FEF3C7'},
-            {step:'3',emoji:'✅',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.',color:'#D1FAE5'},
+            {k:'STEP 1 · ESCROWCREATE',title:'Buyer locks payment',desc:'XRP is held in an on-chain XRPL escrow — neither the platform nor the seller can touch it.'},
+            {k:'STEP 2 · DELIVERY',title:'Seller delivers',desc:'The account, skins or goods are handed over, then the buyer confirms receipt.'},
+            {k:'STEP 3 · ESCROWFINISH',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.'},
           ].map(s=>(
-            <div key={s.step} style={{textAlign:'center'}}>
-              <div style={{width:56,height:56,borderRadius:14,background:dark?'rgba(59,130,246,0.15)':s.color,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>{s.emoji}</div>
-              <div style={{fontSize:14,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>Step {s.step} · {s.title}</div>
-              <div style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.6,maxWidth:280,margin:'0 auto'}}>{s.desc}</div>
+            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 22px'}}>
+              <div className="xh-mono" style={{fontSize:10.5,letterSpacing:'0.08em',color:'var(--xh-accent)',marginBottom:11}}>{s.k}</div>
+              <div className="xh-display" style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>{s.title}</div>
+              <div style={{fontSize:13.5,color:'var(--xh-text2)',lineHeight:1.6}}>{s.desc}</div>
             </div>
           ))}
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:28,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
-          <span style={{fontSize:18}}>🛡️</span>
-          <span style={{fontSize:13,color:'var(--xh-accent)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:24,background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderLeft:'3px solid #f59e0b',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
+          <span style={{fontSize:18}}>🛟</span>
+          <span style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
         </div>
       </div>
 
       {/* CTA */}
-      <div style={{background:'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 50%, #1572E8 100%)',borderRadius:18,padding:'48px 28px',textAlign:'center',marginBottom:24,color:'#fff'}}>
-        <h2 style={{fontSize:28,fontWeight:800,letterSpacing:'-0.02em',marginBottom:12}}>Ready to drop anchor?</h2>
-        <p style={{fontSize:15,opacity:0.9,maxWidth:520,margin:'0 auto 24px',lineHeight:1.55}}>Connect your Xaman wallet and start trading in under a minute.</p>
-        <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
+      <div style={{background:'linear-gradient(135deg, #0b1b33 0%, #142b52 55%, #1d4ed8 100%)',borderRadius:18,padding:'48px 28px 56px',textAlign:'center',marginBottom:24,color:'#fff',position:'relative',overflow:'hidden'}}>
+        <h2 className="xh-display" style={{fontSize:30,fontWeight:800,letterSpacing:'-0.02em',marginBottom:12,position:'relative',zIndex:1}}>Ready to drop anchor?</h2>
+        <p style={{fontSize:15,color:'#bcd2f7',maxWidth:520,margin:'0 auto 24px',lineHeight:1.55,position:'relative',zIndex:1}}>Connect your Xaman wallet and start trading in under a minute.</p>
+        <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap',position:'relative',zIndex:1}}>
           {!user && (
-            <Link href="/login" style={{background:'#fff',color:'#1572E8',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none'}}>Connect wallet</Link>
+            <Link href="/login" style={{background:'#fff',color:'#0b1b33',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none'}}>Connect wallet</Link>
           )}
           {user ? (<Link href="/listings/new" style={{background:'rgba(255,255,255,0.15)',color:'#fff',padding:'12px 28px',borderRadius:8,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>+ List an item</Link>) : (<Link href="/listings" style={{background:'rgba(255,255,255,0.12)',color:'#fff',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>Browse first</Link>)}
         </div>
+        <svg style={{position:'absolute',left:0,right:0,bottom:-2,width:'100%',height:44,opacity:.16}} viewBox="0 0 1200 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 30 Q 100 5 200 30 T 400 30 T 600 30 T 800 30 T 1000 30 T 1200 30 V60 H0 Z" fill="#fff"/></svg>
       </div>
 
       {/* FOOTER */}
