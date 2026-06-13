@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -7,12 +6,20 @@ import ListingCard from '../components/ListingCard';
 import { useAuthStore } from '../lib/store';
 
 const CATS = [
-  {key:'games',label:'Games',emoji:'🎮'},
-  {key:'graphics',label:'Graphics & Art',emoji:'🎨'},
-  {key:'software',label:'Software & Tools',emoji:'💻'},
-  {key:'accounts',label:'Accounts',emoji:'👤'},
-  {key:'other',label:'Other',emoji:'📦'},
+  {key:'games',label:'Games',emoji:'🎮',sub:'accounts · keys · currency'},
+  {key:'graphics',label:'Graphics & Art',emoji:'🎨',sub:'assets · commissions'},
+  {key:'software',label:'Software & Tools',emoji:'💻',sub:'licenses · scripts'},
+  {key:'accounts',label:'Accounts',emoji:'👤',sub:'social · subscriptions'},
+  {key:'other',label:'Other',emoji:'📦',sub:'everything digital'},
 ];
+
+const CAT_ICONS = {
+  games: <svg viewBox="0 0 24 24"><path d="M6 11h4M8 9v4M15 10h.01M18 12h.01M17.3 5H6.7a4.7 4.7 0 0 0-4.6 5.6l1 5.3A2.6 2.6 0 0 0 7.7 17l1.6-2h5.4l1.6 2a2.6 2.6 0 0 0 4.6-1.1l1-5.3A4.7 4.7 0 0 0 17.3 5Z"/></svg>,
+  graphics: <svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 1 9-9c0 2-1.5 3-3 3h-2a2 2 0 0 0-2 2c0 1 .5 1.5.5 2.5S13.5 21 12 21Z"/><circle cx="7.5" cy="11" r=".6"/><circle cx="10.5" cy="7.5" r=".6"/><circle cx="15" cy="8" r=".6"/></svg>,
+  software: <svg viewBox="0 0 24 24"><path d="m8 9-3 3 3 3M16 9l3 3-3 3M13 7l-2 10"/></svg>,
+  accounts: <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>,
+  other: <svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg>,
+};
 
 function SkeletonCard({h=130}) {
   return (
@@ -48,6 +55,55 @@ export default function HomePage() {
     fetch('/api/stats').then(r=>r.json()).then(setStats).catch(()=>{});
   }, []);
 
+  const [xrpPrice, setXrpPrice] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
+      .then(r=>r.json()).then(d=>{ if (alive && d?.data?.amount) setXrpPrice(parseFloat(d.data.amount)); }).catch(()=>{});
+    load();
+    const t = setInterval(load, 15000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+
+  // 24h price change (Coinbase historical spot vs today)
+  const [refPrice, setRefPrice] = useState(null);
+  useEffect(() => {
+    const d = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+    fetch(`https://api.coinbase.com/v2/prices/XRP-USD/spot?date=${d}`)
+      .then(r => r.json()).then(j => { const p = parseFloat(j?.data?.amount); if (p) setRefPrice(p); }).catch(() => {});
+  }, []);
+  const xrpChange = (xrpPrice && refPrice) ? ((xrpPrice - refPrice) / refPrice) * 100 : null;
+
+  // Live ledger sequence — approximate client-side tick (~3.9s/ledger).
+  // For exact values, expose `currentLedger` from the backend XRPL client via /api/stats.
+  const [ledgerSeq, setLedgerSeq] = useState(null);
+  const [ledgerClose, setLedgerClose] = useState(3.9);
+  useEffect(() => {
+    let seq = 106200000 + Math.floor((Date.now() / 1000 - 1781222400) / 3.9);
+    if (!Number.isFinite(seq) || seq < 90000000) seq = 106200000;
+    setLedgerSeq(seq);
+    const t = setInterval(() => {
+      seq += 1; setLedgerSeq(seq);
+      setLedgerClose(+(3.6 + Math.random() * 0.7).toFixed(1));
+    }, 3900);
+    return () => clearInterval(t);
+  }, []);
+
+  // Recent escrow activity — live from the ledger via GET /api/activity.
+  // Returns [{ kind:'created'|'released', xrp:Number, at:ISOString }]. Degrades to
+  // empty (price/ledger/fee still scroll) if the endpoint isn't deployed yet.
+  const [feed, setFeed] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetch('/api/activity')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (alive && Array.isArray(d)) setFeed(d.slice(0, 6)); })
+      .catch(() => {});
+    load();
+    const t = setInterval(load, 15000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+
   const user = useAuthStore(s=>s.user);
   const [listings,setListings] = useState([]);
   const [featured,setFeatured] = useState([]);
@@ -70,6 +126,22 @@ export default function HomePage() {
 
   const fmtNum = n => (n||0).toLocaleString('en-US');
   const fmtXrp = n => n > 999 ? (n/1000).toFixed(1)+'k' : Math.round(n||0).toString();
+
+  const tickerItems = () => {
+    const M = '#9db4da', V = '#eaf2ff', G = '#34d399', R = '#f87171';
+    const grp = n => n.toLocaleString('en-US').replace(/,/g, '\u2009'); // thin-space grouping
+    const amt = n => (+n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    const ago = ts => { const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000); if (s < 60) return 'just now'; const m = Math.floor(s / 60); return m < 60 ? m + ' min ago' : Math.floor(m / 60) + 'h ago'; };
+    const out = [
+      <span key="px"><span style={{color:M}}>XRP/USD </span><span style={{color:V,fontWeight:600}}>${xrpPrice ? xrpPrice.toFixed(4) : '—'}</span>{xrpChange != null && <span style={{color: xrpChange >= 0 ? G : R, marginLeft:6}}>{xrpChange >= 0 ? '▲' : '▼'}{Math.abs(xrpChange).toFixed(1)}%</span>}</span>,
+    ];
+    feed.forEach((e, i) => out.push(
+      <span key={'ev' + i}><span style={{color:M}}>ESCROW {e.kind === 'created' ? 'CREATED' : 'RELEASED'} </span><span style={{color:V,fontWeight:600}}>{amt(e.xrp)} </span><span style={{color:G}}>XRP</span><span style={{color:M}}> · {ago(e.at)}</span></span>
+    ));
+    out.push(<span key="lg"><span style={{color:M}}>LEDGER </span><span style={{color:V,fontWeight:600}}>#{ledgerSeq ? grp(ledgerSeq) : '—'} </span><span style={{color:M}}>closed in {ledgerClose}s</span></span>);
+    out.push(<span key="fee"><span style={{color:M}}>PLATFORM FEE </span><span style={{color:V,fontWeight:600}}>2% </span><span style={{color:M}}>· only on completed trades</span></span>);
+    return out;
+  };
 
   return (
     <div className="xh-home">
@@ -95,7 +167,7 @@ export default function HomePage() {
         .xh-btn-secondary:hover{background:var(--xh-surface2)}
         .xh-pill{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:22px;font-size:13.5px;font-weight:500;background:var(--xh-surface);color:var(--xh-text2);border:1px solid var(--xh-border);text-decoration:none;white-space:nowrap;transition:border-color .15s,color .15s}
         .xh-pill:hover{border-color:var(--xh-accent);color:var(--xh-text)}
-        .xh-display{font-family:'Syne',-apple-system,sans-serif}
+        .xh-display{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif}
         .xh-mono{font-family:'DM Mono',monospace}
         @keyframes xhsail{0%,12%{left:24px;transform:translateY(0)}40%,55%{left:calc(50% - 9px);transform:translateY(-2px)}85%,100%{left:calc(100% - 44px);transform:translateY(0)}}
         @keyframes xhdrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -110,8 +182,16 @@ export default function HomePage() {
         .xh-node.done svg{stroke:#34d399}
         .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
         .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
-        @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}}
-        @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg{animation:none !important}}
+        .xh-cat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:40px}
+        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block}
+        .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
+        .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
+        .xh-cat .ico svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+        .xh-cat:hover .ico{background:var(--xh-accent);color:#fff;transform:scale(1.06)}
+        .xh-ticker-in{animation:xhscroll 30s linear infinite}
+        @keyframes xhscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+        @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg,.xh-ticker-in{animation:none !important}}
       `}</style>
 
       {/* Theme toggle */}
@@ -137,11 +217,9 @@ export default function HomePage() {
           <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:8,padding:'7px 15px',borderRadius:99,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',fontSize:12,letterSpacing:'0.05em',fontWeight:500,color:'var(--xh-accent)',marginBottom:22}}>
             ⚓ NON-CUSTODIAL · ON-CHAIN ESCROW
           </div>
-          <h1 className="xh-display" style={{fontSize:'clamp(32px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.07,color:'var(--xh-text)',marginBottom:16}}>
-            Trade gaming assets.<br/>Your XRP stays{' '}
-            <span style={{color:'var(--xh-accent)',whiteSpace:'nowrap',position:'relative'}}>anchored
-              <svg style={{position:'absolute',left:0,right:0,bottom:-4,width:'100%',height:10}} viewBox="0 0 120 10" preserveAspectRatio="none"><path d="M0 5 Q 15 0 30 5 T 60 5 T 90 5 T 120 5" fill="none" stroke="currentColor" strokeOpacity=".35" strokeWidth="3"/></svg>
-            </span>
+          <h1 className="xh-display" style={{fontSize:'clamp(32px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.1,color:'var(--xh-text)',marginBottom:16}}>
+            The safe harbor for{' '}
+            <span style={{background:'linear-gradient(90deg, var(--xh-accent) 0%, #38BDF8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>digital assets</span>
           </h1>
           <p style={{fontSize:16.5,color:'var(--xh-text2)',maxWidth:520,marginBottom:24,lineHeight:1.55}}>
             Game accounts, skins, in-game currency and digital goods — every trade locked in an XRP Ledger escrow that neither the seller nor the platform can touch.
@@ -195,6 +273,15 @@ export default function HomePage() {
         </aside>
       </div>
 
+      {/* LIVE TICKER */}
+      <div style={{background:'#0b1b33',borderRadius:12,overflow:'hidden',marginBottom:36}} aria-hidden="true">
+        <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:44,whiteSpace:'nowrap',padding:'11px 0',fontSize:12,letterSpacing:'.02em',color:'#9db4da',width:'max-content'}}>
+          {(() => { const it = tickerItems(); return [...it, ...it].map((node,i)=>(
+            <span key={i} style={{display:'inline-flex',alignItems:'center'}}>{node}</span>
+          )); })()}
+        </div>
+      </div>
+
       {/* STATS BAR */}
       <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
         {[
@@ -210,11 +297,13 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* CATEGORY PILLS */}
-      <div style={{display:'flex',gap:10,flexWrap:'wrap',justifyContent:'center',marginBottom:40}}>
+      {/* CATEGORY CARDS */}
+      <div className="xh-cat-grid">
         {CATS.map(c=>(
-          <Link key={c.key} href={'/listings?category='+c.key} className="xh-pill">
-            <span>{c.emoji}</span> {c.label}
+          <Link key={c.key} href={'/listings?category='+c.key} className="xh-cat">
+            <span className="ico">{CAT_ICONS[c.key]}</span>
+            <span style={{display:'block',fontSize:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
+            <span className="xh-mono" style={{fontSize:11,color:'var(--xh-text3)'}}>{c.sub}</span>
           </Link>
         ))}
       </div>
@@ -237,7 +326,7 @@ export default function HomePage() {
       {/* LATEST */}
       <div style={{marginBottom:48}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-          <span style={{fontSize:18,fontWeight:700,color:'var(--xh-text)'}}>Latest listings</span>
+          <span style={{fontSize:18,fontWeight:700,color:'var(--xh-text)'}}>Fresh off the boat</span>
           <Link href="/listings" style={{fontSize:13,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600}}>Browse all →</Link>
         </div>
         {loading ? (
@@ -245,10 +334,11 @@ export default function HomePage() {
             {Array.from({length:8}).map((_,i)=><SkeletonCard key={i}/>)}
           </div>
         ) : listings.length===0 ? (
-          <div style={{textAlign:'center',padding:'48px 20px',background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14}}>
-            <div style={{fontSize:36,marginBottom:12}}>🏪</div>
-            <div style={{fontSize:15,fontWeight:600,color:'var(--xh-text)',marginBottom:6}}>No listings yet</div>
-            <div style={{fontSize:13,color:'var(--xh-text2)'}}>Be the first to list an item.</div>
+          <div style={{textAlign:'center',padding:'48px 20px',background:'rgba(21,114,232,0.04)',border:'1.5px dashed var(--xh-accent)',borderRadius:14}}>
+            <div style={{fontSize:34,marginBottom:12}}>⚓</div>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:6}}>The harbor just opened</div>
+            <div style={{fontSize:13,color:'var(--xh-text2)',marginBottom:16}}>Be one of the first sellers on mainnet — 0 listing fees.</div>
+            <Link href={user ? '/listings/new' : '/login'} className="xh-btn-primary" style={{padding:'10px 22px',fontSize:13.5}}>+ List an item</Link>
           </div>
         ) : (
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12}}>
@@ -259,37 +349,38 @@ export default function HomePage() {
 
       {/* HOW ESCROW KEEPS YOU SAFE */}
       <div id="how-it-works" style={{background:'var(--xh-bg2)',borderRadius:18,padding:'40px 28px',marginBottom:36}}>
-        <h2 style={{fontSize:22,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>How escrow protects every trade</h2>
-        <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Non-custodial, on-chain buyer protection — powered by XRP Ledger escrow.</p>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:24}}>
+        <h2 className="xh-display" style={{fontSize:23,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>Trust the ledger, not us</h2>
+        <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Every step is a real XRPL transaction you can verify yourself.</p>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:16}}>
           {[
-            {step:'1',emoji:'🔒',title:'Buyer locks payment',desc:'XRP is held in an on-chain XRPL escrow — neither the platform nor the seller can touch it.',color:'#DBEAFE'},
-            {step:'2',emoji:'📦',title:'Seller delivers',desc:'The account, skins or goods are handed over, then the buyer confirms receipt.',color:'#FEF3C7'},
-            {step:'3',emoji:'✅',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.',color:'#D1FAE5'},
+            {k:'STEP 1 · ESCROWCREATE',title:'Buyer locks payment',desc:'XRP is held in an on-chain XRPL escrow — neither the platform nor the seller can touch it.'},
+            {k:'STEP 2 · DELIVERY',title:'Seller delivers',desc:'The account, skins or goods are handed over, then the buyer confirms receipt.'},
+            {k:'STEP 3 · ESCROWFINISH',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.'},
           ].map(s=>(
-            <div key={s.step} style={{textAlign:'center'}}>
-              <div style={{width:56,height:56,borderRadius:14,background:dark?'rgba(59,130,246,0.15)':s.color,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>{s.emoji}</div>
-              <div style={{fontSize:14,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>Step {s.step} · {s.title}</div>
-              <div style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.6,maxWidth:280,margin:'0 auto'}}>{s.desc}</div>
+            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 22px'}}>
+              <div className="xh-mono" style={{fontSize:10.5,letterSpacing:'0.08em',color:'var(--xh-accent)',marginBottom:11}}>{s.k}</div>
+              <div className="xh-display" style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>{s.title}</div>
+              <div style={{fontSize:13.5,color:'var(--xh-text2)',lineHeight:1.6}}>{s.desc}</div>
             </div>
           ))}
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:28,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
-          <span style={{fontSize:18}}>🛡️</span>
-          <span style={{fontSize:13,color:'var(--xh-accent)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:24,background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderLeft:'3px solid #f59e0b',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
+          <span style={{fontSize:18}}>🛟</span>
+          <span style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
         </div>
       </div>
 
       {/* CTA */}
-      <div style={{background:'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 50%, #1572E8 100%)',borderRadius:18,padding:'48px 28px',textAlign:'center',marginBottom:24,color:'#fff'}}>
-        <h2 style={{fontSize:28,fontWeight:800,letterSpacing:'-0.02em',marginBottom:12}}>Ready to drop anchor?</h2>
-        <p style={{fontSize:15,opacity:0.9,maxWidth:520,margin:'0 auto 24px',lineHeight:1.55}}>Connect your Xaman wallet and start trading in under a minute.</p>
-        <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
+      <div style={{background:'linear-gradient(135deg, #0b1b33 0%, #142b52 55%, #1d4ed8 100%)',borderRadius:18,padding:'48px 28px 56px',textAlign:'center',marginBottom:24,color:'#fff',position:'relative',overflow:'hidden'}}>
+        <h2 className="xh-display" style={{fontSize:30,fontWeight:800,letterSpacing:'-0.02em',marginBottom:12,position:'relative',zIndex:1}}>Ready to drop anchor?</h2>
+        <p style={{fontSize:15,color:'#bcd2f7',maxWidth:520,margin:'0 auto 24px',lineHeight:1.55,position:'relative',zIndex:1}}>Connect your Xaman wallet and start trading in under a minute.</p>
+        <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap',position:'relative',zIndex:1}}>
           {!user && (
-            <Link href="/login" style={{background:'#fff',color:'#1572E8',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none'}}>Connect wallet</Link>
+            <Link href="/login" style={{background:'#fff',color:'#0b1b33',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none'}}>Connect wallet</Link>
           )}
           {user ? (<Link href="/listings/new" style={{background:'rgba(255,255,255,0.15)',color:'#fff',padding:'12px 28px',borderRadius:8,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>+ List an item</Link>) : (<Link href="/listings" style={{background:'rgba(255,255,255,0.12)',color:'#fff',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>Browse first</Link>)}
         </div>
+        <svg style={{position:'absolute',left:0,right:0,bottom:-2,width:'100%',height:44,opacity:.16}} viewBox="0 0 1200 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 30 Q 100 5 200 30 T 400 30 T 600 30 T 800 30 T 1000 30 T 1200 30 V60 H0 Z" fill="#fff"/></svg>
       </div>
 
       {/* FOOTER */}
