@@ -1,90 +1,228 @@
 'use client';
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import ListingCard from '../../components/ListingCard';
 
 const CATS = [
-  { key: '', label: 'All', emoji: '🌐' },
-  { key: 'games', label: 'Games', emoji: '🎮' },
-  { key: 'graphics', label: 'Graphics & Art', emoji: '🎨' },
-  { key: 'software', label: 'Software & Tools', emoji: '💻' },
-  { key: 'accounts', label: 'Accounts', emoji: '👤' },
-  { key: 'other', label: 'Other', emoji: '📦' },
+  { key: '',         label: 'All',              emoji: '🌐', mast: { title: 'Open harbor',    sub: 'Browse every dock — game items, accounts, software keys and more. Every trade escrow-locked on the XRP Ledger.', ico: 'compass' } },
+  { key: 'games',    label: 'Games',            emoji: '🎮', mast: { title: 'Games dock',     sub: 'Accounts, keys and in-game currency — every trade escrow-locked on the XRP Ledger.',                                  ico: 'gamepad' } },
+  { key: 'graphics', label: 'Graphics & Art',   emoji: '🎨', mast: { title: 'Graphics bay',   sub: 'Logos, illustrations, design assets and creative files — paid in XRP, locked in escrow.',                              ico: 'palette' } },
+  { key: 'software', label: 'Software & Tools', emoji: '💻', mast: { title: 'Software pier',  sub: 'Licenses, scripts, plugins and digital tools — released only when you confirm delivery.',                              ico: 'code' } },
+  { key: 'accounts', label: 'Accounts',         emoji: '👤', mast: { title: 'Accounts quay',  sub: 'Verified profiles, subscriptions and access — handed over under XRPL escrow protection.',                              ico: 'user' } },
+  { key: 'other',    label: 'Other',            emoji: '📦', mast: { title: 'General cargo',  sub: 'Everything else digital — protected by XRP Ledger escrow from sale to settlement.',                                    ico: 'package' } },
 ];
 
 const SORTS = [
-  { key: 'newest', label: 'Newest' },
-  { key: 'price_asc', label: 'Price: Low → High' },
-  { key: 'price_desc', label: 'Price: High → Low' },
-  { key: 'popular', label: 'Popular' },
+  { key: 'newest',     label: 'Newest' },
+  { key: 'price_asc',  label: 'Price: low → high' },
+  { key: 'price_desc', label: 'Price: high → low' },
+  { key: 'popular',    label: 'Popular' },
 ];
+
+const GAMES = ['Valorant', 'CS2', 'Fortnite', 'League of Legends', 'Dota 2', 'Apex Legends', 'WoW', 'Minecraft', 'Rocket League', 'Steam (general)', 'Other'];
+
+const ICON_PATHS = {
+  compass: 'M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10ZM16 8l-2 6-6 2 2-6 6-2Z',
+  gamepad: 'M6 11h4M8 9v4M15 10h.01M18 12h.01M17.3 5H6.7a4.7 4.7 0 0 0-4.6 5.6l1 5.3A2.6 2.6 0 0 0 7.7 17l1.6-2h5.4l1.6 2a2.6 2.6 0 0 0 4.6-1.1l1-5.3A4.7 4.7 0 0 0 17.3 5Z',
+  palette: 'M12 2a10 10 0 1 0 0 20 2 2 0 0 0 1.4-3.4A1.5 1.5 0 0 1 14.5 16H17a5 5 0 0 0 5-5c0-4.97-4.48-9-10-9ZM6.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM10 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM14 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM17.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z',
+  code:    'M8 6L2 12l6 6M16 6l6 6-6 6M14 4l-4 16',
+  user:    'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0',
+  package: 'M3 7l9 4 9-4M3 7v10l9 4M21 7v10l-9 4M12 11v10',
+};
+
+const CSS = `
+.xh-listings{font-family:var(--xh-body);color:#14161a}
+.xh-listings h1{font-family:var(--xh-display);font-weight:800;color:#fff}
+
+.xh-mast{background:#0b1b33;color:#fff;border-radius:14px;position:relative;overflow:hidden;margin:-8px 0 24px}
+.xh-mast-in{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:30px 32px 40px;position:relative;z-index:1}
+.xh-crumb{font-family:var(--xh-mono);font-size:11px;color:#7e96bf;margin-bottom:10px;letter-spacing:0.06em}
+.xh-crumb b{color:#cfe0ff;font-weight:500}
+.xh-mast h1{font-size:32px;letter-spacing:-0.02em;display:flex;align-items:center;gap:14px;line-height:1.1;margin:0}
+.xh-mast h1 .ico{width:46px;height:46px;border-radius:13px;background:rgba(59,130,246,0.2);border:1px solid rgba(125,160,255,0.3);display:grid;place-items:center;flex-shrink:0}
+.xh-mast h1 .ico svg{width:24px;height:24px;stroke:#9cc0ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.xh-mast p{color:#9db4da;font-size:14px;margin-top:8px;max-width:560px;line-height:1.5}
+.xh-mast-stats{display:flex;gap:24px;font-family:var(--xh-mono);font-size:11px;color:#7e96bf;text-align:right;letter-spacing:0.04em;flex-shrink:0;padding-top:6px}
+.xh-mast-stats b{display:block;font-size:20px;color:#fff;font-weight:500;margin-bottom:3px;letter-spacing:0;font-family:var(--xh-display)}
+.xh-mast-wave{position:absolute;bottom:-1px;left:0;right:0;height:30px;opacity:0.45;z-index:0}
+.xh-mast-wave svg{width:100%;height:100%}
+
+.xh-page{display:grid;grid-template-columns:240px 1fr;gap:28px;padding-bottom:48px}
+
+.xh-side{position:sticky;top:80px;align-self:start;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 96px);overflow-y:auto;padding-bottom:8px;padding-right:4px}
+.xh-side::-webkit-scrollbar{width:4px}
+.xh-side::-webkit-scrollbar-thumb{background:#e7e9ed;border-radius:2px}
+.xh-fg{border:1px solid #e7e9ed;border-radius:14px;padding:16px 18px;background:#fff}
+.xh-fg h4{font-family:var(--xh-mono);font-size:11px;letter-spacing:0.08em;color:#5b6472;margin:0 0 12px;font-weight:500}
+.xh-fi{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:6px 0;color:#5b6472;cursor:pointer;-webkit-user-select:none;user-select:none}
+.xh-fi:hover{color:#14161a}
+.xh-fi.on{color:#1d4ed8;font-weight:600}
+.xh-fi .box{width:16px;height:16px;border:1.5px solid #e7e9ed;border-radius:5px;display:grid;place-items:center;flex:none;background:#fff;transition:all 0.15s}
+.xh-fi.on .box{background:#3b82f6;border-color:#3b82f6}
+.xh-fi.on .box::after{content:"✓";color:#fff;font-size:10.5px;line-height:1}
+.xh-fi .count{margin-left:auto;font-family:var(--xh-mono);font-size:10.5px;color:#a8b0bc}
+.xh-price-in{display:flex;gap:8px;align-items:center}
+.xh-price-in input{flex:1;min-width:0;width:100%;font:inherit;font-size:13px;font-family:var(--xh-mono);padding:8px 10px;border:1px solid #e7e9ed;border-radius:8px;background:#f5f6f8;color:#14161a}
+.xh-price-in input:focus{outline:2px solid #3b82f6;background:#fff}
+.xh-escrow-note{font-size:12.5px;color:#5b6472;background:#f5f6f8;border:1px solid #e7e9ed;border-left:3px solid #10b981;border-radius:10px;padding:12px 14px;line-height:1.45}
+
+.xh-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.xh-search{flex:1;display:flex;gap:8px;min-width:240px}
+.xh-search input{flex:1;font:inherit;font-size:14px;padding:10px 16px;border:1px solid #e7e9ed;border-radius:10px;background:#f5f6f8;color:#14161a;min-width:0}
+.xh-search input:focus{outline:2px solid #3b82f6;background:#fff}
+.xh-search button{background:#3b82f6;color:#fff;border:none;padding:0 18px;border-radius:10px;font-weight:500;cursor:pointer;font-size:14px}
+.xh-search button:hover{background:#1d4ed8}
+.xh-sort{font:inherit;font-size:13.5px;font-weight:500;padding:10px 14px;border:1px solid #e7e9ed;border-radius:10px;background:#fff;color:#14161a;cursor:pointer}
+
+.xh-rline{font-family:var(--xh-mono);font-size:12px;color:#5b6472;margin-bottom:14px}
+.xh-rline b{color:#14161a;font-weight:500}
+
+.xh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.xh-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:#1d4ed8;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.22);border-radius:999px;padding:5px 12px}
+.xh-chip i{font-style:normal;cursor:pointer;opacity:0.55}
+.xh-chip i:hover{opacity:1}
+.xh-chip-clear{background:transparent;border:0;color:#5b6472;font-size:12.5px;cursor:pointer;padding:5px 8px;text-decoration:underline}
+
+.xh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+
+.xh-empty{text-align:center;padding:64px 24px;background:#f5f6f8;border:1px solid #e7e9ed;border-radius:14px;color:#5b6472}
+.xh-empty .ico{font-size:38px;margin-bottom:12px;opacity:0.55}
+.xh-empty .t{font-size:16px;font-weight:600;color:#14161a;margin-bottom:6px}
+.xh-empty .s{font-size:13px;margin-bottom:16px}
+.xh-empty button{background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:500;cursor:pointer}
+.xh-empty button:hover{background:#1d4ed8}
+
+.xh-load{text-align:center;margin-top:28px}
+.xh-load button{background:#fff;border:1px solid #e7e9ed;color:#5b6472;border-radius:10px;padding:10px 28px;font-size:14px;cursor:pointer;font-family:var(--xh-mono)}
+.xh-load button:hover{border-color:#3b82f6;color:#1d4ed8}
+
+.xh-skel{background:#f5f6f8;border:1px solid #e7e9ed;border-radius:14px;height:280px;animation:xhSkel 1.4s ease-in-out infinite}
+@keyframes xhSkel{0%,100%{opacity:1}50%{opacity:0.5}}
+
+@media (max-width:920px){
+  .xh-page{grid-template-columns:1fr}
+  .xh-side{position:static;flex-direction:row;flex-wrap:wrap;max-height:none;overflow:visible;padding-right:0}
+  .xh-fg{flex:1 1 calc(50% - 8px);min-width:200px}
+  .xh-grid{grid-template-columns:repeat(2,1fr)}
+  .xh-mast-in{flex-direction:column;align-items:flex-start;gap:18px;padding:24px 20px 36px}
+  .xh-mast h1{font-size:24px}
+  .xh-mast-stats{text-align:left;gap:18px;flex-wrap:wrap}
+}
+@media (max-width:560px){
+  .xh-grid{grid-template-columns:1fr}
+  .xh-mast-in{padding:20px 18px 32px}
+}
+`;
+
+function MastIcon({ name }) {
+  return (
+    <span className="ico">
+      <svg viewBox="0 0 24 24"><path d={ICON_PATHS[name] || ICON_PATHS.compass} /></svg>
+    </span>
+  );
+}
 
 function ListingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const catScrollRef = useRef(null);
-  const [catEdges, setCatEdges] = useState({ left: false, right: false });
-  function updateCatEdges() { const el = catScrollRef.current; if (!el) return; setCatEdges({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 }); }
-  function scrollCats(dir) { const el = catScrollRef.current; if (el) el.scrollBy({ left: dir * 220, behavior: 'smooth' }); }
-  useEffect(() => { updateCatEdges(); const el = catScrollRef.current; if (!el) return; const on = () => updateCatEdges(); el.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on); return () => { el.removeEventListener('scroll', on); window.removeEventListener('resize', on); }; }, []);
+  const user = useAuthStore(s => s.user);
+
   const [cat, setCat] = useState('');
-  const [sort, setSort] = useState('newest');
+  const [game, setGame] = useState('');
   const [q, setQ] = useState('');
   const [inputQ, setInputQ] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [game, setGame] = useState('');
+  const [proOnly, setProOnly] = useState(false);
+  const [ratingMin, setRatingMin] = useState(false);
+  const [sort, setSort] = useState('newest');
+
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [favIds, setFavIds] = useState(new Set());
-  const user = useAuthStore(s => s.user);
-  const searchRef = useRef(null);
+  const [catCounts, setCatCounts] = useState({});
+
+  // Inject fonts + CSS once
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!document.getElementById('xh-listings-fonts')) {
+      const link = document.createElement('link');
+      link.id = 'xh-listings-fonts';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
+      document.head.appendChild(link);
+    }
+    if (!document.getElementById('xh-listings-css')) {
+      const style = document.createElement('style');
+      style.id = 'xh-listings-css';
+      style.textContent = ':root{--xh-display:"Bricolage Grotesque","Inter",system-ui,sans-serif;--xh-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--xh-mono:"JetBrains Mono",ui-monospace,monospace}\n' + CSS;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) api.favorites.ids().then(ids => setFavIds(new Set(ids))).catch(() => {});
   }, [user]);
 
+  // Restore from URL once
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.get('q')) { setQ(p.get('q')); setInputQ(p.get('q')); }
-    { const c0 = p.get('cat') || p.get('category'); if (c0) setCat(c0); }
+    const c0 = p.get('cat') || p.get('category'); if (c0) setCat(c0);
+    if (p.get('game')) setGame(p.get('game'));
+    if (p.get('min'))  setMinPrice(p.get('min'));
+    if (p.get('max'))  setMaxPrice(p.get('max'));
   }, []);
 
+  // Fetch listings whenever filters change
   useEffect(() => {
     setLoading(true);
     setOffset(0);
     setHasMore(false);
     const params = { sort, limit: 24, offset: 0 };
-    if (cat) params.category = cat;
-    if (q) params.search = q;
+    if (cat)      params.category = cat;
+    if (q)        params.search   = q;
     if (minPrice) params.minPrice = minPrice;
     if (maxPrice) params.maxPrice = maxPrice;
-    if (game) params.game = game;
+    if (game)     params.game     = game;
     api.listings.list(params)
       .then(data => {
-        setListings(data || []);
+        let arr = data || [];
+        if (proOnly)   arr = arr.filter(x => x.seller_is_pro);
+        if (ratingMin) arr = arr.filter(x => (Number(x.reputation_score) || 0) >= 4);
+        setListings(arr);
         setHasMore((data || []).length === 24);
       })
       .catch(() => setListings([]))
       .finally(() => setLoading(false));
-  }, [cat, sort, q, minPrice, maxPrice, game]);
+  }, [cat, sort, q, minPrice, maxPrice, game, proOnly, ratingMin]);
+
+  // Category counts (cheap snapshot, ignores filters)
+  useEffect(() => {
+    api.listings.list({ limit: 200, offset: 0 }).then(data => {
+      const counts = {};
+      (data || []).forEach(l => { counts[l.category] = (counts[l.category] || 0) + 1; });
+      setCatCounts(counts);
+    }).catch(() => {});
+  }, []);
 
   const loadMore = () => {
     const next = offset + 24;
     const params = { sort, limit: 24, offset: next };
-    if (cat) params.category = cat;
-    if (q) params.search = q;
+    if (cat)      params.category = cat;
+    if (q)        params.search   = q;
     if (minPrice) params.minPrice = minPrice;
     if (maxPrice) params.maxPrice = maxPrice;
-    if (game) params.game = game;
+    if (game)     params.game     = game;
     api.listings.list(params).then(data => {
-      setListings(l => [...l, ...(data || [])]);
+      let arr = data || [];
+      if (proOnly)   arr = arr.filter(x => x.seller_is_pro);
+      if (ratingMin) arr = arr.filter(x => (Number(x.reputation_score) || 0) >= 4);
+      setListings(l => [...l, ...arr]);
       setOffset(next);
       setHasMore((data || []).length === 24);
     });
@@ -95,135 +233,156 @@ function ListingsContent() {
     const isFav = favIds.has(id);
     const next = new Set(favIds);
     if (isFav) { next.delete(id); await api.favorites.remove(id).catch(() => {}); }
-    else { next.add(id); await api.favorites.add(id).catch(() => {}); }
+    else       { next.add(id);    await api.favorites.add(id).catch(() => {}); }
     setFavIds(next);
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setQ(inputQ.trim());
-  };
-
+  const handleSearch = (e) => { e.preventDefault(); setQ(inputQ.trim()); };
   const clearFilters = () => {
-    setCat(''); setSort('newest'); setQ(''); setInputQ(''); setMinPrice(''); setMaxPrice(''); setGame('');
+    setCat(''); setSort('newest'); setQ(''); setInputQ('');
+    setMinPrice(''); setMaxPrice(''); setGame(''); setProOnly(false); setRatingMin(false);
   };
 
-  const hasActiveFilters = cat || q || minPrice || maxPrice || game || sort !== 'newest';
+  const activeCat = CATS.find(c => c.key === cat) || CATS[0];
+  const hasActiveFilters = !!(cat || q || minPrice || maxPrice || game || proOnly || ratingMin);
+
+  const activeChips = [];
+  if (cat)       activeChips.push({ k:'cat',    label: CATS.find(c => c.key === cat)?.label || cat, on: () => setCat('') });
+  if (game)      activeChips.push({ k:'game',   label: game,                                       on: () => setGame('') });
+  if (minPrice)  activeChips.push({ k:'min',    label: 'min ' + minPrice + ' XRP',                 on: () => setMinPrice('') });
+  if (maxPrice)  activeChips.push({ k:'max',    label: 'max ' + maxPrice + ' XRP',                 on: () => setMaxPrice('') });
+  if (proOnly)   activeChips.push({ k:'pro',    label: 'Pro sellers',                              on: () => setProOnly(false) });
+  if (ratingMin) activeChips.push({ k:'rating', label: '4★ and up',                                on: () => setRatingMin(false) });
+  if (q)         activeChips.push({ k:'q',      label: '"' + q + '"',                              on: () => { setQ(''); setInputQ(''); } });
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      {/* Search bar */}
-      <form onSubmit={handleSearch} style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-        <input
-          ref={searchRef}
-          value={inputQ}
-          onChange={e => setInputQ(e.target.value)}
-          placeholder="Search listings..."
-          style={{ flex: 1, background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px', color: 'var(--text)', fontSize: 14, outline: 'none' }}
-        />
-        <button type="submit" style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-          Search
-        </button>
-        <button type="button" onClick={() => setShowFilters(f => !f)} style={{ background: showFilters ? 'var(--surface)' : 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text2)', borderRadius: 10, padding: '10px 14px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-          ⚙ Filters {hasActiveFilters && <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 10, fontSize: 10, padding: '1px 6px' }}>ON</span>}
-        </button>
-      </form>
-
-      {/* Filter panel */}
-      {showFilters && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+    <div className="xh-listings">
+      <header className="xh-mast">
+        <div className="xh-mast-in">
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sort</div>
-            <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}>
-              {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
+            <div className="xh-crumb">HARBOR · <b>{activeCat.mast.title.toUpperCase()}</b></div>
+            <h1><MastIcon name={activeCat.mast.ico} />{activeCat.mast.title}</h1>
+            <p>{activeCat.mast.sub}</p>
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Min Price (XRP)</div>
-            <input type="number" min="0" step="0.01" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="0" style={{ width: 90, background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
+          <div className="xh-mast-stats">
+            <div><b>{listings.length}{hasMore ? '+' : ''}</b>{listings.length === 1 ? 'listing' : 'listings'}</div>
+            <div><b>XRPL</b>on-chain escrow</div>
+            <div><b>100%</b>escrow-protected</div>
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Max Price (XRP)</div>
-            <input type="number" min="0" step="0.01" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="∞" style={{ width: 90, background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
-          </div>
-          <div style={{ display: (cat === '' || cat === 'games') ? undefined : 'none' }}>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Game</div>
-            <select value={game} onChange={e => setGame(e.target.value)} style={{ background: 'var(--bg)', border: '1px solid var(--border2)', color: 'var(--text)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}>
-              <option value="">All games</option>
-              {['CS2','Valorant','Fortnite','Dota 2','Rocket League','WoW','LoL','Apex Legends','Minecraft','Other'].map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-          {hasActiveFilters && (
-            <button onClick={clearFilters} style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}>
-              Clear all
-            </button>
-          )}
         </div>
-      )}
+        <div className="xh-mast-wave">
+          <svg viewBox="0 0 1200 34" preserveAspectRatio="none">
+            <path d="M0 18 Q 100 4 200 18 T 400 18 T 600 18 T 800 18 T 1000 18 T 1200 18 V34 H0 Z" fill="#10264a" />
+          </svg>
+        </div>
+      </header>
 
-      {/* Category tabs - horizontal scroll with edge fade + arrows */}
-      <div style={{ position: 'relative', marginBottom: 20 }}>
-        {catEdges.left && (<>
-          <div style={{ position:'absolute', left:0, top:0, bottom:8, width:44, background:'linear-gradient(to right, var(--bg), transparent)', pointerEvents:'none', zIndex:2 }} />
-          <button onClick={() => scrollCats(-1)} aria-label="Scroll categories left" style={{ position:'absolute', left:0, top:'calc(50% - 4px)', transform:'translateY(-50%)', zIndex:3, width:28, height:28, borderRadius:'50%', border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', cursor:'pointer', fontSize:15, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
-        </>)}
-        <div ref={catScrollRef} style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
-          {CATS.map(c => (
-            <button key={c.key} onClick={() => { setCat(c.key); if (c.key && c.key !== 'games') setGame(''); }} style={{ flexShrink: 0, background: cat === c.key ? 'var(--accent)' : 'var(--surface)', color: cat === c.key ? '#fff' : 'var(--text2)', border: '1px solid ' + (cat === c.key ? 'var(--accent)' : 'var(--border)'), borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: cat === c.key ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
-              {c.emoji} {c.label}
-            </button>
-          ))}
-        </div>
-        {catEdges.right && (<>
-          <div style={{ position:'absolute', right:0, top:0, bottom:8, width:44, background:'linear-gradient(to left, var(--bg), transparent)', pointerEvents:'none', zIndex:2 }} />
-          <button onClick={() => scrollCats(1)} aria-label="Scroll categories right" style={{ position:'absolute', right:0, top:'calc(50% - 4px)', transform:'translateY(-50%)', zIndex:3, width:28, height:28, borderRadius:'50%', border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', cursor:'pointer', fontSize:15, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
-        </>)}
-      </div>
-
-      {/* Results header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <span style={{ fontSize: 13, color: 'var(--text3)' }}>
-          {loading ? 'Loading...' : listings.length === 0 ? 'No listings found' : listings.length + (hasMore ? '+' : '') + ' listings'}
-          {q && <span style={{ color: 'var(--text2)' }}> for "<b style={{ color: 'var(--text)' }}>{q}</b>"</span>}
-        </span>
-        {!showFilters && (
-          <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text2)', borderRadius: 8, padding: '5px 10px', fontSize: 12, cursor: 'pointer' }}>
-            {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
-        )}
-      </div>
-
-      {/* Grid */}
-      {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 12 }}>
-          {[...Array(12)].map((_, i) => (
-            <div key={i} style={{ background: 'var(--surface)', borderRadius: 12, height: 220, animation: 'pulse2 1.5s infinite' }} />
-          ))}
-          <style>{'@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
-        </div>
-      ) : listings.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>No listings found</div>
-          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 16 }}>Try different search terms or filters</div>
-          {hasActiveFilters && <button onClick={clearFilters} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}>Clear filters</button>}
-        </div>
-      ) : (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(185px,1fr))', gap: 12 }}>
-            {listings.map(l => <ListingCard key={l.id} listing={l} isFavorited={favIds.has(l.id)} onToggleFavorite={user ? toggleFav : undefined} />)}
+      <div className="xh-page">
+        <aside className="xh-side">
+          <div className="xh-fg">
+            <h4>CATEGORY</h4>
+            {CATS.filter(c => c.key).map(c => (
+              <div key={c.key} className={'xh-fi ' + (cat === c.key ? 'on' : '')} onClick={() => setCat(cat === c.key ? '' : c.key)}>
+                <span className="box"></span>{c.label}<span className="count">{catCounts[c.key] || 0}</span>
+              </div>
+            ))}
           </div>
-          {hasMore && (
-            <div style={{ textAlign: 'center', marginTop: 24 }}>
-              <button onClick={loadMore} style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text2)', borderRadius: 10, padding: '10px 28px', fontSize: 13, cursor: 'pointer' }}>Load more</button>
+          {(cat === '' || cat === 'games') && (
+            <div className="xh-fg">
+              <h4>GAME</h4>
+              {GAMES.map(g => (
+                <div key={g} className={'xh-fi ' + (game === g ? 'on' : '')} onClick={() => setGame(game === g ? '' : g)}>
+                  <span className="box"></span>{g}
+                </div>
+              ))}
             </div>
           )}
-        </>
-      )}
+          <div className="xh-fg">
+            <h4>PRICE · XRP</h4>
+            <div className="xh-price-in">
+              <input placeholder="min" value={minPrice} onChange={e => setMinPrice(e.target.value)} inputMode="decimal" />
+              <span style={{ color: '#5b6472' }}>–</span>
+              <input placeholder="max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} inputMode="decimal" />
+            </div>
+          </div>
+          <div className="xh-fg">
+            <h4>SELLER</h4>
+            <div className={'xh-fi ' + (proOnly ? 'on' : '')} onClick={() => setProOnly(!proOnly)}>
+              <span className="box"></span>Pro sellers only
+            </div>
+            <div className={'xh-fi ' + (ratingMin ? 'on' : '')} onClick={() => setRatingMin(!ratingMin)}>
+              <span className="box"></span>4★ and up
+            </div>
+          </div>
+          <div className="xh-escrow-note">🛡 Every listing here is escrow-protected — your XRP is locked on-chain until you confirm delivery.</div>
+        </aside>
+
+        <main>
+          <form onSubmit={handleSearch} className="xh-toolbar">
+            <div className="xh-search">
+              <input value={inputQ} onChange={e => setInputQ(e.target.value)} placeholder={'Search in ' + activeCat.mast.title + '…'} />
+              <button type="submit">Search</button>
+            </div>
+            <select className="xh-sort" value={sort} onChange={e => setSort(e.target.value)}>
+              {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
+          </form>
+
+          {activeChips.length > 0 && (
+            <div className="xh-chips">
+              {activeChips.map(c => (
+                <span key={c.k} className="xh-chip">{c.label} <i onClick={c.on}>✕</i></span>
+              ))}
+              <button className="xh-chip-clear" onClick={clearFilters} type="button">Clear all</button>
+            </div>
+          )}
+
+          <div className="xh-rline">
+            <b>{loading ? '…' : (listings.length + (hasMore ? '+' : '')) + ' listings'}</b>
+            {' · sorted by ' + (SORTS.find(s => s.key === sort)?.label || sort).toLowerCase()}
+            {' · ledger-verified sellers first'}
+          </div>
+
+          {loading ? (
+            <div className="xh-grid">{[...Array(6)].map((_, i) => <div key={i} className="xh-skel" />)}</div>
+          ) : listings.length === 0 ? (
+            <div className="xh-empty">
+              <div className="ico">🔍</div>
+              <div className="t">No listings found</div>
+              <div className="s">Try a different category or filter — or be the first to list one</div>
+              {hasActiveFilters
+                ? <button onClick={clearFilters}>Clear filters</button>
+                : <button onClick={() => router.push('/listings/new')}>List an item</button>}
+            </div>
+          ) : (
+            <>
+              <div className="xh-grid">
+                {listings.map(l => (
+                  <ListingCard
+                    key={l.id}
+                    listing={l}
+                    isFavorited={favIds.has(l.id)}
+                    onToggleFavorite={user ? toggleFav : undefined}
+                  />
+                ))}
+              </div>
+              {hasMore && (
+                <div className="xh-load">
+                  <button onClick={loadMore}>Load more</button>
+                </div>
+              )}
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
 
 export default function ListingsPage() {
-  return <Suspense fallback={<div style={{padding:40,color:'var(--text3)',textAlign:'center'}}>Loading...</div>}><ListingsContent /></Suspense>;
+  return (
+    <Suspense fallback={<div style={{ padding: 40, color: '#5b6472', textAlign: 'center', fontFamily: '"Inter",system-ui,sans-serif' }}>Loading…</div>}>
+      <ListingsContent />
+    </Suspense>
+  );
 }
