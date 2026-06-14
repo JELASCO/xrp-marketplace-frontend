@@ -1,14 +1,34 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
 const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key — replace with your own from imgbb.com
-const CATS=[{key:'games',label:'Games',emoji:'🎮'},{key:'graphics',label:'Graphics & Art',emoji:'🎨'},{key:'software',label:'Software & Tools',emoji:'💻'},{key:'accounts',label:'Accounts',emoji:'👤'},{key:'other',label:'Other',emoji:'📦'}];
+const CATS = [
+  { key:'games',    label:'Games',           emoji:'🎮' },
+  { key:'graphics', label:'Graphics & Art',  emoji:'🎨' },
+  { key:'software', label:'Software & Tools',emoji:'💻' },
+  { key:'accounts', label:'Accounts',        emoji:'👤' },
+  { key:'other',    label:'Other',           emoji:'📦' },
+];
+const CAT_LABEL_UPPER = { games:'GAMES', graphics:'GRAPHICS', software:'SOFTWARE', accounts:'ACCOUNTS', other:'OTHER' };
+const CAT_BG = {
+  games:    'linear-gradient(135deg,#dbeafe,#eff6ff)',
+  graphics: 'linear-gradient(135deg,#ede9fe,#faf5ff)',
+  software: 'linear-gradient(135deg,#ccfbf1,#f0fdfa)',
+  accounts: 'linear-gradient(135deg,#f1f5f9,#f8fafc)',
+  other:    'linear-gradient(135deg,#fef3c7,#fffbeb)',
+};
 const GAMES = ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','World of Warcraft','Apex Legends','Roblox','Minecraft','Call of Duty','Old School RuneScape','RuneScape 3','Path of Exile','Diablo 4','Rust','Team Fortress 2','PUBG','Genshin Impact','Grand Theft Auto V','EA FC 24','Overwatch 2','Escape from Tarkov','ARC Raiders','New World','Lost Ark','Albion Online','Final Fantasy XIV','Warframe','Destiny 2','Other'];
 const PLATFORMS = ['PC','PlayStation','Xbox','Nintendo Switch','Mobile','Cross-platform','Other'];
+const DELIVERY_OPTS = [
+  { v:'instant', l:'Instant' },
+  { v:'1h',      l:'Under 1 hour' },
+  { v:'24h',     l:'Within 24 hours' },
+  { v:'1-3d',    l:'1–3 days' },
+];
 const TITLE_MAX=120;
 const DESC_MAX=2000;
 
@@ -22,26 +42,247 @@ async function uploadToImgbb(file) {
   return d.data.url;
 }
 
+const CSS = `
+.xh-form{font-family:var(--xh-body);color:#14161a}
+.xh-form h1{font-family:var(--xh-display);font-weight:800;letter-spacing:-0.02em;line-height:1.1}
+.xh-form .sec-h{font-family:var(--xh-display);font-weight:700;letter-spacing:-0.01em}
+
+.xh-form-mast{background:#0b1b33;color:#fff;border-radius:16px;padding:28px 30px 36px;margin:14px 0 18px;position:relative;overflow:hidden}
+.xh-form-mast .crumb{font-family:var(--xh-mono);font-size:11.5px;color:#7e96bf;letter-spacing:0.04em;margin-bottom:10px;text-transform:uppercase}
+.xh-form-mast .crumb b{color:#cfe0ff;font-weight:500}
+.xh-form-mast h1{font-size:28px;display:flex;align-items:center;gap:14px;margin:0 0 6px;color:#fff}
+.xh-form-mast h1 .icon{width:40px;height:40px;border-radius:10px;background:#3b82f6;display:grid;place-items:center;font-size:20px;flex:none}
+.xh-form-mast .sub{color:#aebfdd;font-size:14px;max-width:640px;line-height:1.55;margin-top:6px}
+.xh-form-mast .step-rail{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.xh-form-mast .step{font-family:var(--xh-mono);font-size:11px;color:#7e96bf;background:rgba(255,255,255,0.05);border:1px solid #21385f;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;letter-spacing:0.04em}
+.xh-form-mast .step.on{color:#cfe0ff;background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.35)}
+.xh-form-mast .step.done{color:#10b981;border-color:rgba(16,185,129,0.4)}
+.xh-form-mast .step .num{width:18px;height:18px;border-radius:50%;background:#10264a;display:grid;place-items:center;font-size:10px;color:#7e96bf}
+.xh-form-mast .step.on .num{background:#3b82f6;color:#fff}
+.xh-form-mast .step.done .num{background:#10b981;color:#fff}
+.xh-form-mast .wave{position:absolute;bottom:-2px;left:0;right:0;height:24px;pointer-events:none}
+
+.xh-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:32px;padding:0 0 60px;align-items:start}
+.xh-col{display:flex;flex-direction:column;gap:18px}
+
+.xh-card{background:#fff;border:1px solid #e7e9ed;border-radius:14px;padding:22px 24px}
+.xh-card .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:6px}
+.xh-card .sec-head .lbl{font-family:var(--xh-mono);font-size:10.5px;letter-spacing:0.08em;color:#1d4ed8;text-transform:uppercase;font-weight:500}
+.xh-card .sec-head h2{font-size:17px;color:#14161a}
+.xh-card .sec-head .hint{font-size:12px;color:#5b6472;font-family:var(--xh-mono)}
+
+.xh-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.xh-field:last-child{margin-bottom:0}
+.xh-field label{font-size:13px;font-weight:600;color:#14161a;display:flex;align-items:center;gap:6px}
+.xh-field label .opt{font-family:var(--xh-mono);font-size:10.5px;font-weight:400;color:#5b6472;text-transform:uppercase}
+.xh-field label .req{color:#ef4444}
+.xh-field .helper{font-size:12px;color:#5b6472;line-height:1.45}
+.xh-field input[type=text],.xh-field input[type=number],.xh-field input[type=url],.xh-field textarea,.xh-field select{
+  width:100%;background:#fff;border:1px solid #e7e9ed;border-radius:10px;
+  padding:11px 14px;font-size:14px;color:#14161a;font-family:inherit;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box
+}
+.xh-field input:focus,.xh-field textarea:focus,.xh-field select:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
+.xh-field input.err,.xh-field textarea.err{border-color:#ef4444}
+.xh-field textarea{resize:vertical;min-height:96px;line-height:1.55}
+.xh-field .count{font-family:var(--xh-mono);font-size:10.5px;color:#5b6472;text-align:right;margin-top:2px}
+.xh-field .count.over{color:#ef4444}
+
+.xh-cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.xh-cat-btn{padding:14px 6px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff;border:1px solid #e7e9ed;font-family:inherit;color:#5b6472;transition:all 0.15s}
+.xh-cat-btn:hover{border-color:#3b82f6;color:#1d4ed8}
+.xh-cat-btn.on{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-color:#3b82f6;color:#1d4ed8}
+.xh-cat-btn .emoji{font-size:22px}
+.xh-cat-btn .lbl{font-size:11.5px;font-weight:600;letter-spacing:0.02em;text-align:center}
+
+.xh-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.xh-media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.xh-tile{aspect-ratio:1;border-radius:12px;background:#f5f6f8;border:1px dashed #e7e9ed;display:grid;place-items:center;position:relative;color:#5b6472;font-size:24px;overflow:hidden;transition:all 0.15s}
+.xh-tile.add{cursor:pointer}
+.xh-tile.add:hover{border-color:#3b82f6;color:#3b82f6}
+.xh-tile.filled{border-style:solid;background:linear-gradient(135deg,#dbeafe,#eff6ff)}
+.xh-tile.filled img{width:100%;height:100%;object-fit:cover}
+.xh-tile.cover{outline:2px solid #3b82f6;outline-offset:-2px}
+.xh-tile .cover-tag{position:absolute;top:6px;left:6px;font-family:var(--xh-mono);font-size:9.5px;background:#3b82f6;color:#fff;padding:2px 6px;border-radius:4px;letter-spacing:0.05em;z-index:2}
+.xh-tile .x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(11,27,51,0.85);color:#fff;display:grid;place-items:center;font-size:12px;cursor:pointer;border:none;padding:0;z-index:2}
+.xh-tile.add .plus{font-size:30px;font-weight:300;line-height:1;color:inherit}
+.xh-tile.add .lbl{font-family:var(--xh-mono);font-size:9.5px;color:#5b6472;margin-top:4px;letter-spacing:0.04em;text-transform:uppercase}
+.xh-tile.add .col{display:flex;flex-direction:column;align-items:center}
+.xh-media-note{font-family:var(--xh-mono);font-size:10.5px;color:#5b6472;margin-top:10px}
+
+.xh-price{position:relative}
+.xh-price input{padding-right:60px;font-family:var(--xh-mono);font-weight:500;font-size:18px;color:#1d4ed8}
+.xh-price .suffix{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-family:var(--xh-mono);font-size:12px;color:#5b6472;font-weight:500;letter-spacing:0.04em;pointer-events:none}
+.xh-usd-live{font-family:var(--xh-mono);font-size:11px;color:#10b981;margin-top:6px;display:flex;align-items:center;gap:6px}
+.xh-usd-live .lvdot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:xhPulse 2s infinite}
+.xh-fee{font-family:var(--xh-mono);font-size:11px;color:#5b6472;margin-top:4px}
+.xh-fee b{color:#10b981;font-weight:600}
+@keyframes xhPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.xh-chips{display:flex;gap:6px;flex-wrap:wrap}
+.xh-chip{font-family:var(--xh-mono);font-size:11.5px;color:#5b6472;border:1px solid #e7e9ed;background:#fff;border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;transition:all 0.15s;font-family:var(--xh-mono)}
+.xh-chip:hover{border-color:#3b82f6;color:#1d4ed8}
+.xh-chip.on{background:#0b1b33;color:#fff;border-color:#0b1b33}
+
+.xh-taginput{border:1px solid #e7e9ed;border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff;transition:border-color 0.15s,box-shadow 0.15s}
+.xh-taginput:focus-within{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
+.xh-tag{font-family:var(--xh-mono);font-size:11.5px;background:#f5f6f8;border:1px solid #e7e9ed;border-radius:999px;padding:4px 10px 4px 12px;color:#14161a;display:flex;align-items:center;gap:6px}
+.xh-tag button{cursor:pointer;color:#5b6472;background:none;border:none;font-weight:500;padding:0;font-size:13px;font-family:inherit}
+.xh-tag button:hover{color:#ef4444}
+.xh-taginput input{flex:1;min-width:120px;border:none;outline:none;padding:6px 8px;font-size:13.5px;background:transparent;font-family:inherit;box-shadow:none}
+
+.xh-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #e7e9ed;gap:16px}
+.xh-toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.xh-toggle-row:first-child{padding-top:0}
+.xh-toggle-row .info{flex:1}
+.xh-toggle-row .info .t{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:3px;color:#14161a}
+.xh-toggle-row .info .badge{font-family:var(--xh-mono);font-size:9.5px;background:#f59e0b;color:#fff;padding:2px 6px;border-radius:4px;letter-spacing:0.05em;font-weight:500}
+.xh-toggle-row .info .s{font-size:12.5px;color:#5b6472;line-height:1.45}
+.xh-toggle{position:relative;width:42px;height:24px;flex:none}
+.xh-toggle input{display:none}
+.xh-toggle .track{display:block;width:100%;height:100%;background:#e7e9ed;border-radius:999px;position:relative;transition:background 0.15s;cursor:pointer}
+.xh-toggle .track::before{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.18);transition:transform 0.15s}
+.xh-toggle input:checked + .track{background:#3b82f6}
+.xh-toggle input:checked + .track::before{transform:translateX(18px)}
+
+.xh-digital-extra{margin-top:14px;display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px dashed #e7e9ed}
+.xh-digital-extra textarea{font-family:var(--xh-mono);font-size:13px}
+
+.xh-action-bar{position:sticky;bottom:0;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-top:1px solid #e7e9ed;padding:14px 0;margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.xh-action-bar .left{font-family:var(--xh-mono);font-size:11.5px;color:#5b6472}
+.xh-action-bar .left .ok{color:#10b981}
+.xh-action-bar .btn-group{display:flex;gap:10px}
+.xh-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:14.5px;padding:11px 22px;border-radius:10px;border:1px solid transparent;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.xh-btn:disabled{cursor:not-allowed;opacity:0.6}
+.xh-btn-primary{background:#3b82f6;color:#fff;box-shadow:0 6px 18px rgba(59,130,246,0.28)}
+.xh-btn-primary:hover:not(:disabled){background:#1d4ed8;transform:translateY(-1px)}
+.xh-btn-ghost{background:#fff;border-color:#e7e9ed;color:#14161a}
+.xh-btn-ghost:hover:not(:disabled){border-color:#3b82f6}
+
+.xh-err{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#b91c1c;font-family:var(--xh-body)}
+
+.xh-auth-gate{max-width:480px;margin:60px auto;text-align:center;padding:40px 24px;background:#f5f6f8;border:1px solid #e7e9ed;border-radius:14px}
+.xh-auth-gate .ic{font-size:38px;margin-bottom:14px}
+.xh-auth-gate .t{font-family:var(--xh-display);font-size:20px;font-weight:700;color:#14161a;margin-bottom:6px;letter-spacing:-0.01em}
+.xh-auth-gate .s{font-size:13.5px;color:#5b6472;line-height:1.55}
+
+/* PREVIEW PANEL */
+.xh-prev-col{position:sticky;top:84px}
+.xh-prev{background:#f5f6f8;border:1px solid #e7e9ed;border-radius:14px;padding:18px;font-size:13px}
+.xh-prev .head{display:flex;align-items:center;justify-content:space-between;font-family:var(--xh-mono);font-size:10.5px;color:#5b6472;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed #e7e9ed}
+.xh-prev .head .live{color:#10b981;display:flex;align-items:center;gap:5px}
+.xh-prev .head .live::before{content:"";width:6px;height:6px;border-radius:50%;background:#10b981;animation:xhPulse 2s infinite}
+.xh-prev-img{aspect-ratio:4/3;border-radius:12px;background:linear-gradient(135deg,#dbeafe,#eff6ff);display:grid;place-items:center;font-size:54px;position:relative;border:1px solid #e7e9ed;margin-bottom:8px;overflow:hidden}
+.xh-prev-img img{width:100%;height:100%;object-fit:cover}
+.xh-prev-img .badge{position:absolute;top:9px;left:9px;font-family:var(--xh-mono);font-size:9.5px;background:rgba(11,27,51,0.85);color:#fff;padding:3px 7px;border-radius:5px;letter-spacing:0.04em}
+.xh-prev-thumbs{display:flex;gap:5px;margin-bottom:12px}
+.xh-prev-thumbs div{flex:1;aspect-ratio:1;border-radius:6px;background:linear-gradient(135deg,#e0eaff,#f1f6ff);font-size:14px;display:grid;place-items:center;overflow:hidden}
+.xh-prev-thumbs div img{width:100%;height:100%;object-fit:cover}
+.xh-prev-thumbs div.on{outline:2px solid #3b82f6;outline-offset:-2px}
+.xh-prev .cat{font-family:var(--xh-mono);font-size:10px;letter-spacing:0.06em;color:#1d4ed8;margin-bottom:5px;text-transform:uppercase}
+.xh-prev .title{font-family:var(--xh-display);font-weight:800;font-size:18px;line-height:1.2;letter-spacing:-0.01em;margin-bottom:8px;color:#14161a;word-break:break-word}
+.xh-prev .price{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.xh-prev .price .xrp{font-family:var(--xh-mono);font-weight:500;font-size:22px;color:#1d4ed8;line-height:1}
+.xh-prev .price .usd{font-family:var(--xh-mono);font-size:11px;color:#5b6472}
+.xh-prev .stock{font-size:11.5px;color:#5b6472;margin-bottom:10px}
+.xh-prev .stock .ok{color:#10b981;font-weight:600}
+.xh-prev .buy{background:#3b82f6;color:#fff;border-radius:8px;padding:10px;text-align:center;font-weight:600;font-size:13px;margin-bottom:10px}
+.xh-prev .mini{background:#0b1b33;color:#cfe0ff;border-radius:10px;padding:11px 12px;font-size:10.5px;margin-bottom:10px}
+.xh-prev .mini .t{font-family:var(--xh-mono);font-size:9px;color:#7e96bf;letter-spacing:0.07em;margin-bottom:8px}
+.xh-prev .mini .steps{display:flex;gap:4px;align-items:flex-start;color:#aebfdd;font-size:9.5px;text-align:center;line-height:1.3}
+.xh-prev .mini .steps .s{flex:1}
+.xh-prev .mini .steps .s .ic{width:22px;height:22px;margin:0 auto 4px;border-radius:6px;background:#10264a;border:1px solid #2c4571;display:grid;place-items:center;font-size:11px}
+.xh-prev .mini .steps .arrow{color:#33507e;font-size:11px;padding-top:5px}
+.xh-prev .seller{background:#fff;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;font-size:12px}
+.xh-prev .seller .av{width:30px;height:30px;border-radius:50%;background:#3b82f6;color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.xh-prev .seller .nm{font-weight:600;font-size:12.5px;color:#14161a}
+.xh-prev .seller .st{font-size:10.5px;color:#5b6472;margin-top:1px}
+.xh-prev .empty{padding:40px 20px;text-align:center;color:#5b6472;font-size:12.5px;font-family:var(--xh-mono)}
+.xh-prev .foot{margin-top:14px;padding-top:12px;border-top:1px dashed #e7e9ed;font-family:var(--xh-mono);font-size:10px;color:#5b6472;text-align:center;letter-spacing:0.04em;text-transform:uppercase}
+
+@media (max-width:960px){
+  .xh-grid{grid-template-columns:1fr;gap:22px;padding-bottom:40px}
+  .xh-prev-col{position:static}
+  .xh-row2{grid-template-columns:1fr}
+  .xh-cat-grid{grid-template-columns:repeat(3,1fr)}
+  .xh-form-mast h1{font-size:22px}
+}
+@media (max-width:560px){
+  .xh-media-grid{grid-template-columns:repeat(2,1fr)}
+  .xh-form-mast{padding:22px 20px 30px}
+}
+`;
+
+const WAVE_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 24' preserveAspectRatio='none'><path d='M0 12 Q150 0 300 12 T600 12 T900 12 T1200 12 V24 H0Z' fill='%23fff'/></svg>";
+
 export default function NewListingPage() {
   const router  = useRouter();
   const user    = useAuthStore(s => s.user);
   const fileRef = useRef(null);
-  const [form,     setForm]     = useState({ title:'', description:'', category:'games', game:'CS2', platform:'PC', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'', deliveryTime:'', tags:[] });
+  const [form, setForm] = useState({ title:'', description:'', category:'games', game:'CS2', platform:'PC', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'', deliveryTime:'', tags:[], featured:false });
   const [tagInput, setTagInput] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [uploading,setUploading]= useState(false);
-  const [preview,  setPreview]  = useState(null);
   const [error,    setError]    = useState('');
+  const [xrpUsd,   setXrpUsd]   = useState(null);
+
+  // Inject fonts + CSS once
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!document.getElementById('xh-form-fonts')) {
+      const link = document.createElement('link');
+      link.id = 'xh-form-fonts';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
+      document.head.appendChild(link);
+    }
+    if (!document.getElementById('xh-form-css')) {
+      const style = document.createElement('style');
+      style.id = 'xh-form-css';
+      style.textContent = ':root{--xh-display:"Bricolage Grotesque","Inter",system-ui,sans-serif;--xh-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--xh-mono:"JetBrains Mono",ui-monospace,monospace}\n' + CSS;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  // Live XRP/USD price
+  useEffect(() => {
+    let alive = true;
+    const fetchPrice = () => {
+      fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
+        .then(r => r.json())
+        .then(d => { if (alive && d?.data?.amount) setXrpUsd(parseFloat(d.data.amount)); })
+        .catch(() => {});
+    };
+    fetchPrice();
+    const t = setInterval(fetchPrice, 15000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
 
   if (!user) return (
-    <div style={{textAlign:'center',padding:'60px 20px'}}>
-      <div style={{fontSize:40,marginBottom:16}}>🔒</div>
-      <div style={{fontSize:16,fontWeight:600,color:'var(--text)',marginBottom:8}}>Sign in required</div>
-      <div style={{fontSize:13,color:'var(--text2)'}}>Connect your Xumm wallet to list items.</div>
+    <div className="xh-form">
+      <div className="xh-auth-gate">
+        <div className="ic">🔒</div>
+        <div className="t">Sign in required</div>
+        <div className="s">Connect your Xaman wallet from the top right to list items on the harbor.</div>
+      </div>
     </div>
   );
 
-  const sellerReceives = form.priceXrp ? (parseFloat(form.priceXrp) * 0.97).toFixed(6) : null;
+  const priceNum = parseFloat(form.priceXrp);
+  const sellerReceives = (priceNum > 0) ? (priceNum * 0.97).toFixed(6) : null;
+  const usdPrice = (priceNum > 0 && xrpUsd) ? (priceNum * xrpUsd).toFixed(2) : null;
+
+  // Step progression (for the masthead step rail)
+  const step1Done = !!(form.title.trim() && form.category && form.description.trim());
+  const step2Done = form.images.length > 0;
+  const step3Done = priceNum > 0;
+  const step4Done = !!form.deliveryTime;
+  const stepClass = (idx) => {
+    const done = [step1Done, step2Done, step3Done, step4Done][idx-1];
+    if (done) return 'done';
+    const prevAllDone = [true, step1Done, step1Done && step2Done, step1Done && step2Done && step3Done][idx-1];
+    return prevAllDone ? 'on' : '';
+  };
 
   async function handleFileChange(e) {
     const files = Array.from(e.target.files || []);
@@ -59,7 +300,6 @@ export default function NewListingPage() {
         if (file.size > 5 * 1024 * 1024) continue;
         const url = await uploadToImgbb(file);
         setForm(f => ({ ...f, images: [...f.images, url] }));
-        setPreview(url);
       }
     } catch(err) {
       setError('Image upload failed. Try again or use fewer images.');
@@ -68,6 +308,14 @@ export default function NewListingPage() {
 
   function removeImage(idx) {
     setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
+  }
+
+  function addTag() {
+    const v = tagInput.trim().toLowerCase();
+    if (v && form.tags.length < 8 && !form.tags.includes(v)) {
+      setForm(f => ({ ...f, tags: [...f.tags, v] }));
+    }
+    setTagInput('');
   }
 
   async function handleSubmit(e) {
@@ -81,150 +329,273 @@ export default function NewListingPage() {
     } catch(err) { setError(err.message); setLoading(false); }
   }
 
+  // Preview-derived strings
+  const catKey = form.category || 'other';
+  const previewCat = [CAT_LABEL_UPPER[catKey] || 'ITEM'];
+  if (form.category === 'games' && form.game) previewCat.push(form.game);
+  if (form.category === 'games' && form.platform) previewCat.push(form.platform);
+
+  const avInitial = (user.username || user.id || '?').slice(0,1).toUpperCase();
+
   return (
-    <div style={{maxWidth:560,margin:'0 auto'}}>
-      <div style={{marginBottom:20}}>
-        <Link href="/listings" style={{fontSize:13,color:'var(--text3)',textDecoration:'none'}}>← Back to Listings</Link>
+    <div className="xh-form">
+      <div className="xh-form-mast">
+        <div className="crumb">HARBOR · <b>LIST A NEW ITEM</b></div>
+        <h1><span className="icon">⛴</span>Cast off a new listing</h1>
+        <p className="sub">Set your goods, set your price, and let the harbor handle the rest. Every trade is XRPL-escrow-protected — your buyer's coin is locked on-chain before you deliver.</p>
+        <div className="step-rail">
+          <span className={'step ' + stepClass(1)}><span className="num">1</span>BASICS</span>
+          <span className={'step ' + stepClass(2)}><span className="num">2</span>MEDIA</span>
+          <span className={'step ' + stepClass(3)}><span className="num">3</span>PRICE &amp; STOCK</span>
+          <span className={'step ' + stepClass(4)}><span className="num">4</span>DELIVERY</span>
+          <span className="step"><span className="num">5</span>VISIBILITY</span>
+        </div>
+        <div className="wave" style={{ background: `url("${WAVE_SVG}") no-repeat`, backgroundSize: '100% 100%' }}></div>
       </div>
-      <h1 style={{fontSize:22,fontWeight:800,color:'var(--text)',marginBottom:4,letterSpacing:'-0.02em'}}>Create New Listing</h1>
-      <p style={{fontSize:13,color:'var(--text2)',marginBottom:24}}>List your game items and get paid in XRP.</p>
-      <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,padding:'24px'}}>
-        <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:20}}>
 
-          <div>
-            <label className="label">Category</label>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
-              {CATS.map(c => (
-                <button key={c.key} type="button" onClick={() => setForm(f => ({...f, category:c.key, game: c.key === 'games' ? (f.game || 'CS2') : ''}))}
-                  style={{padding:'10px 8px',borderRadius:8,cursor:'pointer',transition:'all 0.15s',display:'flex',flexDirection:'column',alignItems:'center',gap:4,border:'none',
-                    background: form.category===c.key ? 'rgba(59,130,246,0.15)' : 'var(--surface2)',
-                    outline: form.category===c.key ? '1px solid rgba(59,130,246,0.4)' : '1px solid var(--border)'}}>
-                  <span style={{fontSize:20}}>{c.emoji}</span>
-                  <span style={{fontSize:12,fontWeight:500,color:form.category===c.key?'var(--accent2)':'var(--text2)'}}>{c.label}</span>
-                </button>
+      <div className="xh-grid">
+        {/* FORM COL */}
+        <form className="xh-col" onSubmit={handleSubmit}>
+
+          {/* 1. Basics */}
+          <div className="xh-card">
+            <div className="sec-head">
+              <div><div className="lbl">01 · BASICS</div><h2 className="sec-h">Tell the harbor what you're selling</h2></div>
+              <div className="hint">required</div>
+            </div>
+
+            <div className="xh-field">
+              <label>Category <span className="req">*</span></label>
+              <div className="xh-cat-grid">
+                {CATS.map(c => (
+                  <button key={c.key} type="button" className={'xh-cat-btn' + (form.category === c.key ? ' on' : '')}
+                    onClick={() => setForm(f => ({ ...f, category: c.key, game: c.key === 'games' ? (f.game || 'CS2') : '' }))}>
+                    <span className="emoji">{c.emoji}</span>
+                    <span className="lbl">{c.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="xh-field">
+              <label>Title <span className="req">*</span></label>
+              <input type="text" maxLength={TITLE_MAX} placeholder="e.g. AWP Dragon Lore Factory New" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+              <div className={'count' + (form.title.length > TITLE_MAX ? ' over' : '')}>{form.title.length} / {TITLE_MAX}</div>
+            </div>
+
+            {form.category === 'games' && (
+              <div className="xh-row2">
+                <div className="xh-field">
+                  <label>Game</label>
+                  <select value={form.game} onChange={e => setForm(f => ({ ...f, game: e.target.value }))}>
+                    {GAMES.map(g => <option key={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div className="xh-field">
+                  <label>Platform</label>
+                  <select value={form.platform} onChange={e => setForm(f => ({ ...f, platform: e.target.value }))}>
+                    {PLATFORMS.map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="xh-field">
+              <label>Description <span className="opt">recommended</span></label>
+              <textarea rows={5} maxLength={DESC_MAX} placeholder="Be specific. Buyers love line items and clean bullet points." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              <div className={'count' + (form.description.length > DESC_MAX ? ' over' : '')}>{form.description.length} / {DESC_MAX}</div>
+            </div>
+          </div>
+
+          {/* 2. Media */}
+          <div className="xh-card">
+            <div className="sec-head">
+              <div><div className="lbl">02 · MEDIA</div><h2 className="sec-h">Up to 6 images · first one is the cover</h2></div>
+              <div className="hint">{form.images.length} of 6</div>
+            </div>
+
+            <div className="xh-media-grid">
+              {form.images.map((url, i) => (
+                <div key={i} className={'xh-tile filled' + (i === 0 ? ' cover' : '')}>
+                  <img src={url} alt={'image ' + (i + 1)} />
+                  {i === 0 && <span className="cover-tag">COVER</span>}
+                  <button type="button" className="x" onClick={() => removeImage(i)} aria-label="Remove image">×</button>
+                </div>
               ))}
-            </div>
-          </div>
-
-          <div><label className="label">Title *</label>
-            <input className="input" placeholder="e.g. AWP Dragon Lore Factory New" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
-          </div>
-
-          {form.category === 'games' && (
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            <div><label className="label">Game</label>
-              <select className="input" value={form.game} onChange={e=>setForm(f=>({...f,game:e.target.value}))}>
-                {GAMES.map(g=><option key={g}>{g}</option>)}
-              </select>
-            </div>
-            <div><label className="label">Platform</label>
-              <select className="input" value={form.platform} onChange={e=>setForm(f=>({...f,platform:e.target.value}))}>
-                {PLATFORMS.map(p=><option key={p}>{p}</option>)}
-              </select>
-            </div>
-          </div>
-          )}
-
-          <div><label className="label">Description</label>
-            <textarea className="input" rows={3} placeholder="Describe your item..." value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} style={{resize:'vertical'}}/>
-          </div>
-
-          <div>
-            <label className="label">Price (XRP) *</label>
-            <div style={{position:'relative'}}>
-              <input className="input" type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e=>setForm(f=>({...f,priceXrp:e.target.value}))} style={{paddingRight:50}}/>
-              <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'var(--text3)',fontWeight:600}}>XRP</span>
-            </div>
-            {sellerReceives && <div style={{fontSize:12,color:'var(--text3)',marginTop:5}}>You'll receive <span style={{color:'var(--green)'}}>{sellerReceives} XRP</span> after 3% platform fee</div>}
-          </div>
-
-          <div>
-            <label className="label">Quantity in stock</label>
-            <input className="input" type="number" step="1" min="1" placeholder="1" value={form.quantity} onChange={e=>setForm(f=>({...f,quantity:e.target.value}))}/>
-            <div style={{fontSize:12,color:'var(--text3)',marginTop:5}}>How many of this item you have. Leave blank for 1. Each sale reduces stock; the listing shows "Sold out" only when stock reaches 0.</div>
-          </div>
-
-          <div>
-            <label className="label">Delivery time <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional)</span></label>
-            <select className="input" value={form.deliveryTime} onChange={e=>setForm(f=>({...f,deliveryTime:e.target.value}))}>
-              <option value="">Select…</option>
-              <option value="instant">Instant (automatic)</option>
-              <option value="1h">Within 1 hour</option>
-              <option value="24h">Within 24 hours</option>
-              <option value="1-3d">1–3 days</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="label">Tags <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional, up to 8)</span></label>
-            <div style={{display:'flex',gap:8}}>
-              <input className="input" value={tagInput} onChange={e=>setTagInput(e.target.value)}
-                onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); const v=tagInput.trim().toLowerCase(); if(v && form.tags.length<8 && !form.tags.includes(v)) setForm(f=>({...f,tags:[...f.tags,v]})); setTagInput(''); } }}
-                placeholder="Type a tag and press Enter"/>
-            </div>
-            {form.tags.length > 0 && (
-              <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}}>
-                {form.tags.map((t,i)=>(
-                  <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4,background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:20,padding:'3px 10px',fontSize:12,color:'var(--text2)'}}>
-                    #{t}
-                    <button type="button" onClick={()=>setForm(f=>({...f,tags:f.tags.filter((_,j)=>j!==i)}))} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',padding:0,fontSize:13}}>✕</button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="label">Product Images <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(up to 6, first is the cover)</span></label>
-            <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>Recommended 4:3, at least 1000×750px. PNG or JPG, max 5 MB each.</div>
-            <input ref={fileRef} type="file" accept="image/*" multiple style={{display:'none'}} onChange={handleFileChange}/>
-            {form.images.length > 0 && (
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:8}}>
-                {form.images.map((url, i) => (
-                  <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden',border: i===0 ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)'}}>
-                    <img src={url} alt={'image '+(i+1)} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                    {i===0 && <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(59,130,246,0.85)',color:'#fff',fontSize:10,fontWeight:600,textAlign:'center',padding:'2px 0'}}>COVER</div>}
-                    <button type="button" onClick={()=>removeImage(i)}
-                      style={{position:'absolute',top:4,right:4,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',borderRadius:'50%',width:22,height:22,cursor:'pointer',fontSize:11}}>✕</button>
+              {form.images.length < 6 && (
+                <button type="button" className="xh-tile add" onClick={() => fileRef.current && fileRef.current.click()} disabled={uploading}>
+                  <div className="col">
+                    <span className="plus">{uploading ? '⏳' : '+'}</span>
+                    <span className="lbl">{uploading ? 'UPLOADING' : 'ADD'}</span>
                   </div>
+                </button>
+              )}
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
+            <div className="xh-media-note">PNG · JPG · WEBP · max 5MB each · recommend 4:3, at least 1000×750px</div>
+          </div>
+
+          {/* 3. Price & stock */}
+          <div className="xh-card">
+            <div className="sec-head">
+              <div><div className="lbl">03 · PRICE &amp; STOCK</div><h2 className="sec-h">What's it worth in XRP?</h2></div>
+              <div className="hint">XRP {xrpUsd ? '$' + xrpUsd.toFixed(4) : '…'}</div>
+            </div>
+
+            <div className="xh-row2">
+              <div className="xh-field">
+                <label>Price <span className="req">*</span></label>
+                <div className="xh-price">
+                  <input type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e => setForm(f => ({ ...f, priceXrp: e.target.value }))} />
+                  <span className="suffix">XRP</span>
+                </div>
+                {usdPrice && <div className="xh-usd-live"><span className="lvdot"></span>≈ ${usdPrice} · live · refreshes every 15s</div>}
+                {sellerReceives && <div className="xh-fee">You'll receive <b>{sellerReceives} XRP</b> after 3% platform fee</div>}
+              </div>
+              <div className="xh-field">
+                <label>Quantity <span className="opt">stock</span></label>
+                <input type="number" step="1" min="1" placeholder="1" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
+                <div className="helper">Set to 1 for unique items. More if it's a bundle. The listing shows "Sold out" only when stock reaches 0.</div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Delivery */}
+          <div className="xh-card">
+            <div className="sec-head">
+              <div><div className="lbl">04 · DELIVERY</div><h2 className="sec-h">When &amp; how do you ship</h2></div>
+            </div>
+
+            <div className="xh-field">
+              <label>Delivery window <span className="opt">optional</span></label>
+              <div className="xh-chips">
+                {DELIVERY_OPTS.map(d => (
+                  <button key={d.v} type="button"
+                    className={'xh-chip' + (form.deliveryTime === d.v ? ' on' : '')}
+                    onClick={() => setForm(f => ({ ...f, deliveryTime: f.deliveryTime === d.v ? '' : d.v }))}>
+                    {d.l}
+                  </button>
                 ))}
               </div>
-            )}
-            {form.images.length < 6 && (
-              <button type="button" onClick={()=>fileRef.current&&fileRef.current.click()} disabled={uploading}
-                style={{width:'100%',padding:'10px',background:'var(--surface2)',border:'1px dashed rgba(255,255,255,0.15)',borderRadius:8,color:uploading?'var(--text3)':'var(--text2)',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                {uploading ? '⏳ Uploading...' : `📁 Add image${form.images.length ? 's' : ''} (max 5MB each)`}
-              </button>
-            )}
+            </div>
+
+            <div className="xh-field">
+              <label>Tags <span className="opt">up to 8 · helps buyers find you</span></label>
+              <div className="xh-taginput">
+                {form.tags.map((t, i) => (
+                  <span key={i} className="xh-tag">#{t}<button type="button" onClick={() => setForm(f => ({ ...f, tags: f.tags.filter((_, j) => j !== i) }))} aria-label="Remove tag">×</button></span>
+                ))}
+                <input type="text" placeholder={form.tags.length === 0 ? 'type a tag and press Enter' : 'add another…'} value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }} />
+              </div>
+            </div>
           </div>
 
-          <div style={{border:'1px solid var(--border)',borderRadius:10,padding:14,background:'var(--surface)'}}>
-            <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
-              <input type="checkbox" checked={form.isDigital} onChange={e=>setForm(f=>({...f,isDigital:e.target.checked}))} style={{width:18,height:18,cursor:'pointer'}}/>
-              <span style={{fontSize:14,fontWeight:600,color:'var(--text)'}}>Digital product — instant delivery</span>
-            </label>
-            <div style={{fontSize:12,color:'var(--text3)',marginTop:6,marginLeft:28}}>Buyer automatically receives the content below once payment is secured in escrow. Hidden from everyone until then.</div>
+          {/* 5. Visibility */}
+          <div className="xh-card">
+            <div className="sec-head">
+              <div><div className="lbl">05 · VISIBILITY</div><h2 className="sec-h">Where this listing shows up</h2></div>
+            </div>
+
+            <div className="xh-toggle-row">
+              <div className="info">
+                <div className="t">⚡ Instant delivery <span className="badge">DIGITAL</span></div>
+                <div className="s">Content unlocks for the buyer the moment escrow is funded. Only enable if your goods can be delivered automatically.</div>
+              </div>
+              <label className="xh-toggle"><input type="checkbox" checked={form.isDigital} onChange={e => setForm(f => ({ ...f, isDigital: e.target.checked }))} /><span className="track"></span></label>
+            </div>
+
             {form.isDigital && (
-              <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:12}}>
-                <div>
-                  <label className="label">Delivery content <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(CD key, account login, code…)</span></label>
-                  <textarea className="input" rows={3} placeholder="e.g. Steam key: XXXXX-XXXXX-XXXXX" value={form.digitalContent} onChange={e=>setForm(f=>({...f,digitalContent:e.target.value}))} style={{resize:'vertical',fontFamily:'monospace',fontSize:13}}/>
+              <div className="xh-digital-extra">
+                <div className="xh-field">
+                  <label>Delivery content <span className="opt">key, login, code…</span></label>
+                  <textarea rows={3} placeholder="e.g. Steam key: XXXXX-XXXXX-XXXXX" value={form.digitalContent} onChange={e => setForm(f => ({ ...f, digitalContent: e.target.value }))} />
                 </div>
-                <div>
-                  <label className="label">Download link <span style={{color:'var(--text3)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional URL)</span></label>
-                  <input className="input" type="url" placeholder="https://drive.google.com/..." value={form.digitalLink} onChange={e=>setForm(f=>({...f,digitalLink:e.target.value}))}/>
+                <div className="xh-field">
+                  <label>Download link <span className="opt">optional URL</span></label>
+                  <input type="url" placeholder="https://drive.google.com/..." value={form.digitalLink} onChange={e => setForm(f => ({ ...f, digitalLink: e.target.value }))} />
                 </div>
               </div>
             )}
           </div>
 
-          {error && <div style={{background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'#f87171'}}>{error}</div>}
+          {error && <div className="xh-err">{error}</div>}
 
-          <button type="submit" disabled={loading||uploading}
-            style={{background:loading?'var(--surface)':'var(--accent)',color:'#fff',border:'none',borderRadius:10,padding:'12px',fontSize:14,fontWeight:600,cursor:loading?'not-allowed':'pointer'}}>
-            {loading ? 'Publishing...' : 'Publish Listing'}
-          </button>
+          {/* sticky action bar */}
+          <div className="xh-action-bar">
+            <div className="left">DRAFT · <span className="ok">{form.title.trim() ? 'ready to publish' : 'fill in the basics first'}</span></div>
+            <div className="btn-group">
+              <Link href="/listings" className="xh-btn xh-btn-ghost">Cancel</Link>
+              <button type="submit" className="xh-btn xh-btn-primary" disabled={loading || uploading}>
+                {loading ? 'Publishing…' : '⛵ Publish to harbor'}
+              </button>
+            </div>
+          </div>
         </form>
+
+        {/* PREVIEW COL */}
+        <div className="xh-prev-col">
+          <div className="xh-prev">
+            <div className="head">
+              <span>LIVE PREVIEW</span>
+              <span className="live">UPDATING</span>
+            </div>
+
+            {form.images.length === 0 && !form.title.trim() ? (
+              <div className="empty">
+                <div style={{ fontSize: 32, opacity: 0.3, marginBottom: 8 }}>🖼</div>
+                Fill in the basics on the left to see your listing come to life
+              </div>
+            ) : (
+              <>
+                <div className="xh-prev-img" style={{ background: CAT_BG[catKey] || CAT_BG.other }}>
+                  {form.images[0]
+                    ? <img src={form.images[0]} alt="cover" />
+                    : <span style={{ opacity: 0.6 }}>🖼</span>}
+                  <span className="badge">{previewCat.slice(0,2).join(' · ')}</span>
+                </div>
+
+                {form.images.length > 1 && (
+                  <div className="xh-prev-thumbs">
+                    {form.images.slice(0, 6).map((u, i) => (
+                      <div key={i} className={i === 0 ? 'on' : ''}><img src={u} alt={'thumb ' + (i + 1)} /></div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="cat">{previewCat.join(' / ')}</div>
+                <div className="title">{form.title || 'Your listing title shows here'}</div>
+                <div className="price">
+                  <span className="xrp">{priceNum > 0 ? Number(form.priceXrp).toLocaleString('en-US') : '0'} XRP</span>
+                  {usdPrice && <span className="usd">≈ ${usdPrice}</span>}
+                </div>
+                <div className="stock"><span className="ok">● In stock</span>{form.quantity ? ` · ${form.quantity} available` : ''}</div>
+
+                <div className="buy">🛡 Buy with escrow</div>
+
+                <div className="mini">
+                  <div className="t">WHERE BUYER'S XRP GOES</div>
+                  <div className="steps">
+                    <div className="s"><div className="ic">🔒</div>Locked at<br />purchase</div>
+                    <div className="arrow">→</div>
+                    <div className="s"><div className="ic">📦</div>You<br />deliver</div>
+                    <div className="arrow">→</div>
+                    <div className="s"><div className="ic">✓</div>Escrow<br />releases</div>
+                  </div>
+                </div>
+
+                <div className="seller">
+                  <span className="av">{avInitial}</span>
+                  <div>
+                    <div className="nm">{user.username || 'you'}</div>
+                    <div className="st">New listing · escrow-protected</div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="foot">SHOWS LIVE ON xrpharbor.com/listing/&lt;id&gt;</div>
+          </div>
+        </div>
       </div>
     </div>
   );
