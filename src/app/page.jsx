@@ -168,6 +168,18 @@ export default function HomePage() {
         .xh-pill:hover{border-color:var(--xh-accent);color:var(--xh-text)}
         .xh-display{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif}
         .xh-mono{font-family:'DM Mono',monospace}
+        .xh-faq{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:12px;overflow:hidden;margin-bottom:10px}
+        .xh-faq summary{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px;font-weight:600;font-size:14.5px;cursor:pointer;list-style:none;color:var(--xh-text)}
+        .xh-faq summary::-webkit-details-marker{display:none}
+        .xh-faq summary:hover{background:var(--xh-bg2)}
+        .xh-faq[open] summary:hover{background:transparent}
+        .xh-pm{flex:none;width:22px;height:22px;border-radius:7px;background:var(--xh-bg2);display:grid;place-items:center;color:var(--xh-text2);transition:transform .18s,background .18s}
+        .xh-pm svg{width:14px;height:14px}
+        .xh-faq[open] .xh-pm{background:var(--xh-accent);color:#fff;transform:rotate(135deg)}
+        .xh-faq[open] .xh-pm svg{stroke:#fff}
+        .xh-faq .xh-a{padding:0 20px 18px;font-size:13.5px;color:var(--xh-text2);line-height:1.62}
+        .xh-faq .xh-a code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--xh-bg2);padding:1px 6px;border-radius:5px;color:var(--xh-accent)}
+        .xh-faq .xh-a a{color:var(--xh-accent);font-weight:600}
         @keyframes xhsail{0%,12%{left:24px;transform:translateY(0) rotate(-3deg)}26%{transform:translateY(-2px) rotate(3deg)}40%,55%{left:calc(50% - 9px);transform:translateY(-1px) rotate(-2deg)}70%{transform:translateY(-2px) rotate(3deg)}85%,100%{left:calc(100% - 44px);transform:translateY(0) rotate(0deg)}}
         @keyframes xhdrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         .xh-hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:48px 0 44px}
@@ -407,6 +419,55 @@ export default function HomePage() {
         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:24,background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderLeft:'3px solid #f59e0b',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
           <span style={{fontSize:18}}>🛟</span>
           <span style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
+        </div>
+      </div>
+
+      {/* WHY HARBOR */}
+      <div style={{marginBottom:36}}>
+        <div style={{marginBottom:20}}>
+          <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',lineHeight:1.15}}>Built differently for digital goods</h2>
+          <p style={{fontSize:14,color:'var(--xh-text2)',marginTop:6,maxWidth:520}}>Why solo developers, traders and digital artists are docking here.</p>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14}}>
+          {[
+            {bg:'rgba(21,114,232,.09)',fg:'var(--xh-accent)',t:'On-chain escrow',p:'Every trade locked in the XRP Ledger’s native escrow. No intermediary holding funds — verifiable on-chain forever.',ic:'lock'},
+            {bg:'rgba(16,185,129,.1)',fg:'#10b981',t:'Instant settlement',p:'XRP settles in 3–5 seconds for a fraction of a cent. No card chargebacks, no fourteen-day holds.',ic:'bolt'},
+            {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'2% flat fee',p:'No hidden percentages, no payment-processor cuts. Most platforms stack 13–20% in fees.',ic:'coin'},
+            {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP works the same in Istanbul as in Berlin. No conversion fees, no regional account limits.',ic:'globe'}
+          ].map(w => (
+            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:22}}>
+              <div style={{width:44,height:44,borderRadius:12,display:'grid',placeItems:'center',marginBottom:14,background:w.bg,color:w.fg}}>
+                {w.ic==='lock' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>}
+                {w.ic==='bolt' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z"/></svg>}
+                {w.ic==='coin' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="6.5" rx="7" ry="3.2"/><path d="M5 6.5v5.5c0 1.8 3.1 3.2 7 3.2s7-1.4 7-3.2V6.5"/><path d="M5 12v5.5c0 1.8 3.1 3.2 7 3.2s7-1.4 7-3.2V12"/></svg>}
+                {w.ic==='globe' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.8"/><path d="M3.4 12h17.2M12 3.2c2.4 2.4 2.4 15.2 0 17.6M12 3.2c-2.4 2.4-2.4 15.2 0 17.6"/></svg>}
+              </div>
+              <h3 style={{fontSize:15.5,fontWeight:650,marginBottom:7,color:'var(--xh-text)'}}>{w.t}</h3>
+              <p style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.55}}>{w.p}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div style={{marginBottom:36}}>
+        <div style={{textAlign:'center',marginBottom:24}}>
+          <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',marginBottom:8}}>Common questions</h2>
+          <p style={{fontSize:14,color:'var(--xh-text2)'}}>Quick answers about escrow, fees and getting started.</p>
+        </div>
+        <div style={{maxWidth:760,margin:'0 auto'}}>
+          {[
+            {q:'What is XRPL escrow and why should I trust it?',a:(<>XRPL escrow is a native feature of the XRP Ledger that locks XRP between two parties. When you buy here, your XRP isn’t held by us — it’s locked by the ledger itself via an <code>EscrowCreate</code> transaction. The seller can’t touch it until you confirm receipt, and if they never deliver the escrow expires and your XRP returns automatically.</>),open:true},
+            {q:'What fees does XRPHarbor charge?',a:(<>One flat fee: <b>2% of each sale</b>, deducted automatically from the seller’s payout. No buyer fees, no listing fees, no withdrawal fees. The optional <code>Featured</code> upgrade costs 25 XRP for seven days.</>),open:false},
+            {q:'How do I get XRP to buy something?',a:(<>Install Xumm, buy XRP from an exchange like Coinbase or Binance, then withdraw to your Xumm address. Connect Xumm here and you’re ready to trade — about fifteen minutes the first time.</>),open:false},
+            {q:'What if the seller does not deliver?',a:(<>You simply don’t release the escrow, so the seller can’t access the XRP. After the escrow window (seven days for physical items, 24 hours for digital) you can cancel and your XRP returns. Open a dispute if you need our team to review.</>),open:false},
+            {q:'Can I sell physical items?',a:(<>Yes. Pokemon cards, vintage hardware, collectibles — anything tangible. Just set realistic delivery times and provide tracking. The best sellers ship within 24 hours and message the buyer a tracking link.</>),open:false}
+          ].map((f,i) => (
+            <details key={i} className="xh-faq" open={f.open}>
+              <summary>{f.q}<span className="xh-pm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+              <div className="xh-a">{f.a}</div>
+            </details>
+          ))}
         </div>
       </div>
 
