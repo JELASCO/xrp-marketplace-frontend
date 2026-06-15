@@ -138,8 +138,7 @@ export default function HomePage() {
     feed.forEach((e, i) => out.push(
       <span key={'ev' + i}><span style={{color:M}}>ESCROW {e.kind === 'created' ? 'CREATED' : 'RELEASED'} </span><span style={{color:V,fontWeight:600}}>{amt(e.xrp)} </span><span style={{color:G}}>XRP</span><span style={{color:M}}> · {ago(e.at)}</span></span>
     ));
-    out.push(<span key="lg"><span style={{color:M}}>LEDGER </span><span style={{color:V,fontWeight:600}}>#{ledgerSeq ? grp(ledgerSeq) : '—'} </span><span style={{color:M}}>closed in {ledgerClose}s</span></span>);
-    out.push(<span key="fee"><span style={{color:M}}>PLATFORM FEE </span><span style={{color:V,fontWeight:600}}>2% </span><span style={{color:M}}>· only on completed trades</span></span>);
+    out.push(<span key="lg"><span style={{color:M}}>LEDGER </span><span style={{color:V,fontWeight:600}}>#{ledgerSeq ? grp(ledgerSeq) : '—'} </span><span style={{color:M}}>closed in {ledgerClose}s</span></span>);;
     return out;
   };
 
@@ -169,7 +168,7 @@ export default function HomePage() {
         .xh-pill:hover{border-color:var(--xh-accent);color:var(--xh-text)}
         .xh-display{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif}
         .xh-mono{font-family:'DM Mono',monospace}
-        @keyframes xhsail{0%,12%{left:24px;transform:translateY(0)}40%,55%{left:calc(50% - 9px);transform:translateY(-2px)}85%,100%{left:calc(100% - 44px);transform:translateY(0)}}
+        @keyframes xhsail{0%,12%{left:24px;transform:translateY(0) rotate(-3deg)}26%{transform:translateY(-2px) rotate(3deg)}40%,55%{left:calc(50% - 9px);transform:translateY(-1px) rotate(-2deg)}70%{transform:translateY(-2px) rotate(3deg)}85%,100%{left:calc(100% - 44px);transform:translateY(0) rotate(0deg)}}
         @keyframes xhdrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         .xh-hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:48px 0 44px}
         .xh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -228,11 +227,6 @@ export default function HomePage() {
             <input value={heroQ} onChange={e=>setHeroQ(e.target.value)} placeholder="Search game accounts, skins, items…" aria-label="Search listings" style={{flex:1,height:48,borderRadius:12,border:'1px solid var(--xh-border)',background:'var(--xh-surface)',color:'var(--xh-text)',padding:'0 16px',fontSize:15,outline:'none'}} />
             <button type="submit" className="xh-btn-primary" style={{height:48,borderRadius:12,whiteSpace:'nowrap'}}>Search</button>
           </form>
-          <div className="xh-chips">
-            {['Steam account','Valorant skins','Game keys','Design assets'].map(c=>(
-              <Link key={c} href={'/listings?q='+encodeURIComponent(c)}>{c}</Link>
-            ))}
-          </div>
           <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:24}}>
             <Link href="/listings" className="xh-btn-primary">Browse marketplace</Link>
             {user ? (
@@ -255,7 +249,7 @@ export default function HomePage() {
             <div className="xh-node" style={{left:6}} title="EscrowCreate"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
             <div className="xh-node" style={{left:'calc(50% - 23px)'}} title="Delivery"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg></div>
             <div className="xh-node done" style={{right:6}} title="EscrowFinish"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
-            <span className="xh-sail" style={{position:'absolute',top:20,fontSize:17,left:18,animation:'xhsail 9s ease-in-out infinite'}}>⛵</span>
+            <span className="xh-sail" aria-hidden="true" style={{position:'absolute',top:18,left:18,color:'#bcd4ff',filter:'drop-shadow(0 2px 4px rgba(11,27,51,.5))',animation:'xhsail 9s ease-in-out infinite'}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span>
             <div className="xh-node-label" style={{left:-28}}><b>Payment locked</b>EscrowCreate on XRPL</div>
             <div className="xh-node-label" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
             <div className="xh-node-label" style={{right:-28}}><b>Escrow releases</b>seller paid automatically</div>
