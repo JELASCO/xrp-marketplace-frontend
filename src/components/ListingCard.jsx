@@ -184,14 +184,6 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               whiteSpace: 'nowrap',
             }}>🛡 escrow</span>
           </div>
-
-          {/* Stock hint (only when relevant) */}
-          {stockLeft != null && quantity > 1 && !soldOut && (
-            <div style={{
-              fontSize: 11, color: '#5b6472', marginTop: 8,
-              fontFamily: MONO,
-            }}>{stockLeft} left of {quantity}</div>
-          )}
         </div>
       </div>
     </Link>
