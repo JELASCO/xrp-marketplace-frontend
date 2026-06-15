@@ -318,8 +318,9 @@ export default function HomePage() {
       {featured.length > 0 && (
         <div style={{marginBottom:40}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:18,fontWeight:700,color:'var(--xh-text)'}}>🔥 Featured items</span>
+            <div>
+              <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:11,letterSpacing:'0.07em',color:'#f59e0b',fontWeight:600,marginBottom:5}}><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.3 2.6 5.4 5.9.8-4.3 4.2 1 5.9L12 17l-5.2 2.6 1-5.9L3.5 9.5l5.9-.8z"/></svg> FEATURED · PINNED BY SELLERS</div>
+              <span style={{display:'block',fontSize:22,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em'}}>Today&rsquo;s catch</span>
             </div>
             <Link href="/listings" style={{fontSize:13,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600}}>View all →</Link>
           </div>
