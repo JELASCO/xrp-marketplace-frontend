@@ -199,7 +199,7 @@ export default function HomePage() {
         .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
         .xh-cat .ico svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .xh-cat:hover .ico{background:var(--xh-accent);color:#fff;transform:scale(1.06)}
-        .xh-ticker-in{animation:xhscroll 30s linear infinite}
+        .xh-ticker-in{animation:xhscroll 50s linear infinite}
         @keyframes xhscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg,.xh-ticker-in{animation:none !important}}
@@ -281,7 +281,7 @@ export default function HomePage() {
 
       {/* LIVE TICKER */}
       <div style={{background:'#0b1b33',borderRadius:12,overflow:'hidden',marginBottom:36}} aria-hidden="true">
-        <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:44,whiteSpace:'nowrap',padding:'11px 0',fontSize:12,letterSpacing:'.02em',color:'#9db4da',width:'max-content'}}>
+        <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:36,whiteSpace:'nowrap',padding:'11px 0 11px 24px',fontSize:12,letterSpacing:'.02em',color:'#9db4da',width:'max-content'}}>
           {(() => { const it = tickerItems(); return [...it, ...it].map((node,i)=>(
             <span key={i} style={{display:'inline-flex',alignItems:'center'}}>{node}</span>
           )); })()}
