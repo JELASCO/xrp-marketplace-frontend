@@ -382,10 +382,6 @@ export default function HomePage() {
                     {cap.pro && <span className="xh-mono" style={{fontSize:9,fontWeight:600,letterSpacing:'0.04em',background:'#f59e0b',color:'#fff',padding:'2px 6px',borderRadius:5}}>PRO</span>}
                     <span style={{color:'var(--xh-accent)',display:'inline-flex'}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5.2c0 4 2.9 7.2 7 8.8 4.1-1.6 7-4.8 7-8.8V6z"/><path d="m9.3 12 1.9 1.9L15 10"/></svg></span>
                   </div>
-                  <div className="xh-mono" style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'var(--xh-text3)',marginTop:3}}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-                    {cap.loc}
-                  </div>
                 </div>
               </div>
               <div style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.55,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{cap.bio}</div>
