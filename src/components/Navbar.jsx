@@ -96,14 +96,7 @@ export default function Navbar() {
       <nav style={{background:'#f5f6f8',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(0,0,0,0.08)',position:'sticky',top:0,zIndex:50,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{fontWeight:800,fontSize:18,color:'#14161a',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
-            <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
-              <circle cx="32" cy="14" r="5" stroke="#2080F5" strokeWidth="3.5" fill="none"/>
-              <line x1="32" y1="19" x2="32" y2="50" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="22" y1="24" x2="42" y2="24" stroke="#2080F5" strokeWidth="3" strokeLinecap="round"/>
-              <path d="M 14 42 Q 32 56 50 42" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
-              <line x1="14" y1="42" x2="19" y2="38" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="50" y1="42" x2="45" y2="38" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round"/>
-            </svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2080F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg>
             <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
           <form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
