@@ -75,7 +75,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
 
           {/* pro / featured — top right */}
           {seller_is_pro && (
-            <span style={{
+            <span className="xh-pro" style={{
               position: 'absolute', top: 10, right: 10,
               fontFamily: MONO, fontSize: 10,
               background: '#f59e0b', color: '#fff',
