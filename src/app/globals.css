@@ -133,4 +133,4 @@ body {
 
 
 @keyframes xhProShimmer{to{background-position:-200% 0}}
-.xh-pro{background:linear-gradient(90deg,#f59e0b,#fff3c4,#f59e0b)!important;background-size:200% 100%!important;color:#5a3d00!important;animation:xhProShimmer 2s linear infinite}
+.xh-pro{background-image:linear-gradient(90deg,#f59e0b,#fff3c4,#f59e0b)!important;background-size:200% 100%!important;color:#5a3d00!important;animation:xhProShimmer 2s linear infinite}
