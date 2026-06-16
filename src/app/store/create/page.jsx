@@ -125,6 +125,7 @@ export default function CreateStorePage() {
   };
 
   const handlePreview = () => {
+    if (!hasStore) { setError('Publish your store first — then you can preview the live page.'); return; }
     if (handle && /^[a-z0-9-]{3,40}$/.test(handle)) window.open('/store/' + handle, '_blank');
     else setError('Set a valid store URL first to preview');
   };
@@ -309,9 +310,9 @@ export default function CreateStorePage() {
               What buyers will see
             </div>
             <div style={{ background: C.bg, border: `1px solid ${C.line}`, borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ aspectRatio: '3 / 1', background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' }} aria-hidden="true" />
+              <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' }} aria-hidden="true" />
               <div style={{ padding: '0 16px 16px', position: 'relative' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 12, background: C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, border: `3px solid ${C.bg}`, marginTop: -28 }} aria-hidden="true">{initials}</div>
+                <div style={{ width: 64, height: 64, borderRadius: 12, background: logoUrl ? ('center/cover no-repeat url(' + logoUrl + ')') : C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, border: `3px solid ${C.bg}`, marginTop: -28 }} aria-hidden="true">{logoUrl ? '' : initials}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: C.ink }}>
                   {displayName}
                   <span style={{ color: C.blue, display: 'inline-flex' }} aria-label="Verified seller">
