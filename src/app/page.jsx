@@ -402,7 +402,7 @@ export default function HomePage() {
 
       {/* HOW ESCROW KEEPS YOU SAFE */}
       <div id="how-it-works" style={{background:'var(--xh-bg2)',borderRadius:18,padding:'40px 28px',marginBottom:36}}>
-        <h2 className="xh-display" style={{fontSize:23,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>Proof, not promises</h2>
+        <h2 className="xh-display" style={{fontSize:23,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>Verified by the ledger</h2>
         <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Every step is a real XRPL transaction you can verify yourself.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:16}}>
           {[
