@@ -49,7 +49,7 @@ const CSS = `
 .xh-mast-wave{position:absolute;bottom:-1px;left:0;right:0;height:30px;opacity:0.45;z-index:0}
 .xh-mast-wave svg{width:100%;height:100%}
 
-.xh-page{display:grid;grid-template-columns:240px 1fr;gap:28px;padding-bottom:48px}
+.xh-page{display:grid;grid-template-columns:240px minmax(0,1fr);gap:28px;padding-bottom:48px}
 
 .xh-side{position:sticky;top:80px;align-self:start;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 96px);overflow-y:auto;padding-bottom:8px;padding-right:4px}
 .xh-side::-webkit-scrollbar{width:4px}
@@ -85,7 +85,7 @@ const CSS = `
 .xh-chip i:hover{opacity:1}
 .xh-chip-clear{background:transparent;border:0;color:#5b6472;font-size:12.5px;cursor:pointer;padding:5px 8px;text-decoration:underline}
 
-.xh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.xh-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 
 .xh-empty{text-align:center;padding:64px 24px;background:#f5f6f8;border:1px solid #e7e9ed;border-radius:14px;color:#5b6472}
 .xh-empty .ico{font-size:38px;margin-bottom:12px;opacity:0.55}
@@ -105,7 +105,7 @@ const CSS = `
   .xh-page{grid-template-columns:1fr}
   .xh-side{position:static;flex-direction:row;flex-wrap:wrap;max-height:none;overflow:visible;padding-right:0}
   .xh-fg{flex:1 1 calc(50% - 8px);min-width:200px}
-  .xh-grid{grid-template-columns:repeat(2,1fr)}
+  .xh-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .xh-mast-in{flex-direction:column;align-items:flex-start;gap:18px;padding:24px 20px 36px}
   .xh-mast h1{font-size:24px}
   .xh-mast-stats{text-align:left;gap:18px;flex-wrap:wrap}
