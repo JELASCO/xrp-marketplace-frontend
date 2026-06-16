@@ -430,7 +430,7 @@ export default function HomePage() {
             {bg:'rgba(21,114,232,.09)',fg:'var(--xh-accent)',t:'On-chain escrow',p:'Every trade locked in the XRP Ledger’s native escrow. No intermediary holding funds — verifiable on-chain forever.',ic:'lock'},
             {bg:'rgba(16,185,129,.1)',fg:'#10b981',t:'Instant settlement',p:'XRP settles in 3–5 seconds for a fraction of a cent. No card chargebacks, no fourteen-day holds.',ic:'bolt'},
             {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'2% flat fee',p:'No hidden percentages, no payment-processor cuts. Most platforms stack 13–20% in fees.',ic:'coin'},
-            {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP works the same in Istanbul as in Berlin. No conversion fees, no regional account limits.',ic:'globe'}
+            {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP settles the same everywhere — no conversion fees, no regional account limits.',ic:'globe'}
           ].map(w => (
             <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:22}}>
               <div style={{width:44,height:44,borderRadius:12,display:'grid',placeItems:'center',marginBottom:14,background:w.bg,color:w.fg}}>
