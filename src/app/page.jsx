@@ -429,7 +429,7 @@ export default function HomePage() {
           {[
             {bg:'rgba(21,114,232,.09)',fg:'var(--xh-accent)',t:'On-chain escrow',p:'Every trade locked in the XRP Ledger’s native escrow. No intermediary holding funds — verifiable on-chain forever.',ic:'lock'},
             {bg:'rgba(16,185,129,.1)',fg:'#10b981',t:'Instant settlement',p:'XRP settles in 3–5 seconds for a fraction of a cent. No card chargebacks, no fourteen-day holds.',ic:'bolt'},
-            {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'2% flat fee',p:'No hidden percentages, no payment-processor cuts. Most platforms stack 13–20% in fees.',ic:'coin'},
+            {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'3% flat fee',p:'No hidden percentages, no payment-processor cuts. Most platforms stack 13–20% in fees.',ic:'coin'},
             {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP settles the same everywhere — no conversion fees, no regional account limits.',ic:'globe'}
           ].map(w => (
             <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:22}}>
@@ -455,7 +455,7 @@ export default function HomePage() {
         <div style={{maxWidth:760,margin:'0 auto'}}>
           {[
             {q:'What is XRPL escrow and why should I trust it?',a:(<>XRPL escrow is a native feature of the XRP Ledger that locks XRP between two parties. When you buy here, your XRP isn’t held by us — it’s locked by the ledger itself via an <code>EscrowCreate</code> transaction. The seller can’t touch it until you confirm receipt, and if they never deliver the escrow expires and your XRP returns automatically.</>),open:true},
-            {q:'What fees does XRPHarbor charge?',a:(<>One flat fee: <b>2% of each sale</b>, deducted automatically from the seller’s payout. No buyer fees, no listing fees, no withdrawal fees. The optional <code>Featured</code> upgrade costs 25 XRP for seven days.</>),open:false},
+            {q:'What fees does XRPHarbor charge?',a:(<>One flat fee: <b>3% of each sale</b>, deducted automatically from the seller’s payout. No buyer fees, no listing fees, no withdrawal fees. The optional <code>Featured</code> upgrade costs 10 XRP for seven days.</>),open:false},
             {q:'How do I get XRP to buy something?',a:(<>Install Xumm, buy XRP from an exchange like Coinbase or Binance, then withdraw to your Xumm address. Connect Xumm here and you’re ready to trade — about fifteen minutes the first time.</>),open:false},
             {q:'What if the seller does not deliver?',a:(<>You simply don’t release the escrow, so the seller can’t access the XRP. After the escrow window (seven days for physical items, 24 hours for digital) you can cancel and your XRP returns. Open a dispute if you need our team to review.</>),open:false},
             {q:'Can I sell physical items?',a:(<>Yes. Pokemon cards, vintage hardware, collectibles — anything tangible. Just set realistic delivery times and provide tracking. The best sellers ship within 24 hours and message the buyer a tracking link.</>),open:false}
