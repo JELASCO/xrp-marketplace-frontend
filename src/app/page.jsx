@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { api } from '../lib/api';
 import ListingCard from '../components/ListingCard';
 import { useAuthStore } from '../lib/store';
+import XummLoginModal from '../components/XummLoginModal';
 
 const CATS = [
   {key:'games',label:'Games',emoji:'🎮',sub:'accounts · keys · currency'},
@@ -51,6 +52,7 @@ export default function HomePage() {
 
   const [stats, setStats] = useState(null);
   const [heroQ, setHeroQ] = useState('');
+  const [showLogin, setShowLogin] = useState(false);
   useEffect(() => {
     fetch('/api/stats').then(r=>r.json()).then(setStats).catch(()=>{});
   }, []);
@@ -146,7 +148,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="xh-home">
+    <div className="xh-home">{showLogin && <XummLoginModal onClose={()=>setShowLogin(false)} />}
       <style>{`
         html[data-theme="light"]{
           --xh-bg:#FFFFFF; --xh-bg2:#F6F8FB; --xh-surface:#FFFFFF; --xh-surface2:#F2F5F9;
@@ -247,7 +249,7 @@ export default function HomePage() {
             {user ? (
               <Link href="/listings/new" className="xh-btn-secondary">Start selling</Link>
             ) : (
-              <Link href="/login" className="xh-btn-secondary">Start selling</Link>
+              <button onClick={()=>setShowLogin(true)} className="xh-btn-secondary" style={{border:'none',cursor:'pointer'}}>Start selling</button>
             )}
           </div>
         </div>
@@ -346,7 +348,7 @@ export default function HomePage() {
             <div style={{fontSize:34,marginBottom:12}}>⚓</div>
             <div style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:6}}>The harbor just opened</div>
             <div style={{fontSize:13,color:'var(--xh-text2)',marginBottom:16}}>Be one of the first sellers on mainnet — 0 listing fees.</div>
-            <Link href={user ? '/listings/new' : '/login'} className="xh-btn-primary" style={{padding:'10px 22px',fontSize:13.5}}>+ List an item</Link>
+            {user ? (<Link href="/listings/new" className="xh-btn-primary" style={{padding:'10px 22px',fontSize:13.5}}>+ List an item</Link>) : (<button onClick={()=>setShowLogin(true)} className="xh-btn-primary" style={{padding:'10px 22px',fontSize:13.5,border:'none',cursor:'pointer'}}>+ List an item</button>)}
           </div>
         ) : (
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12}}>
@@ -380,7 +382,7 @@ export default function HomePage() {
                 <div>
                   <div style={{display:'flex',alignItems:'center',gap:7,fontWeight:700,fontSize:15.5,color:'var(--xh-text)'}}>
                     {cap.nm}
-                    {cap.pro && <span className="xh-mono" style={{fontSize:9,fontWeight:600,letterSpacing:'0.04em',background:'#f59e0b',color:'#fff',padding:'2px 6px',borderRadius:5}}>PRO</span>}
+                    {cap.pro && <span className="xh-mono xh-pro" style={{fontSize:9,fontWeight:600,letterSpacing:'0.04em',background:'#f59e0b',color:'#fff',padding:'2px 6px',borderRadius:5}}>PRO</span>}
                     <span style={{color:'var(--xh-accent)',display:'inline-flex'}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5.2c0 4 2.9 7.2 7 8.8 4.1-1.6 7-4.8 7-8.8V6z"/><path d="m9.3 12 1.9 1.9L15 10"/></svg></span>
                   </div>
                 </div>
@@ -475,7 +477,7 @@ export default function HomePage() {
         <p style={{fontSize:15,color:'#bcd2f7',maxWidth:520,margin:'0 auto 24px',lineHeight:1.55,position:'relative',zIndex:1}}>Connect your Xaman wallet and start trading in under a minute.</p>
         <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap',position:'relative',zIndex:1}}>
           {!user && (
-            <Link href="/login" style={{background:'#fff',color:'#0b1b33',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none'}}>Connect wallet</Link>
+            <button onClick={()=>setShowLogin(true)} style={{background:'#fff',color:'#0b1b33',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,border:'none',cursor:'pointer'}}>Connect wallet</button>
           )}
           {user ? (<Link href="/listings/new" style={{background:'rgba(255,255,255,0.15)',color:'#fff',padding:'12px 28px',borderRadius:8,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>+ List an item</Link>) : (<Link href="/listings" style={{background:'rgba(255,255,255,0.12)',color:'#fff',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>Browse first</Link>)}
         </div>
