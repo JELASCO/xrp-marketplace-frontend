@@ -47,6 +47,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           position: 'relative',
           transform: hover ? 'translateY(-3px)' : 'translateY(0)',
           boxShadow: hover ? '0 16px 32px -14px rgba(20,22,26,0.18)' : 'none',
+          minWidth: 0,
           fontFamily: BODY,
         }}
       >
