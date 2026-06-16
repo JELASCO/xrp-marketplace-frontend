@@ -97,12 +97,12 @@ export default function Navbar() {
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{fontWeight:800,fontSize:18,color:'#14161a',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
             <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
-              <circle cx="32" cy="14" r="5" stroke="#fff" strokeWidth="3.5" fill="none"/>
-              <line x1="32" y1="19" x2="32" y2="50" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="22" y1="24" x2="42" y2="24" stroke="#fff" strokeWidth="3" strokeLinecap="round"/>
-              <path d="M 14 42 Q 32 56 50 42" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
-              <line x1="14" y1="42" x2="19" y2="38" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
-              <line x1="50" y1="42" x2="45" y2="38" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
+              <circle cx="32" cy="14" r="5" stroke="#2080F5" strokeWidth="3.5" fill="none"/>
+              <line x1="32" y1="19" x2="32" y2="50" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round"/>
+              <line x1="22" y1="24" x2="42" y2="24" stroke="#2080F5" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M 14 42 Q 32 56 50 42" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
+              <line x1="14" y1="42" x2="19" y2="38" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round"/>
+              <line x1="50" y1="42" x2="45" y2="38" stroke="#2080F5" strokeWidth="3.5" strokeLinecap="round"/>
             </svg>
             <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
