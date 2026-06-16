@@ -61,7 +61,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           overflow: 'hidden',
         }}>
           {images?.[0]
-            ? <img src={images[0]} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <img src={images[0]} alt={title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             : <span style={{ fontSize: 36, opacity: 0.6 }}>{CAT_ICON[catKey] || CAT_ICON.other}</span>}
 
           {/* category badge — top left */}
