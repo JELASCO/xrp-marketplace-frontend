@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
 import XummLoginModal from './XummLoginModal';
+import { useXrpPrice } from '../lib/xrpPrice';
 
 const NOTIF_LABELS = {
   sale_paid: 'New sale — payment locked in escrow',
@@ -62,30 +63,7 @@ export default function Navbar() {
     if (search.trim()) router.push('/listings?q=' + encodeURIComponent(search.trim()));
   }
 
-  const [xrpPrice, setXrpPrice] = useState(null);
-  const [priceDir, setPriceDir] = useState(null); // 'up' | 'down' | null
-  useEffect(() => {
-    let active = true;
-    let last = null;
-    const fetchPrice = () => {
-      fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
-        .then(r => r.json())
-        .then(d => {
-          if (!active || !d || !d.data || !d.data.amount) return;
-          const p = parseFloat(d.data.amount);
-          if (last != null && p !== last) {
-            setPriceDir(p > last ? 'up' : 'down');
-            setTimeout(() => active && setPriceDir(null), 1200);
-          }
-          last = p;
-          setXrpPrice(p);
-        })
-        .catch(() => {});
-    };
-    fetchPrice();
-    const iv = setInterval(fetchPrice, 15000); // refresh every 15s
-    return () => { active = false; clearInterval(iv); };
-  }, []);
+  const { price: xrpPrice, dir: priceDir } = useXrpPrice();
 
   return (
     <>
