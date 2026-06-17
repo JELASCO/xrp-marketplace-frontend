@@ -22,6 +22,13 @@ const SORTS = [
 ];
 
 const GAMES = ['Valorant', 'CS2', 'Fortnite', 'League of Legends', 'Dota 2', 'Apex Legends', 'WoW', 'Minecraft', 'Rocket League', 'Steam (general)', 'Other'];
+const SUBCATS = {
+  games: ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','World of Warcraft','Apex Legends','Roblox','Minecraft','Call of Duty','Old School RuneScape','RuneScape 3','Path of Exile','Diablo 4','Rust','Team Fortress 2','PUBG','Genshin Impact','Grand Theft Auto V','EA FC 24','Overwatch 2','Escape from Tarkov','ARC Raiders','New World','Lost Ark','Albion Online','Final Fantasy XIV','Warframe','Destiny 2','Other'],
+  graphics: ['Logos','Illustrations','3D & models','UI/UX kits','Avatars / PFP','Textures'],
+  software: ['Licenses & keys','Scripts & bots','Plugins','Templates','Source code'],
+  accounts: ['Game accounts','Social media','Streaming','Subscriptions'],
+  other: ['Gift cards','eBooks & guides','Collectibles','Misc'],
+};
 
 const ICON_PATHS = {
   compass: 'M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10ZM16 8l-2 6-6 2 2-6 6-2Z',
@@ -282,15 +289,15 @@ function ListingsContent() {
           <div className="xh-fg">
             <h4>CATEGORY</h4>
             {CATS.filter(c => c.key).map(c => (
-              <div key={c.key} className={'xh-fi ' + (cat === c.key ? 'on' : '')} onClick={() => setCat(cat === c.key ? '' : c.key)}>
+              <div key={c.key} className={'xh-fi ' + (cat === c.key ? 'on' : '')} onClick={() => { setCat(cat === c.key ? '' : c.key); setGame(''); }}>
                 <span className="box"></span>{c.label}<span className="count">{catCounts[c.key] || 0}</span>
               </div>
             ))}
           </div>
-          {(cat === '' || cat === 'games') && (
+          {(cat ? SUBCATS[cat] : GAMES) && (
             <div className="xh-fg">
-              <h4>GAME</h4>
-              {GAMES.map(g => (
+              <h4>{(cat === '' || cat === 'games') ? 'GAME' : 'TYPE'}</h4>
+              {(cat ? (SUBCATS[cat] || []) : GAMES).map(g => (
                 <div key={g} className={'xh-fi ' + (game === g ? 'on' : '')} onClick={() => setGame(game === g ? '' : g)}>
                   <span className="box"></span>{g}
                 </div>
