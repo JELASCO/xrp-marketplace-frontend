@@ -23,6 +23,13 @@ const CAT_BG = {
 };
 const GAMES = ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','World of Warcraft','Apex Legends','Roblox','Minecraft','Call of Duty','Old School RuneScape','RuneScape 3','Path of Exile','Diablo 4','Rust','Team Fortress 2','PUBG','Genshin Impact','Grand Theft Auto V','EA FC 24','Overwatch 2','Escape from Tarkov','ARC Raiders','New World','Lost Ark','Albion Online','Final Fantasy XIV','Warframe','Destiny 2','Other'];
 const PLATFORMS = ['PC','PlayStation','Xbox','Nintendo Switch','Mobile','Cross-platform','Other'];
+const SUBCATS = {
+  games: GAMES,
+  graphics: ['Logos','Illustrations','3D & models','UI/UX kits','Avatars / PFP','Textures'],
+  software: ['Licenses & keys','Scripts & bots','Plugins','Templates','Source code'],
+  accounts: ['Game accounts','Social media','Streaming','Subscriptions'],
+  other: ['Gift cards','eBooks & guides','Collectibles','Misc'],
+};
 const DELIVERY_OPTS = [
   { v:'instant', l:'Instant' },
   { v:'1h',      l:'Under 1 hour' },
@@ -369,7 +376,7 @@ export default function NewListingPage() {
               <div className="xh-cat-grid">
                 {CATS.map(c => (
                   <button key={c.key} type="button" className={'xh-cat-btn' + (form.category === c.key ? ' on' : '')}
-                    onClick={() => setForm(f => ({ ...f, category: c.key, game: c.key === 'games' ? (f.game || 'CS2') : '' }))}>
+                    onClick={() => setForm(f => ({ ...f, category: c.key, game: (SUBCATS[c.key] && SUBCATS[c.key][0]) || '' }))}>
                     <span className="emoji">{c.emoji}</span>
                     <span className="lbl">{c.label}</span>
                   </button>
@@ -383,20 +390,22 @@ export default function NewListingPage() {
               <div className={'count' + (form.title.length > TITLE_MAX ? ' over' : '')}>{form.title.length} / {TITLE_MAX}</div>
             </div>
 
-            {form.category === 'games' && (
+            {SUBCATS[form.category] && (
               <div className="xh-row2">
                 <div className="xh-field">
-                  <label>Game</label>
+                  <label>{form.category === 'games' ? 'Game' : 'Subcategory'}</label>
                   <select value={form.game} onChange={e => setForm(f => ({ ...f, game: e.target.value }))}>
-                    {GAMES.map(g => <option key={g}>{g}</option>)}
+                    {SUBCATS[form.category].map(g => <option key={g}>{g}</option>)}
                   </select>
                 </div>
-                <div className="xh-field">
-                  <label>Platform</label>
-                  <select value={form.platform} onChange={e => setForm(f => ({ ...f, platform: e.target.value }))}>
-                    {PLATFORMS.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                </div>
+                {form.category === 'games' && (
+                  <div className="xh-field">
+                    <label>Platform</label>
+                    <select value={form.platform} onChange={e => setForm(f => ({ ...f, platform: e.target.value }))}>
+                      {PLATFORMS.map(p => <option key={p}>{p}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
 
