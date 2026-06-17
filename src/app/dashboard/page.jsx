@@ -28,10 +28,10 @@ function Pill({status}) {
   return <span style={{fontSize:11.5,fontWeight:600,padding:'3px 9px',borderRadius:999,whiteSpace:'nowrap',color:s.c,background:s.b}}>{s.l}</span>;
 }
 
-function Metric({label,value,unit,sub,subColor}) {
+function Metric({icon,label,value,unit,sub,subColor}) {
   return (
     <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,padding:'15px 16px'}}>
-      <div style={{fontSize:12.5,color:'var(--text2)'}}>{label}</div>
+      <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'var(--text2)'}}>{icon}<span>{label}</span></div>
       <div style={{fontSize:23,fontWeight:600,color:'var(--text)',marginTop:6,fontFamily:'monospace'}}>{value}{unit&&<span style={{fontSize:12,fontWeight:500,color:'var(--text2)'}}> {unit}</span>}</div>
       {sub&&<div style={{fontSize:11.5,color:subColor||'var(--text2)',marginTop:3}}>{sub}</div>}
     </div>
@@ -136,10 +136,10 @@ export default function DashboardPage() {
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:11,marginBottom:14}}>
-        <Metric label="In escrow" value={fmt(inEscrow)} unit="XRP" sub={active.length+' active trades'} subColor="#1d6fd6"/>
-        <Metric label="Earned" value={fmt(earned)} unit="XRP" sub="as seller"/>
-        <Metric label="Spent" value={fmt(spent)} unit="XRP" sub="as buyer"/>
-        <Metric label="Trades" value={fmt(trades)} sub={'★ '+Number(rating||0).toFixed(1)+' · '+reviewCount+' reviews'} subColor="#b9770e"/>
+        <Metric icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>} label="In escrow" value={fmt(inEscrow)} unit="XRP" sub={active.length+' active trades'} subColor="#1d6fd6"/>
+        <Metric icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M14.2 9.3a2.5 2.5 0 0 0-2.2-1.1c-1.4 0-2.3.8-2.3 1.8 0 2.5 4.6 1.4 4.6 3.9 0 1-1 1.8-2.4 1.8a2.7 2.7 0 0 1-2.3-1.1M12 6.6v10.8"/></svg>} label="Earned" value={fmt(earned)} unit="XRP" sub="as seller"/>
+        <Metric icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h7.8a1 1 0 0 0 1-.8L20 8H6"/></svg>} label="Spent" value={fmt(spent)} unit="XRP" sub="as buyer"/>
+        <Metric icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.5 5.1 5.6.8-4 3.9.9 5.6L12 16.8 7 18.9l.9-5.6-4-3.9 5.6-.8z"/></svg>} label="Trades" value={fmt(trades)} sub={'★ '+Number(rating||0).toFixed(1)+' · '+reviewCount+' reviews'} subColor="#b9770e"/>
       </div>
 
       <div style={{...card, marginBottom:14}}>
