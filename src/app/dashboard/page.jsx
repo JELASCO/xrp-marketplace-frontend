@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
-import { useXrpPrice } from '../../lib/xrpPrice';
 
 const ST = {
   pending:{l:'Pending',c:'var(--text2)',b:'var(--border)'},
@@ -45,7 +44,6 @@ export default function DashboardPage() {
   const user = useAuthStore(s => s.user);
   const loading = useAuthStore(s => s.loading);
   const hydrated = useAuthStore(s => s.hydrated);
-  const { price: xrpPrice, change: xrpChange } = useXrpPrice();
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [listings, setListings] = useState([]);
@@ -118,12 +116,6 @@ export default function DashboardPage() {
         <div>
           <h1 style={{fontSize:22,fontWeight:700,color:'var(--text)',margin:0}}>Welcome back, {user.username}</h1>
           {walletShort && <p style={{fontSize:12.5,color:'var(--text2)',margin:'3px 0 0',fontFamily:'monospace'}}>{walletShort}</p>}
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:8,background:'#0b1b33',borderRadius:10,padding:'8px 13px'}}>
-          <span style={{width:7,height:7,borderRadius:'50%',background:'#34d399',animation:'xhLivePulse 1.6s ease-in-out infinite',display:'inline-block',flex:'none'}}/>
-          <span style={{fontSize:11.5,color:'#8aa0c4'}}>XRP</span>
-          <span style={{fontFamily:'monospace',color:'#fff',fontSize:13}}>{xrpPrice ? '$'+xrpPrice.toFixed(4) : '—'}</span>
-          {xrpChange != null && <span style={{fontFamily:'monospace',fontSize:11,color: xrpChange>=0 ? '#34d399' : '#f87171'}}>{(xrpChange>=0?'▲':'▼')+Math.abs(xrpChange).toFixed(1)+'%'}</span>}
         </div>
       </div>
 
