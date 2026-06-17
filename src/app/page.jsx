@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import ListingCard from '../components/ListingCard';
 import { useAuthStore } from '../lib/store';
 import XummLoginModal from '../components/XummLoginModal';
+import { useXrpPrice } from '../lib/xrpPrice';
 
 const CATS = [
   {key:'games',label:'Games',emoji:'🎮',sub:'accounts · keys · currency'},
@@ -57,24 +58,7 @@ export default function HomePage() {
     fetch('/api/stats').then(r=>r.json()).then(setStats).catch(()=>{});
   }, []);
 
-  const [xrpPrice, setXrpPrice] = useState(null);
-  useEffect(() => {
-    let alive = true;
-    const load = () => fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
-      .then(r=>r.json()).then(d=>{ if (alive && d?.data?.amount) setXrpPrice(parseFloat(d.data.amount)); }).catch(()=>{});
-    load();
-    const t = setInterval(load, 15000);
-    return () => { alive = false; clearInterval(t); };
-  }, []);
-
-  // 24h price change (Coinbase historical spot vs today)
-  const [refPrice, setRefPrice] = useState(null);
-  useEffect(() => {
-    const d = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-    fetch(`https://api.coinbase.com/v2/prices/XRP-USD/spot?date=${d}`)
-      .then(r => r.json()).then(j => { const p = parseFloat(j?.data?.amount); if (p) setRefPrice(p); }).catch(() => {});
-  }, []);
-  const xrpChange = (xrpPrice && refPrice) ? ((xrpPrice - refPrice) / refPrice) * 100 : null;
+  const { price: xrpPrice, change: xrpChange } = useXrpPrice();
 
   // Live ledger sequence — approximate client-side tick (~3.9s/ledger).
   // For exact values, expose `currentLedger` from the backend XRPL client via /api/stats.
