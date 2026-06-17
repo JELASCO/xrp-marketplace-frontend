@@ -20,7 +20,7 @@ const ST = {
 };
 const ACTIVE = ['escrow_locked','in_escrow','delivered','disputed','release_approved','refund_approved'];
 const fmt = (n) => Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2});
-const liveCss = '@keyframes xhLivePulse{0%,100%{opacity:1}50%{opacity:.35}}';
+const liveCss = '@keyframes xhLivePulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes xhSail{0%{opacity:0;transform:translateX(-220px)}30%{opacity:1}100%{opacity:1;transform:translateX(0)}}@keyframes xhBob{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-4px) rotate(1.2deg)}}@keyframes xhDrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}@keyframes xhTwk{0%,100%{opacity:.15}50%{opacity:.9}}@keyframes xhRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}';
 
 function Pill({status}) {
   const s = ST[status] || ST.pending;
@@ -38,6 +38,38 @@ function Metric({icon,label,value,unit,sub,subColor}) {
 }
 
 function pillLink(c,b){ return {fontSize:11.5,fontWeight:500,padding:'4px 10px',borderRadius:999,whiteSpace:'nowrap',color:c,background:b,textDecoration:'none'}; }
+
+function WelcomeBanner({username, wallet}) {
+  const stars = [['30%','22%','0.2s'],['48%','16%','1.1s'],['64%','26%','0.6s'],['82%','18%','1.6s'],['90%','30%','0.9s']];
+  return (
+    <div role="img" aria-label={'Welcome aboard'+(username?', '+username:'')} style={{position:'relative',width:'100%',height:200,borderRadius:14,overflow:'hidden',background:'#0b1b33',marginBottom:16}}>
+      <div style={{position:'absolute',left:'50%',top:'34%',width:440,height:440,transform:'translate(-50%,-50%)',borderRadius:'50%',background:'radial-gradient(circle,rgba(32,128,245,0.18) 0%,rgba(32,128,245,0) 60%)'}}/>
+      {stars.map(([l,t,d],i) => (
+        <span key={i} style={{position:'absolute',left:l,top:t,width:2,height:2,borderRadius:'50%',background:'#cfe0f7',opacity:0,animation:'xhTwk 3s ease-in-out infinite',animationDelay:d}}/>
+      ))}
+      {wallet && <span style={{position:'absolute',top:12,right:14,fontSize:11.5,fontFamily:'monospace',color:'#9db8de',background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.14)',borderRadius:999,padding:'3px 10px'}}>{wallet}</span>}
+      <div style={{position:'absolute',left:0,right:0,top:30,textAlign:'center',padding:'0 20px'}}>
+        <p style={{margin:0,fontSize:12,letterSpacing:1,color:'#5f7da8',opacity:0,animation:'xhRise .7s ease 1.6s forwards'}}>XRPHarbor</p>
+        <h1 style={{margin:'5px 0 0',fontSize:25,fontWeight:600,color:'#f3f8ff',opacity:0,animation:'xhRise .7s ease 1.8s forwards'}}>Welcome aboard{username ? <>, <span style={{color:'#46a0ff'}}>{username}</span></> : ''}</h1>
+        <p style={{margin:'8px 0 0',display:'inline-flex',alignItems:'center',gap:6,fontSize:13,color:'#9db8de',opacity:0,animation:'xhRise .7s ease 2.05s forwards'}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#46a0ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          Verified by the ledger
+        </p>
+      </div>
+      <svg viewBox="0 0 150 110" aria-hidden="true" style={{position:'absolute',left:'8%',bottom:54,width:122,opacity:0,animation:'xhSail 1.6s cubic-bezier(.22,.61,.36,1) forwards, xhBob 4s ease-in-out 1.6s infinite'}}>
+        <line x1="75" y1="14" x2="75" y2="74" stroke="#cdddf3" strokeWidth="2.5" strokeLinecap="round"/>
+        <path d="M75 18 L75 64 L36 64 Z" fill="#2080F5"/>
+        <path d="M75 22 L75 62 L108 62 Z" fill="#1572E8" opacity="0.9"/>
+        <path d="M30 70 L120 70 L108 92 L42 92 Z" fill="#0d3a6b"/>
+        <rect x="42" y="92" width="66" height="4" rx="2" fill="#15498a"/>
+        <circle cx="75" cy="11" r="3.5" fill="#46a0ff"/>
+      </svg>
+      <div style={{position:'absolute',left:0,right:0,bottom:0,height:72,background:'#08274a'}}/>
+      <svg viewBox="0 0 1360 120" preserveAspectRatio="none" aria-hidden="true" style={{position:'absolute',left:0,bottom:0,width:'200%',height:72,animation:'xhDrift 9s linear infinite'}}><path d="M0 40 Q170 12 340 40 T680 40 T1020 40 T1360 40 V120 H0 Z" fill="#0c3160" opacity="0.9"/></svg>
+      <svg viewBox="0 0 1360 120" preserveAspectRatio="none" aria-hidden="true" style={{position:'absolute',left:0,bottom:0,width:'200%',height:72,animation:'xhDrift 6s linear infinite reverse'}}><path d="M0 56 Q170 30 340 56 T680 56 T1020 56 T1360 56 V120 H0 Z" fill="#103e76" opacity="0.7"/></svg>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -112,12 +144,7 @@ export default function DashboardPage() {
     <div style={{maxWidth:980, margin:'0 auto', padding:'0 4px'}}>
       <style dangerouslySetInnerHTML={{__html: liveCss}}/>
 
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap',marginBottom:16}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:700,color:'var(--text)',margin:0}}>Welcome back, {user.username}</h1>
-          {walletShort && <p style={{fontSize:12.5,color:'var(--text2)',margin:'3px 0 0',fontFamily:'monospace'}}>{walletShort}</p>}
-        </div>
-      </div>
+      <WelcomeBanner username={user.username} wallet={walletShort}/>
 
       <div style={{display:'flex',alignItems:'center',gap:9,flexWrap:'wrap',marginBottom:16}}>
         <span style={{fontSize:12,color:'var(--text2)',fontWeight:600}}>Needs attention</span>
