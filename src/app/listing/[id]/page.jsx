@@ -208,6 +208,7 @@ export default function ListingDetailPage({ params }) {
 
   // Fetch listing + similar
   useEffect(() => {
+    api.listings.view(id).catch(() => {});
     api.listings.get(id).then(l => {
       setListing(l);
       if (l && l.category) {
