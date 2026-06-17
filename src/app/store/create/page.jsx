@@ -23,7 +23,14 @@ const C = {
   blue: '#3b82f6', blueDark: '#2563eb', green: '#10b981',
 };
 
-const CATS = ['CS2 skins', 'Valorant', 'Fortnite', 'Dota 2', 'WoW gold', 'Accounts', 'Graphics & Art', 'Software'];
+const CAT_TREE = {
+  'Games': ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','World of Warcraft','Apex Legends','Roblox','Minecraft','Call of Duty','Old School RuneScape','RuneScape 3','Path of Exile','Diablo 4','Rust','Team Fortress 2','PUBG','Genshin Impact','Grand Theft Auto V','EA FC 24','Overwatch 2','Escape from Tarkov','ARC Raiders','New World','Lost Ark','Albion Online','Final Fantasy XIV','Warframe','Destiny 2','Other'],
+  'Graphics & Art': ['Logos','Illustrations','3D & models','UI/UX kits','Avatars / PFP','Textures'],
+  'Software & Tools': ['Licenses & keys','Scripts & bots','Plugins','Templates','Source code'],
+  'Accounts': ['Game accounts','Social media','Streaming','Subscriptions'],
+  'Other': ['Gift cards','eBooks & guides','Collectibles','Misc'],
+};
+const CAT_KEYS = Object.keys(CAT_TREE);
 const RESPONSES = ['Within 4 hours (business hours)', 'Within 12 hours', 'Within 24 hours', 'Within 48 hours'];
 
 const sectionStyle = { background: C.bg, border: `1px solid ${C.line}`, borderRadius: 16, padding: 24, marginBottom: 16 };
@@ -59,6 +66,7 @@ export default function CreateStorePage() {
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
   const [cats, setCats] = useState([]);
+  const [activeCat, setActiveCat] = useState('Games');
   const [tagline, setTagline] = useState('');
   const [about, setAbout] = useState('');
   const [autoAccept, setAutoAccept] = useState(true);
@@ -101,7 +109,7 @@ export default function CreateStorePage() {
     }).catch(() => {});
   }, [user, router]);
 
-  const toggleCat = (c) => setCats((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : (prev.length >= 4 ? prev : [...prev, c]));
+  const toggleCat = (c) => setCats((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : (prev.length >= 8 ? prev : [...prev, c]));
 
   const handleLogoFile = async (file) => {
     if (!file) return;
@@ -199,17 +207,26 @@ export default function CreateStorePage() {
                 <div style={hintStyle}>Lowercase letters, numbers, and dashes. You can change this once after publishing.</div>
               </div>
               <div>
-                <label style={labelStyle}>What do you sell?</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {CATS.map((c) => {
-                    const on = cats.includes(c);
+                                <label style={labelStyle}>What do you sell?</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {CAT_KEYS.map((k) => {
+                    const active = activeCat === k;
                     return (
-                      <button key={c} type="button" aria-pressed={on} onClick={() => toggleCat(c)}
-                        style={{ padding: '7px 13px', background: on ? C.ink : C.bg, border: `1px solid ${on ? C.ink : C.line}`, borderRadius: 999, fontSize: 13, fontWeight: 500, color: on ? '#fff' : C.ink, cursor: 'pointer', fontFamily: 'inherit', minHeight: 36 }}>{c}</button>
+                      <button key={k} type="button" onClick={() => setActiveCat(k)}
+                        style={{ padding: '7px 14px', background: active ? C.blue : C.bg, border: '1px solid ' + (active ? C.blue : C.line), borderRadius: 999, fontSize: 13, fontWeight: 600, color: active ? '#fff' : C.ink, cursor: 'pointer', fontFamily: 'inherit', minHeight: 36 }}>{k}</button>
                     );
                   })}
                 </div>
-                <div style={hintStyle}>Helps buyers find you in category browsing. Pick up to 4.</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {CAT_TREE[activeCat].map((c) => {
+                    const on = cats.includes(c);
+                    return (
+                      <button key={c} type="button" aria-pressed={on} onClick={() => toggleCat(c)}
+                        style={{ padding: '6px 12px', background: on ? C.ink : C.bg, border: '1px solid ' + (on ? C.ink : C.line), borderRadius: 999, fontSize: 13, fontWeight: 500, color: on ? '#fff' : C.ink, cursor: 'pointer', fontFamily: 'inherit', minHeight: 34 }}>{c}</button>
+                    );
+                  })}
+                </div>
+                <div style={hintStyle}>Pick a category, then the items you sell. {cats.length}/8 selected.</div>
               </div>
             </section>
 
