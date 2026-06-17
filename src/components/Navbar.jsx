@@ -133,7 +133,11 @@ export default function Navbar() {
               </button>
               {showMenu && (
                 <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
-                  {[{href:'/listings/new',label:'List an Item'},{href:'/store/create',label:'Create store'},{href:'/dashboard',label:'Dashboard'},{href:'/pro',label:'⭐ Upgrade to Pro'},{href:'/orders',label:'My Orders'},{href:'/messages',label:'Messages'},{href:'/favorites',label:'Favorites'},{href:'/profile/'+user.id,label:'My Profile'},{href:'/settings',label:'Settings'}].map(i=>(
+                  {!(user.proUntil && new Date(user.proUntil).getTime() > Date.now()) && (<>
+                    <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#c4880c',fontWeight:600,textDecoration:'none'}}>⭐ Upgrade to Pro</Link>
+                    <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
+                  </>)}
+                  {[{href:'/listings/new',label:'List an Item'},{href:'/store/create',label:'Create store'},{href:'/dashboard',label:'Dashboard'},{href:'/orders',label:'My Orders'},{href:'/messages',label:'Messages'},{href:'/favorites',label:'Favorites'},{href:'/profile/'+user.id,label:'My Profile'},{href:'/settings',label:'Settings'}].map(i=>(
                     <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
                       style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--text2)',textDecoration:'none',transition:'all 0.15s'}}
                       onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
