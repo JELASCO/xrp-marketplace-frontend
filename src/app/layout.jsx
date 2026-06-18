@@ -1,6 +1,7 @@
 import './globals.css';
 import Navbar from '../components/Navbar';
 import Providers from '../components/Providers';
+import ToastHost from '../components/ToastHost';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://xrpharbor.com';
 const SITE_NAME = 'XRPHarbor';
@@ -54,6 +55,7 @@ export default function RootLayout({ children }) {
         <Providers>
           <Navbar />
           <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>{children}</main>
+          <ToastHost />
         </Providers>
       </body>
     </html>
