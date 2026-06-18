@@ -143,3 +143,5 @@ body {
 /* App feel: no text selection / caret when clicking UI; inputs stay selectable */
 * { -webkit-user-select: none; -moz-user-select: none; user-select: none; }
 input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
+
+html, body { overflow-x: clip; }
