@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <div style={{maxWidth:800,margin:'40px auto',padding:'0 20px',color:'var(--text)',lineHeight:1.8}}>
       <h1 style={{fontSize:28,fontWeight:700,marginBottom:8}}>Privacy Policy</h1>
-      <p style={{color:'var(--text3)',marginBottom:32,fontSize:13}}>Last updated: May 2025</p>
+      <p style={{color:'var(--text3)',marginBottom:32,fontSize:13}}>Last updated: June 2026</p>
       <section style={{marginBottom:28}}><h2 style={{fontSize:18,fontWeight:600,marginBottom:8,color:'#c8ccd6'}}>1. Information We Collect</h2><p style={{color:'var(--text2)'}}>We collect your XRPL wallet address, username, optional bio and avatar, transaction history on our platform, and usage data.</p></section>
       <section style={{marginBottom:28}}><h2 style={{fontSize:18,fontWeight:600,marginBottom:8,color:'#c8ccd6'}}>2. How We Use It</h2><p style={{color:'var(--text2)'}}>We use your information to facilitate transactions, display your public profile, resolve disputes, prevent fraud, and improve the platform.</p></section>
       <section style={{marginBottom:28}}><h2 style={{fontSize:18,fontWeight:600,marginBottom:8,color:'#c8ccd6'}}>3. Public Information</h2><p style={{color:'var(--text2)'}}>Your username, reputation score, and listing history are publicly visible. Transactions are recorded on the XRP Ledger, a public blockchain.</p></section>
