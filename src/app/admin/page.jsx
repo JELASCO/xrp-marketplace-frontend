@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '../../lib/store';
 import { api } from '../../lib/api';
+import { xhConfirm } from '../../lib/confirm';
 
 const TABS = [
   {key:'dashboard',label:'Dashboard',icon:'▦'},
@@ -333,7 +334,7 @@ export default function AdminPage() {
                     </div>
                     <div style={{display:'flex',gap:6}}>
                       {!l.is_featured && <button className='xh-btn-sm xh-btn-warn' onClick={()=>{const d=parseInt(prompt('Feature for how many days?','7'));if(d>0)api.admin.featureListing(l.id,d).then(()=>location.reload())}}>★ Feature</button>}
-                      {l.status==='active' && <button className='xh-btn-sm xh-btn-danger' onClick={()=>{if(confirm('Remove this listing? Seller will lose visibility.'))api.admin.removeListing(l.id).then(()=>location.reload())}}>Remove</button>}
+                      {l.status==='active' && <button className='xh-btn-sm xh-btn-danger' onClick={()=>{xhConfirm('Remove this listing? Seller will lose visibility.',{danger:true,confirmText:'Remove'}).then(ok=>{if(ok)api.admin.removeListing(l.id).then(()=>location.reload())})}}>Remove</button>}
                     </div>
                   </div>
                 ))}
@@ -415,7 +416,7 @@ export default function AdminPage() {
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                     <button className='xh-btn-sm' onClick={()=>api.admin.verifyUser(u.id,!u.is_verified).then(()=>location.reload())}>{u.is_verified?'Unverify':'Verify'}</button>
                     <button className='xh-btn-sm' onClick={()=>{const d=parseInt(prompt('Grant Pro for how many days?','30'));if(d>0)api.admin.grantPro(u.id,d).then(()=>location.reload())}}>Grant Pro</button>
-                    <button className='xh-btn-sm xh-btn-danger' onClick={()=>{if(confirm('Ban this user?'))api.admin.banUser(u.id,true).then(()=>location.reload())}}>Ban</button>
+                    <button className='xh-btn-sm xh-btn-danger' onClick={()=>{xhConfirm('Ban this user?',{danger:true,confirmText:'Ban'}).then(ok=>{if(ok)api.admin.banUser(u.id,true).then(()=>location.reload())})}}>Ban</button>
                   </div>
                 </div>
               ))}
@@ -481,7 +482,7 @@ export default function AdminPage() {
                     </div>
                     <div style={{display:'flex',gap:6,flexShrink:0}}>
                       <button className='xh-btn-sm' onClick={()=>{const note=prompt('Resolution note (optional):','');api.admin.resolveReport(r.id,'resolved',note||'').then(()=>location.reload())}}>Resolve</button>
-                      <button className='xh-btn-sm xh-btn-warn' onClick={()=>{if(confirm('Dismiss this report? (use when the report is unfounded)'))api.admin.resolveReport(r.id,'dismissed','').then(()=>location.reload())}}>Dismiss</button>
+                      <button className='xh-btn-sm xh-btn-warn' onClick={()=>{xhConfirm('Dismiss this report? (use when the report is unfounded)',{confirmText:'Dismiss'}).then(ok=>{if(ok)api.admin.resolveReport(r.id,'dismissed','').then(()=>location.reload())})}}>Dismiss</button>
                     </div>
                   </div>
                 </div>
