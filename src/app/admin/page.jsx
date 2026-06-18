@@ -113,6 +113,14 @@ function fmtDate(d) {
   try { const dt = new Date(d); return dt.toLocaleDateString('en-US') + ' ' + dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return d; }
 }
 
+const XRPL_NETWORK = (process.env.NEXT_PUBLIC_XRPL_NETWORK || '').toLowerCase();
+const XRPL_NODE_ENV = process.env.NEXT_PUBLIC_XRPL_NODE || '';
+const XRPL_IS_MAINNET = XRPL_NETWORK === 'mainnet';
+const XRPL_NET_VALUE = XRPL_NETWORK ? (XRPL_IS_MAINNET ? 'Mainnet' : XRPL_NETWORK.charAt(0).toUpperCase() + XRPL_NETWORK.slice(1)) : 'Not set';
+const XRPL_NET_PILL = XRPL_NETWORK ? (XRPL_IS_MAINNET ? 'live \u00b7 real XRP' : 'not mainnet') : 'env unset';
+const XRPL_NET_PILLCOLOR = XRPL_IS_MAINNET ? 'green' : 'yellow';
+const XRPL_NODE_VALUE = XRPL_NODE_ENV || 'Not set';
+
 function SettingItem({label, value, hint, pill, pillColor, envKey, icon}) {
   return (
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'12px 14px',background:'var(--xh-surface2)',borderRadius:8,gap:12,flexWrap:'wrap'}}>
@@ -494,8 +502,8 @@ export default function AdminPage() {
 
           <Section title='XRPL network'>
             <div style={{display:'flex',flexDirection:'column',gap:6}}>
-              <SettingItem icon='🌐' label='Network' value='Testnet' pill='not mainnet' pillColor='yellow' hint='All escrows currently run on the XRP Ledger testnet. Mainnet switch will move funds to real XRP.' envKey='XRPL_NODE / NODE_ENV'/>
-              <SettingItem icon='🔗' label='XRPL endpoint' value='altnet.rippletest' hint='Public testnet WebSocket node used for escrow create / fulfill / cancel.' envKey='XRPL_NODE'/>
+              <SettingItem icon='🌐' label='Network' value={XRPL_NET_VALUE} pill={XRPL_NET_PILL} pillColor={XRPL_NET_PILLCOLOR} hint={XRPL_IS_MAINNET ? 'Escrows run on XRPL mainnet \u2014 real XRP moves on every release.' : 'Reflects NEXT_PUBLIC_XRPL_NETWORK. Set it (mainnet/testnet) to match the backend XRPL_NODE.'} envKey='NEXT_PUBLIC_XRPL_NETWORK'/>
+              <SettingItem icon='🔗' label='XRPL endpoint' value={XRPL_NODE_VALUE} hint='WebSocket node used for escrow create / fulfill / cancel. Set to match the backend XRPL_NODE.' envKey='NEXT_PUBLIC_XRPL_NODE'/>
               <SettingItem icon='👛' label='Platform wallet' value='configured' pill='set' pillColor='green' hint='The XRPL address that collects platform fees. Set via env var — only the seed should ever live in Railway secrets.' envKey='PLATFORM_WALLET_ADDRESS'/>
             </div>
           </Section>
