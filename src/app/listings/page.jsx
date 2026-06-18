@@ -245,6 +245,8 @@ function ListingsContent() {
   };
 
   const handleSearch = (e) => { e.preventDefault(); setQ(inputQ.trim()); };
+  const [openF, setOpenF] = useState({});
+  const toggleF = (k) => setOpenF(s => ({ ...s, [k]: !s[k] }));
   const clearFilters = () => {
     setCat(''); setSort('newest'); setQ(''); setInputQ('');
     setMinPrice(''); setMaxPrice(''); setGame(''); setProOnly(false); setRatingMin(false);
@@ -287,8 +289,8 @@ function ListingsContent() {
       <div className="xh-page">
         <aside className="xh-side">
           <div className="xh-fg">
-            <h4>CATEGORY</h4>
-            {CATS.filter(c => c.key).map(c => (
+            <h4 onClick={() => toggleF('cat')} style={{cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>CATEGORY<span style={{fontSize:10,opacity:0.55,transition:'transform .2s',transform:openF.cat?'rotate(180deg)':'none'}}>▾</span></h4>
+            {openF.cat && CATS.filter(c => c.key).map(c => (
               <div key={c.key} className={'xh-fi ' + (cat === c.key ? 'on' : '')} onClick={() => { setCat(cat === c.key ? '' : c.key); setGame(''); }}>
                 <span className="box"></span>{c.label}<span className="count">{catCounts[c.key] || 0}</span>
               </div>
@@ -296,8 +298,8 @@ function ListingsContent() {
           </div>
           {(cat ? SUBCATS[cat] : GAMES) && (
             <div className="xh-fg">
-              <h4>{(cat === '' || cat === 'games') ? 'GAME' : 'TYPE'}</h4>
-              {(cat ? (SUBCATS[cat] || []) : GAMES).map(g => (
+              <h4 onClick={() => toggleF('game')} style={{cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>{(cat === '' || cat === 'games') ? 'GAME' : 'TYPE'}<span style={{fontSize:10,opacity:0.55,transition:'transform .2s',transform:openF.game?'rotate(180deg)':'none'}}>▾</span></h4>
+              {openF.game && (cat ? (SUBCATS[cat] || []) : GAMES).map(g => (
                 <div key={g} className={'xh-fi ' + (game === g ? 'on' : '')} onClick={() => setGame(game === g ? '' : g)}>
                   <span className="box"></span>{g}
                 </div>
@@ -305,21 +307,21 @@ function ListingsContent() {
             </div>
           )}
           <div className="xh-fg">
-            <h4>PRICE · XRP</h4>
-            <div className="xh-price-in">
+            <h4 onClick={() => toggleF('price')} style={{cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>PRICE · XRP<span style={{fontSize:10,opacity:0.55,transition:'transform .2s',transform:openF.price?'rotate(180deg)':'none'}}>▾</span></h4>
+            {openF.price && <div className="xh-price-in">
               <input placeholder="min" value={minPrice} onChange={e => setMinPrice(e.target.value)} inputMode="decimal" />
               <span style={{ color: '#5b6472' }}>–</span>
               <input placeholder="max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} inputMode="decimal" />
-            </div>
+            </div>}
           </div>
           <div className="xh-fg">
-            <h4>SELLER</h4>
-            <div className={'xh-fi ' + (proOnly ? 'on' : '')} onClick={() => setProOnly(!proOnly)}>
+            <h4 onClick={() => toggleF('seller')} style={{cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>SELLER<span style={{fontSize:10,opacity:0.55,transition:'transform .2s',transform:openF.seller?'rotate(180deg)':'none'}}>▾</span></h4>
+            {openF.seller && <><div className={'xh-fi ' + (proOnly ? 'on' : '')} onClick={() => setProOnly(!proOnly)}>
               <span className="box"></span>Pro sellers only
             </div>
             <div className={'xh-fi ' + (ratingMin ? 'on' : '')} onClick={() => setRatingMin(!ratingMin)}>
               <span className="box"></span>4★ and up
-            </div>
+            </div></>}
           </div>
           <div className="xh-escrow-note">🛡 Every listing here is escrow-protected — your XRP is locked on-chain until you confirm delivery.</div>
         </aside>
