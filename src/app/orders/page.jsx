@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
+import { xhConfirm } from '../../lib/confirm';
 import { useAuthStore } from '../../lib/store';
 
 const STATUS_MAP = {
@@ -202,7 +203,7 @@ export default function OrdersPage() {
   }
 
   async function handleCancel(order) {
-    if (!confirm('Cancel this order? This only works before payment is locked in escrow.')) return;
+    if (!(await xhConfirm('Cancel this order? This only works before payment is locked in escrow.', { danger: true, confirmText: 'Cancel order', cancelText: 'Keep' }))) return;
     try {
       await api.orders.cancel(order.id);
       api.orders.mine(role).then(setOrders);
@@ -364,11 +365,11 @@ export default function OrdersPage() {
                         style={{flex:1,background:locked?'var(--surface2)':'rgba(16,185,129,0.1)',color:locked?'var(--text3)':'#34d399',border:'1px solid '+(locked?'var(--border2)':'rgba(16,185,129,0.2)'),borderRadius:8,padding:'10px',fontSize:13,fontWeight:500,cursor:locked?'not-allowed':'pointer',fontFamily:'inherit'}}>
                         {locked ? `Release available in ${mins}:${String(secs).padStart(2,'0')}` : '✓ Received — Release Payment'}
                       </button>
-                      <button onClick={() => { if(confirm('Open a dispute for this order?')) api.orders.dispute(order.id,{reason:'Issue reported by buyer'}).then(() => api.orders.mine(role).then(setOrders)).catch(e=>alert(e.message)); }}
+                      <button onClick={() => { xhConfirm('Open a dispute for this order?', { confirmText: 'Open dispute' }).then(ok => { if(ok) api.orders.dispute(order.id,{reason:'Issue reported by buyer'}).then(() => api.orders.mine(role).then(setOrders)).catch(e=>alert(e.message)); }); }}
                         style={{background:'rgba(239,68,68,0.08)',color:'#f87171',border:'1px solid rgba(239,68,68,0.15)',borderRadius:8,padding:'10px 14px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>⚠</button>
                     </div>
                     {locked && <div style={{fontSize:11,color:'var(--text3)',marginTop:6,textAlign:'center'}}>XRPL escrow requires a short hold before release. This protects both sides.</div>}
-                    <button onClick={() => { if(confirm('Reclaim your funds? This only works after the escrow hold period (if the seller never delivered).')) handleReclaim(order); }}
+                    <button onClick={() => { xhConfirm('Reclaim your funds? This only works after the escrow hold period (if the seller never delivered).', { confirmText: 'Reclaim' }).then(ok => { if(ok) handleReclaim(order); }); }}
                       style={{width:'100%',marginTop:8,background:'transparent',color:'var(--text3)',border:'none',fontSize:11,cursor:'pointer',textDecoration:'underline'}}>
                       Seller didn't deliver? Reclaim your funds
                     </button>
