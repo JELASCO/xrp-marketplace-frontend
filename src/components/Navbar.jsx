@@ -1,6 +1,6 @@
 'use client'; // v2
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../lib/store';
 import { api } from '../lib/api';
@@ -24,6 +24,7 @@ export default function Navbar() {
   const [showLogin, setShowLogin] = useState(false);
   const [showMenu,  setShowMenu]  = useState(false);
   const [search,    setSearch]    = useState('');
+  const pathname = usePathname();
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [unread, setUnread] = useState(0);
@@ -77,13 +78,13 @@ export default function Navbar() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2080F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg>
             <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
-          <form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
+          {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',color:'#14161a',borderRadius:8,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}
               placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8b8f96',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-          </form>
+          </form>)}
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[{href:'/listings',label:'Marketplace'},{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
               <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#14161a',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
