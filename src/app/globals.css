@@ -94,6 +94,10 @@ body {
   [style*="grid-template-columns: repeat(2"],
   [style*="gridTemplateColumns: repeat(2"] { gap: 12px !important; }
 
+  /* Dashboard main/sidebar 2-col + homepage 4-col footer */
+  [style*="grid-template-columns: minmax(0, 1.25fr)"],
+  [style*="grid-template-columns: 2fr 1fr 1fr 1fr"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+
   /* Listing/card grids that use autofill/minmax */
   [style*="minmax(280px"] { grid-template-columns: 1fr !important; }
   [style*="minmax(200px"] { grid-template-columns: repeat(2, 1fr) !important; }
