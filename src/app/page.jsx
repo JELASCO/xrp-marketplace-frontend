@@ -269,7 +269,7 @@ export default function HomePage() {
       </div>
 
       {/* LIVE TICKER */}
-      <div style={{background:'#0b1b33',borderRadius:12,overflow:'hidden',marginBottom:36}} aria-hidden="true">
+      <div style={{background:'#0b1b33',overflow:'hidden',marginBottom:36,width:'100vw',marginLeft:'calc(50% - 50vw)'}} aria-hidden="true">
         <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:36,whiteSpace:'nowrap',padding:'11px 0 11px 24px',fontSize:12,letterSpacing:'.02em',color:'#9db4da',width:'max-content'}}>
           {(() => { const it = tickerItems(); const all=[...it,...it]; const kids=[]; all.forEach((node,i)=>{ kids.push(<span key={'i'+i} style={{display:'inline-flex',alignItems:'center'}}>{node}</span>); kids.push(<span key={'s'+i} style={{color:'#33507e'}}>·</span>); }); return kids; })()}
         </div>
