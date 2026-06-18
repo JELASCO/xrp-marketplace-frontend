@@ -4,7 +4,7 @@ export default function TosPage() {
   return (
     <div style={{maxWidth:800,margin:'40px auto',padding:'0 20px',color:'var(--text)',lineHeight:1.8}}>
       <h1 style={{fontSize:28,fontWeight:700,marginBottom:8}}>Terms of Service</h1>
-      <p style={{color:'var(--text3)',marginBottom:32,fontSize:13}}>Last updated: May 2025</p>
+      <p style={{color:'var(--text3)',marginBottom:32,fontSize:13}}>Last updated: June 2026</p>
       <section style={{marginBottom:28}}><h2 style={{fontSize:18,fontWeight:600,marginBottom:8,color:'#c8ccd6'}}>1. Acceptance of Terms</h2><p style={{color:'var(--text2)'}}>By accessing and using XRPHarbor, you agree to be bound by these Terms of Service. If you do not agree, please do not use the platform.</p></section>
       <section style={{marginBottom:28}}><h2 style={{fontSize:18,fontWeight:600,marginBottom:8,color:'#c8ccd6'}}>2. Platform Description</h2><p style={{color:'var(--text2)'}}>XRPHarbor is a peer-to-peer marketplace for digital game items and assets. We facilitate transactions using XRP Ledger escrow technology. We do not guarantee item delivery.</p></section>
       <section style={{marginBottom:28}}><h2 style={{fontSize:18,fontWeight:600,marginBottom:8,color:'#c8ccd6'}}>3. Eligibility</h2><p style={{color:'var(--text2)'}}>You must be at least 18 years old to use XRPHarbor. By using the platform, you confirm you meet this requirement.</p></section>
