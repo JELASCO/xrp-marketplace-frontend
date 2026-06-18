@@ -1,13 +1,17 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import ListingCard from '../../components/ListingCard';
 export default function FavoritesPage() {
   const user = useAuthStore(s => s.user);
+  const hydrated = useAuthStore(s => s.hydrated);
+  const router = useRouter();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [favIds, setFavIds] = useState(new Set());
+  useEffect(() => { if (hydrated && !user) router.replace('/'); }, [hydrated, user]);
   useEffect(() => {
     if (!user) return;
     api.favorites.list().then(data => { setFavorites(data||[]); setFavIds(new Set((data||[]).map(l=>l.id))); }).catch(()=>{}).finally(()=>setLoading(false));
