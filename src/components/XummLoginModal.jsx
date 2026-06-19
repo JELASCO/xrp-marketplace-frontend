@@ -47,8 +47,8 @@ export default function XummLoginModal({ onClose }) {
       <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:'28px',width:'100%',maxWidth:380,boxShadow:'0 24px 64px rgba(0,0,0,0.6)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
           <div>
-            <div style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>Sign in with Xumm</div>
-            <div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>Scan with your Xumm app</div>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>Sign in with Xaman</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>Scan with your Xaman app</div>
           </div>
           <button onClick={onClose} style={{background:'var(--surface2)',border:'1px solid rgba(255,255,255,0.08)',color:'var(--text2)',borderRadius:8,width:32,height:32,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
         </div>
@@ -61,10 +61,10 @@ export default function XummLoginModal({ onClose }) {
         {status==='pending'&&qrUrl&&(
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
             <div style={{background:'#fff',padding:12,borderRadius:12}}>
-              {(typeof window!=='undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && nextUrl) ? (<a href={nextUrl} target="_blank" rel="noopener" style={{display:'inline-block',background:'var(--accent)',color:'#fff',padding:'14px 28px',borderRadius:10,fontWeight:600,fontSize:14,textDecoration:'none',marginBottom:4}}>Open in Xumm App</a>) : (<img src={qrUrl} alt="Xumm QR" style={{width:192,height:192,display:'block'}}/>)}
+              {(typeof window!=='undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) && nextUrl) ? (<a href={nextUrl} target="_blank" rel="noopener" style={{display:'inline-block',background:'var(--accent)',color:'#fff',padding:'14px 28px',borderRadius:10,fontWeight:600,fontSize:14,textDecoration:'none',marginBottom:4}}>Open in Xaman App</a>) : (<img src={qrUrl} alt="Xaman QR" style={{width:192,height:192,display:'block'}}/>)}
             </div>
             <div style={{fontSize:13,color:'var(--text2)',textAlign:'center',lineHeight:1.6}}>
-              Open <strong style={{color:'var(--text)'}}>Xumm</strong> on your phone and scan to sign in
+              Open <strong style={{color:'var(--text)'}}>Xaman</strong> on your phone and scan to sign in
             </div>
             <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'var(--text3)'}}>
               <div style={{width:6,height:6,borderRadius:'50%',background:'var(--green)',animation:'pulse2 1.5s ease-in-out infinite'}}/>
