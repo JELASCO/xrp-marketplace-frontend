@@ -105,9 +105,9 @@ export default function ProPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => { if (e.target === e.currentTarget) setModal(null); }}>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 16, padding: 28, maxWidth: 360, width: '100%', textAlign: 'center' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Pay {modal.days}-day Pro</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20 }}>Scan with Xumm to pay the membership fee.</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20 }}>Scan with Xaman to pay the membership fee.</div>
             {modal.qrUrl && <div style={{ background: '#fff', padding: 12, borderRadius: 12, display: 'inline-block', marginBottom: 16 }}><img src={modal.qrUrl} alt="QR" style={{ width: 192, height: 192, display: 'block' }} /></div>}
-            {modal.deepLink && <a href={modal.deepLink} style={{ display: 'block', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Open in Xumm App</a>}
+            {modal.deepLink && <a href={modal.deepLink} style={{ display: 'block', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Open in Xaman App</a>}
             <button onClick={verify} disabled={verifying} style={{ width: '100%', background: verifying ? 'var(--surface2)' : 'rgba(16,185,129,0.12)', color: verifying ? 'var(--text3)' : '#34d399', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, cursor: verifying ? 'default' : 'pointer' }}>
               {verifying ? 'Checking…' : "I've paid — activate Pro"}
             </button>
