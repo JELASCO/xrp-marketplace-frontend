@@ -118,8 +118,10 @@ const CSS = `
 .xh-media-note{font-family:var(--xh-mono);font-size:10.5px;color:#5b6472;margin-top:10px}
 
 .xh-price{position:relative}
-.xh-price input{padding-right:60px;font-family:var(--xh-mono);font-weight:500;font-size:18px;color:#1d4ed8}
+.xh-price input{padding-right:92px;font-family:var(--xh-mono);font-weight:500;font-size:18px;color:#1d4ed8}
 .xh-price .suffix{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-family:var(--xh-mono);font-size:12px;color:#5b6472;font-weight:500;letter-spacing:0.04em;pointer-events:none}
+.xh-price .xh-cur-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--xh-mono);font-size:11px;color:#1d4ed8;font-weight:600;letter-spacing:0.04em;cursor:pointer;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:3px 7px}
+.xh-price .xh-cur-toggle:hover{background:#e0e7ff}
 .xh-usd-live{font-family:var(--xh-mono);font-size:11px;color:#10b981;margin-top:6px;display:flex;align-items:center;gap:6px}
 .xh-usd-live .lvdot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:xhPulse 2s infinite}
 .xh-fee{font-family:var(--xh-mono);font-size:11px;color:#5b6472;margin-top:4px}
@@ -226,7 +228,7 @@ export default function NewListingPage() {
   const router  = useRouter();
   const user    = useAuthStore(s => s.user);
   const fileRef = useRef(null);
-  const [form, setForm] = useState({ title:'', description:'', category:'games', game:'CS2', platform:'PC', priceXrp:'', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'', deliveryTime:'', tags:[], featured:false });
+  const [form, setForm] = useState({ title:'', description:'', category:'games', game:'CS2', platform:'PC', priceXrp:'', currency:'XRP', images:[], isDigital:false, digitalContent:'', digitalLink:'', quantity:'', deliveryTime:'', tags:[], featured:false });
   const [tagInput, setTagInput] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [uploading,setUploading]= useState(false);
@@ -277,7 +279,7 @@ export default function NewListingPage() {
 
   const priceNum = parseFloat(form.priceXrp);
   const sellerReceives = (priceNum > 0) ? (priceNum * 0.97).toFixed(6) : null;
-  const usdPrice = (priceNum > 0 && xrpUsd) ? (priceNum * xrpUsd).toFixed(2) : null;
+  const usdPrice = (priceNum > 0) ? (form.currency === 'RLUSD' ? priceNum.toFixed(2) : (xrpUsd ? (priceNum * xrpUsd).toFixed(2) : null)) : null;
 
   // Step progression (for the masthead step rail)
   const step1Done = !!(form.title.trim() && form.category && form.description.trim());
@@ -456,10 +458,10 @@ export default function NewListingPage() {
                 <label>Price <span className="req">*</span></label>
                 <div className="xh-price">
                   <input type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e => setForm(f => ({ ...f, priceXrp: e.target.value }))} />
-                  <span className="suffix">XRP</span>
+                  <button type="button" className="xh-cur-toggle" onClick={() => setForm(f => ({ ...f, currency: f.currency === 'XRP' ? 'RLUSD' : 'XRP' }))} title="Toggle currency">{form.currency} ⇄</button>
                 </div>
                 {usdPrice && <div className="xh-usd-live"><span className="lvdot"></span>≈ ${usdPrice} · live · refreshes every 15s</div>}
-                {sellerReceives && <div className="xh-fee">You'll receive <b>{sellerReceives} XRP</b> after 3% platform fee</div>}
+                {sellerReceives && <div className="xh-fee">You'll receive <b>{sellerReceives} {form.currency}</b> after 3% platform fee</div>}
               </div>
               <div className="xh-field">
                 <label>Quantity <span className="opt">stock</span></label>
@@ -574,7 +576,7 @@ export default function NewListingPage() {
                 <div className="cat">{previewCat.join(' / ')}</div>
                 <div className="title">{form.title || 'Your listing title shows here'}</div>
                 <div className="price">
-                  <span className="xrp">{priceNum > 0 ? Number(form.priceXrp).toLocaleString('en-US') : '0'} XRP</span>
+                  <span className="xrp">{priceNum > 0 ? Number(form.priceXrp).toLocaleString('en-US') : '0'} {form.currency}</span>
                   {usdPrice && <span className="usd">≈ ${usdPrice}</span>}
                 </div>
                 <div className="stock"><span className="ok">● In stock</span>{form.quantity ? ` · ${form.quantity} available` : ''}</div>
