@@ -327,7 +327,7 @@ export default function ListingDetailPage({ params }) {
   const stockLeft = (listing.quantity != null && listing.quantity_sold != null) ? Math.max(0, listing.quantity - listing.quantity_sold) : null;
   const soldOut = isSold || stockLeft === 0;
 
-  const usdPrice = xrpUsd ? (Number(listing.price_xrp) * xrpUsd).toFixed(2) : null;
+  const usdPrice = (listing.currency === 'RLUSD') ? Number(listing.price_xrp).toFixed(2) : (xrpUsd ? (Number(listing.price_xrp) * xrpUsd).toFixed(2) : null);
   const avInitial = (listing.username || '?').slice(0, 1).toUpperCase();
 
   const crumbBits = [];
@@ -392,7 +392,7 @@ export default function ListingDetailPage({ params }) {
 
           <div className="xh-buy-card">
             <div className="xh-price-box">
-              <span className={'xrp' + (soldOut ? ' sold' : '')}>{Number(listing.price_xrp).toLocaleString('en-US')} XRP</span>
+              <span className={'xrp' + (soldOut ? ' sold' : '')}>{Number(listing.price_xrp).toLocaleString('en-US')} {listing.currency || 'XRP'}</span>
               {usdPrice && <span className="usd">≈ ${usdPrice}</span>}
             </div>
             <div className="xh-price-live"><span className="lvdot"></span>LIVE · XRP {xrpUsd ? '$' + xrpUsd.toFixed(4) : '…'} · refreshes every 15s</div>
@@ -508,7 +508,7 @@ export default function ListingDetailPage({ params }) {
                 <div className="cb">
                   <div className="t">{l.title}</div>
                   <div className="row">
-                    <span className="pr">{Number(l.price_xrp).toLocaleString('en-US')} XRP</span>
+                    <span className="pr">{Number(l.price_xrp).toLocaleString('en-US')} {l.currency || 'XRP'}</span>
                     <span className="esc">🛡 escrow</span>
                   </div>
                 </div>
@@ -523,7 +523,7 @@ export default function ListingDetailPage({ params }) {
         <div className="xh-modal-bg" onClick={() => setShowOfferModal(false)}>
           <div className="xh-modal" onClick={e => e.stopPropagation()}>
             <h3>💰 Make an offer</h3>
-            <p className="sub">Listed at <strong style={{ color: '#1d4ed8' }}>{listing.price_xrp} XRP</strong></p>
+            <p className="sub">Listed at <strong style={{ color: '#1d4ed8' }}>{listing.price_xrp} {listing.currency || 'XRP'}</strong></p>
             {offerSent && offerXumm ? (
               <div className="xumm-block">
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#14161a', marginBottom: 8 }}>⚡ Complete payment in Xaman</div>
