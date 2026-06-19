@@ -158,7 +158,7 @@ export default function Navbar() {
           ) : (
             <button onClick={()=>setShowLogin(true)}
               style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#14161a',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
- Connect Xumm
+ Connect Xaman
             </button>
           )}
         </div>
