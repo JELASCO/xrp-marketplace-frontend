@@ -18,7 +18,7 @@ const BODY = '"Inter",system-ui,-apple-system,"Segoe UI",sans-serif';
 
 export default function ListingCard({ listing, isFavorited, onToggleFavorite }) {
   const {
-    id, title, category, game, price_xrp, images, is_featured,
+    id, title, category, game, price_xrp, currency, images, is_featured,
     username, reputation_score, is_verified, store_handle,
     status, quantity, quantity_sold, seller_is_pro,
   } = listing;
@@ -177,7 +177,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
             <span style={{
               fontFamily: MONO, fontWeight: 500, fontSize: 14.5,
               color: '#1d4ed8',
-            }}>{Number(price_xrp).toLocaleString('en-US')} XRP</span>
+            }}>{Number(price_xrp).toLocaleString('en-US')} {currency || 'XRP'}</span>
             <span style={{
               fontSize: 11, fontWeight: 600, color: '#10b981',
               background: 'rgba(16,185,129,0.1)',
