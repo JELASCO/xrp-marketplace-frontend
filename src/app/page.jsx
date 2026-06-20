@@ -278,9 +278,7 @@ export default function HomePage() {
       {/* STATS BAR */}
       <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
         {[
-          {v: stats ? fmtNum(stats.active_listings) : '—', l:'Active listings'},
-          {v: stats ? fmtNum(stats.items_traded) : '—', l:'Trades settled'},
-          {v: stats ? fmtNum(stats.total_users) : '—', l:'Traders'},
+          ...((!stats || (stats.active_listings || 0) < 4) ? [ {v:'0%', l:'Listing fees'}, {v:'3–5s', l:'Settlement'}, {v:'XRPL', l:'Built on-chain'} ] : [ {v: fmtNum(stats.active_listings), l:'Active listings'}, {v: fmtNum(stats.items_traded), l:'Trades settled'}, {v: fmtNum(stats.total_users), l:'Traders'} ]),
           {v: '100%', l:'Escrow-protected', green:true},
         ].map((s,i)=>(
           <div key={i} style={{textAlign:'center'}}>
