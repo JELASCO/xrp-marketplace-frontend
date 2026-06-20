@@ -332,8 +332,9 @@ export default function OrdersPage() {
                   {(order.status==='pending'||order.status==='awaiting_payment') && role==='buyer' && (
               attemptedPay[order.id] ? (
                 <div style={{marginBottom:8}}>
+                  <button onClick={() => handlePay(order)} style={{width:'100%',padding:'11px 16px',borderRadius:9,border:'none',background:'var(--accent)',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',marginBottom:8}}>Continue payment →</button>
                   <div style={{background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:8,padding:'10px 12px',fontSize:12,color:'var(--text2)',marginBottom:8}}>
-                    Already signed in Xaman? Don't pay again — tap below to sync. If your wallet shows the XRP left your account, the escrow is on-chain; syncing will pick it up.
+                    Closed the window or skipped the escrow step? Tap Continue payment to resume — the fee step is skipped automatically if it's already paid. Already signed everything in Xaman? Sync below.
                   </div>
                   <div style={{display:'flex',gap:8}}>
                     <button onClick={() => handleSync(order.id)} disabled={syncing===order.id} style={{flex:1,padding:'11px 16px',borderRadius:9,border:'none',background:syncing===order.id?'var(--surface2)':'var(--accent)',color:'#fff',fontSize:13,fontWeight:600,cursor:syncing===order.id?'default':'pointer'}}>
