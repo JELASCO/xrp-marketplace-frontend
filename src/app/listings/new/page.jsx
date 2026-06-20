@@ -458,7 +458,7 @@ export default function NewListingPage() {
                 <label>Price <span className="req">*</span></label>
                 <div className="xh-price">
                   <input type="number" step="0.01" min="0.01" placeholder="0.00" value={form.priceXrp} onChange={e => setForm(f => ({ ...f, priceXrp: e.target.value }))} />
-                  <button type="button" className="xh-cur-toggle" onClick={() => setForm(f => ({ ...f, currency: f.currency === 'XRP' ? 'RLUSD' : 'XRP' }))} title="Toggle currency">{form.currency} ⇄</button>
+                  <span className="suffix">XRP</span>
                 </div>
                 {usdPrice && <div className="xh-usd-live"><span className="lvdot"></span>≈ ${usdPrice} · live · refreshes every 15s</div>}
                 {sellerReceives && <div className="xh-fee">You'll receive <b>{sellerReceives} {form.currency}</b> after 3% platform fee</div>}
