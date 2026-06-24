@@ -182,7 +182,7 @@ export default function HomePage() {
         .xh-node.done svg{stroke:#34d399}
         .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
         .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
-        .xh-cat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:40px}
+        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:var(--xh-accent);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(21,114,232,.4)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
         .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block}
         .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
         .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
@@ -290,13 +290,17 @@ export default function HomePage() {
 
       {/* CATEGORY CARDS */}
       <div className="xh-cat-grid">
-        {CATS.map(c=>(
-          <Link key={c.key} href={'/listings?category='+c.key} className="xh-cat">
+        {CATS.map((c,i)=>(
+          <Link key={c.key} href={'/listings?category='+c.key} className={i===0?'xh-cat xh-feat':'xh-cat'}>
             <span className="ico">{CAT_ICONS[c.key]}</span>
-            <span style={{display:'block',fontSize:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
+            <span style={{display:'block',fontSize:i===0?22:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
             <span className="xh-mono" style={{fontSize:11,color:'var(--xh-text3)'}}>{c.sub}</span>
           </Link>
         ))}
+        <Link href="/listings/new" className="xh-promo">
+          <span className="xh-mono" style={{fontSize:11,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(255,255,255,.8)',marginBottom:6}}>Got something to sell?</span>
+          <span style={{fontSize:18,fontWeight:600,color:'#fff'}}>List your own item →</span>
+        </Link>
       </div>
 
       {/* FEATURED */}
