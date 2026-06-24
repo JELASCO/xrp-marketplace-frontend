@@ -135,10 +135,10 @@ export default function HomePage() {
     <div className="xh-home">{showLogin && <XummLoginModal onClose={()=>setShowLogin(false)} />}
       <style>{`
         html[data-theme="light"]{
-          --xh-bg:#FFFFFF; --xh-bg2:#F6F8FB; --xh-surface:#FFFFFF; --xh-surface2:#F2F5F9;
-          --xh-text:#0A1628; --xh-text2:#4A5568; --xh-text3:#8A98AD;
-          --xh-border:#E5EBF2; --xh-border2:#D2DBE6; --xh-tint:#F0F5FB;
-          --xh-accent:#1572E8; --xh-accent2:#2080F5;
+          --xh-bg:#F1F6FC; --xh-bg2:#E7EFFA; --xh-surface:#F7FAFE; --xh-surface2:#EAF1FB;
+          --xh-text:#0A2342; --xh-text2:#3D5A80; --xh-text3:#7C92B2;
+          --xh-border:rgba(10,35,66,.13); --xh-border2:rgba(10,35,66,.20); --xh-tint:#EAF1FB;
+          --xh-accent:#2080F5; --xh-accent2:#2F8BFF;
         }
         html[data-theme="light"] body{ background:#FFFFFF !important; color:#0A1628 !important; }
         html[data-theme="dark"]{
@@ -182,7 +182,7 @@ export default function HomePage() {
         .xh-node.done svg{stroke:#34d399}
         .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
         .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
-        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:var(--xh-accent);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(21,114,232,.4)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
+        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:linear-gradient(135deg,#0A2342,#173A86);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(10,35,66,.45)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
         .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block}
         .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
         .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
