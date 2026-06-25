@@ -237,16 +237,61 @@ export default function HomePage() {
       </button>
 
       {/* HERO — split: copy left, escrow waterline right */}
-      <div className="xh-hcards">
-          <div className="xh-fc xh-fc-back">
-            <div className="xh-fc-top xh-fc-top-g"><span className="xh-fc-tag">Currency</span></div>
-            <div className="xh-fc-body"><div className="xh-fc-title">50K Gold — Server #4</div><div className="xh-fc-price"><span className="xh-fc-p">95<small>XRP</small></span><span className="xh-fc-star">★ 4.9</span></div></div>
+      <div className="xh-hero-grid">
+        <div>
+          <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:8,padding:'7px 15px',borderRadius:99,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',fontSize:12,letterSpacing:'0.05em',fontWeight:500,color:'var(--xh-accent)',marginBottom:22}}>
+            ⚓ NON-CUSTODIAL · ON-CHAIN ESCROW
           </div>
-          <div className="xh-fc xh-fc-front">
-            <div className="xh-fc-top xh-fc-top-b"><span className="xh-fc-tag">Game Items</span><span className="xh-fc-pro">★ PRO</span></div>
-            <div className="xh-fc-body"><div className="xh-fc-title">Mythic Dragon Mount · Lvl 60</div><div className="xh-fc-meta"><span className="xh-fc-av">K</span>captain_kael · <span className="xh-fc-star">★ 5.0</span></div><div className="xh-fc-price"><span className="xh-fc-p">340<small>XRP</small></span><span className="xh-fc-pill">⏱ Instant</span></div></div>
+          <h1 className="xh-display" style={{fontSize:'clamp(32px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.1,color:'var(--xh-text)',marginBottom:16}}>
+            The safe harbor for{' '}
+            <span style={{background:'linear-gradient(90deg, var(--xh-accent) 0%, #38BDF8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>digital assets</span>
+          </h1>
+          <p style={{fontSize:16.5,color:'var(--xh-text2)',maxWidth:520,marginBottom:24,lineHeight:1.55}}>
+            Game accounts, skins, in-game currency and digital goods — every trade locked in an XRP Ledger escrow that neither the seller nor the platform can touch.
+          </p>
+          <form onSubmit={(e)=>{e.preventDefault(); const t=heroQ.trim(); window.location.href='/listings'+(t?('?q='+encodeURIComponent(t)):'');}} style={{maxWidth:520,display:'flex',gap:8}}>
+            <input value={heroQ} onChange={e=>setHeroQ(e.target.value)} placeholder="Search game accounts, skins, items…" aria-label="Search listings" style={{flex:1,height:48,borderRadius:12,border:'1px solid var(--xh-border)',background:'var(--xh-surface)',color:'var(--xh-text)',padding:'0 16px',fontSize:15,outline:'none'}} />
+            <button type="submit" className="xh-btn-primary" style={{height:48,borderRadius:12,whiteSpace:'nowrap'}}>Search</button>
+          </form>
+          <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:24}}>
+            <Link href="/listings" className="xh-btn-primary">Browse marketplace</Link>
+            {user ? (
+              <Link href="/listings/new" className="xh-btn-secondary">Start selling</Link>
+            ) : (
+              <button onClick={()=>setShowLogin(true)} className="xh-btn-secondary" style={{border:'none',cursor:'pointer'}}>Start selling</button>
+            )}
           </div>
         </div>
+
+        {/* SIGNATURE: escrow waterline card (fixed dark — works in both themes) */}
+        <aside aria-label="How escrow works" style={{background:'#0b1b33',borderRadius:20,padding:'26px 26px 0',color:'#cfe0ff',boxShadow:'0 30px 60px -20px rgba(11,27,51,.45)',position:'relative',overflow:'hidden'}}>
+          <div className="xh-display" style={{fontWeight:700,fontSize:17,color:'#fff',marginBottom:4}}>Every trade crosses the harbor</div>
+          <div style={{fontSize:13,color:'#8fa6cc',marginBottom:16}}>Watch how your payment travels — start to finish, on-chain.</div>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',fontSize:10.5,letterSpacing:'0.08em',color:'#7e96bf',padding:'0 4px'}}>
+            <span>BUYER&nbsp;DOCK</span><span>SELLER&nbsp;DOCK</span>
+          </div>
+          <div style={{position:'relative',height:140,marginTop:8}}>
+            <div style={{position:'absolute',top:36,left:16,right:16,height:2,background:'repeating-linear-gradient(90deg,#33507e 0 8px,transparent 8px 16px)'}}/>
+            <div className="xh-node" style={{left:6}} title="EscrowCreate"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+            <div className="xh-node" style={{left:'calc(50% - 23px)'}} title="Delivery"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg></div>
+            <div className="xh-node done" style={{right:6}} title="EscrowFinish"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <span className="xh-sail" aria-hidden="true" style={{position:'absolute',top:18,left:18,color:'#bcd4ff',filter:'drop-shadow(0 2px 4px rgba(11,27,51,.5))',animation:'xhsail 9s ease-in-out infinite'}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span>
+            <div className="xh-node-label" style={{left:-22}}><b>Payment locked</b>EscrowCreate on XRPL</div>
+            <div className="xh-node-label" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
+            <div className="xh-node-label" style={{right:-22}}><b>Escrow releases</b>seller paid automatically</div>
+          </div>
+          <div style={{position:'relative',height:50,margin:'0 -26px'}}>
+            <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:50,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 30 Q 75 10 150 30 T 300 30 T 450 30 T 600 30 T 750 30 T 900 30 T 1050 30 T 1200 30 V54 H0 Z" fill="#10264a"/>
+              <path d="M0 38 Q 75 22 150 38 T 300 38 T 450 38 T 600 38 T 750 38 T 900 38 T 1050 38 T 1200 38 V54 H0 Z" fill="#16335f" opacity=".8"/>
+            </svg>
+          </div>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'#7e96bf',borderTop:'1px solid #21385f',margin:'0 -26px',padding:'11px 26px',background:'#091628'}}>
+            <span>XRPL ESCROW · <span style={{color:'#10b981'}}>NON-CUSTODIAL</span></span>
+            <a href="#how-it-works" style={{color:'#7e96bf',textDecoration:'none'}}>how it works ↓</a>
+          </div>
+        </aside>
+      </div>
 
       {/* LIVE TICKER */}
       <div style={{background:'#0b1b33',overflow:'hidden',marginBottom:36,width:'100vw',marginLeft:'calc(50% - 50vw)'}} aria-hidden="true">
@@ -423,7 +468,7 @@ export default function HomePage() {
         </div>
         <div style={{maxWidth:760,margin:'0 auto'}}>
           {[
-            {q:'What is XRPL escrow and why should I trust it?',a:(<>XRPL escrow is a native feature of the XRP Ledger that locks XRP between two parties. When you buy here, your XRP isn’t held by us — it’s locked by the ledger itself via an <code>EscrowCreate</code> transaction. The seller can’t touch it until you confirm receipt, and if they never deliver the escrow expires and your XRP returns automatically.</>),open:true},
+            {q:'What is XRPL escrow and why should I trust it?',a:(<>XRPL escrow is a native feature of the XRP Ledger that locks XRP between two parties. When you buy here, your XRP isn’t held by us — it’s locked by the ledger itself via an <code>EscrowCreate</code> transaction. The seller can’t touch it until you confirm receipt, and if they never deliver the escrow expires and your XRP returns automatically.</>),open:false},
             {q:'What fees does XRPHarbor charge?',a:(<>A flat <b>3% per sale</b> for standard sellers, or <b>1.5% with Pro</b>, deducted automatically from the seller’s payout. No buyer fees, no listing fees, no withdrawal fees. The optional <code>Featured</code> upgrade costs 10 XRP for seven days.</>),open:false},
             {q:'How do I get XRP to buy something?',a:(<>Install Xaman, buy XRP from an exchange like Coinbase or Binance, then withdraw to your Xaman address. Connect Xaman here and you’re ready to trade — about fifteen minutes the first time.</>),open:false},
             {q:'What if the seller does not deliver?',a:(<>You simply don’t release the escrow, so the seller can’t access the XRP. After the escrow window (seven days for physical items, 24 hours for digital) you can cancel and your XRP returns. Open a dispute if you need our team to review.</>),open:false},
