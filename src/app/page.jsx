@@ -192,7 +192,7 @@ export default function HomePage() {
         @keyframes xhscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg,.xh-ticker-in{animation:none !important}}
-      `}
+      
 .xh-hcards{position:relative;width:100%;min-height:440px;max-width:340px;margin:0 auto}
 .xh-fc{position:absolute;width:300px;border-radius:20px;overflow:hidden;box-shadow:0 40px 70px -30px rgba(10,35,66,.45)}
 .xh-fc-top{height:200px;position:relative}
@@ -216,6 +216,7 @@ export default function HomePage() {
 @media(max-width:980px){.xh-hcards{min-height:380px;max-width:300px}.xh-fc{width:260px}.xh-fc-back{width:215px}}
 @media(max-width:560px){.xh-hcards{min-height:340px;transform:scale(.9)}}
 @media(prefers-reduced-motion:reduce){.xh-fc{animation:none!important}}
+      `}
 </style>
 
       {/* Theme toggle */}
