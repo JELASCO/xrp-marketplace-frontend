@@ -157,7 +157,7 @@ export default function HomePage() {
         .xh-pill:hover{border-color:var(--xh-accent);color:var(--xh-text)}
         .xh-display{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif}
         .xh-mono{font-family:'DM Mono',monospace}
-        .xh-faq{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:12px;overflow:hidden;margin-bottom:10px}
+        .xh-faq{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}
         .xh-faq summary{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px;font-weight:600;font-size:14.5px;cursor:pointer;list-style:none;color:var(--xh-text)}
         .xh-faq summary::-webkit-details-marker{display:none}
         .xh-faq summary:hover{background:var(--xh-bg2)}
@@ -301,7 +301,7 @@ export default function HomePage() {
       </div>
 
       {/* STATS BAR */}
-      <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
+      <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
         {[
           ...((!stats || (stats.active_listings || 0) < 4) ? [ {v:'0%', l:'Listing fees'}, {v:'3–5s', l:'Settlement'}, {v:'XRPL', l:'Built on-chain'} ] : [ {v: fmtNum(stats.active_listings), l:'Active listings'}, {v: fmtNum(stats.items_traded), l:'Trades settled'}, {v: fmtNum(stats.total_users), l:'Traders'} ]),
           {v: '100%', l:'Escrow-protected', green:true},
@@ -387,7 +387,7 @@ export default function HomePage() {
             {av:'K',c:'#10b981',nm:'keyport',pro:true,loc:'Berlin',bio:'Licensed software key reseller. Adobe, Microsoft, Steam and Origin — every key ships with a vendor-verified receipt.',t:'128',r:'4.95',s:'2m'},
             {av:'L',c:'#6366f1',nm:'captain_lex',pro:false,loc:'Stockholm',bio:'CS2 and Valorant skin trader, four years on the Steam Market. Now exclusive on XRPHarbor for serious collectors.',t:'76',r:'4.8',s:'3h'}
           ].map(cap => (
-            <div key={cap.nm} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:20,display:'flex',flexDirection:'column',gap:14}}>
+            <div key={cap.nm} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:20,display:'flex',flexDirection:'column',gap:14}}>
               <div style={{display:'flex',alignItems:'center',gap:12}}>
                 <div style={{width:46,height:46,borderRadius:'50%',background:cap.c,color:'#fff',fontWeight:700,fontSize:19,display:'grid',placeItems:'center',flex:'none'}}>{cap.av}</div>
                 <div>
@@ -420,14 +420,14 @@ export default function HomePage() {
             {k:'STEP 2 · DELIVERY',title:'Seller delivers',desc:'The account, skins or goods are handed over, then the buyer confirms receipt.'},
             {k:'STEP 3 · ESCROWFINISH',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.'},
           ].map(s=>(
-            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 22px'}}>
+            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:'22px 22px'}}>
               <div className="xh-mono" style={{fontSize:10.5,letterSpacing:'0.08em',color:'var(--xh-accent)',marginBottom:11}}>{s.k}</div>
               <div className="xh-display" style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>{s.title}</div>
               <div style={{fontSize:13.5,color:'var(--xh-text2)',lineHeight:1.6}}>{s.desc}</div>
             </div>
           ))}
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:24,background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderLeft:'3px solid #f59e0b',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:24,background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderLeft:'3px solid #f59e0b',borderRadius:12,padding:'13px 16px',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
           <span style={{fontSize:18}}>🛟</span>
           <span style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
         </div>
@@ -446,7 +446,7 @@ export default function HomePage() {
             {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'3% fee — 1.5% with Pro',p:'No hidden percentages, no payment-processor cuts. Most platforms stack 13–20% in fees.',ic:'coin'},
             {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP settles the same everywhere — no conversion fees, no regional account limits.',ic:'globe'}
           ].map(w => (
-            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:22}}>
+            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:22}}>
               <div style={{width:44,height:44,borderRadius:12,display:'grid',placeItems:'center',marginBottom:14,background:w.bg,color:w.fg}}>
                 {w.ic==='lock' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>}
                 {w.ic==='bolt' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z"/></svg>}
