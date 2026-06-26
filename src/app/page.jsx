@@ -135,10 +135,10 @@ export default function HomePage() {
     <div className="xh-home">{showLogin && <XummLoginModal onClose={()=>setShowLogin(false)} />}
       <style>{`
         html[data-theme="light"]{
-          --xh-bg:#FFFFFF; --xh-bg2:#F6F8FB; --xh-surface:#FFFFFF; --xh-surface2:#F2F5F9;
-          --xh-text:#0A1628; --xh-text2:#4A5568; --xh-text3:#8A98AD;
-          --xh-border:#E5EBF2; --xh-border2:#D2DBE6; --xh-tint:#F0F5FB;
-          --xh-accent:#1572E8; --xh-accent2:#2080F5;
+          --xh-bg:#F1F6FC; --xh-bg2:#E7EFFA; --xh-surface:#F7FAFE; --xh-surface2:#EAF1FB;
+          --xh-text:#0A2342; --xh-text2:#3D5A80; --xh-text3:#7C92B2;
+          --xh-border:rgba(10,35,66,.13); --xh-border2:rgba(10,35,66,.20); --xh-tint:#EAF1FB;
+          --xh-accent:#2080F5; --xh-accent2:#2F8BFF;
         }
         html[data-theme="light"] body{ background:#FFFFFF !important; color:#0A1628 !important; }
         html[data-theme="dark"]{
@@ -157,7 +157,7 @@ export default function HomePage() {
         .xh-pill:hover{border-color:var(--xh-accent);color:var(--xh-text)}
         .xh-display{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif}
         .xh-mono{font-family:'DM Mono',monospace}
-        .xh-faq{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:12px;overflow:hidden;margin-bottom:10px}
+        .xh-faq{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}
         .xh-faq summary{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 20px;font-weight:600;font-size:14.5px;cursor:pointer;list-style:none;color:var(--xh-text)}
         .xh-faq summary::-webkit-details-marker{display:none}
         .xh-faq summary:hover{background:var(--xh-bg2)}
@@ -182,8 +182,8 @@ export default function HomePage() {
         .xh-node.done svg{stroke:#34d399}
         .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
         .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
-        .xh-cat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:40px}
-        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block}
+        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:linear-gradient(135deg,#0A2342,#173A86);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(10,35,66,.45)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
+        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}
         .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
         .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
         .xh-cat .ico svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -192,7 +192,32 @@ export default function HomePage() {
         @keyframes xhscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg,.xh-ticker-in{animation:none !important}}
-      `}</style>
+      
+.xh-hcards{position:relative;width:100%;min-height:440px;max-width:340px;margin:0 auto}
+.xh-fc{position:absolute;width:300px;border-radius:20px;overflow:hidden;box-shadow:0 40px 70px -30px rgba(10,35,66,.45)}
+.xh-fc-top{height:200px;position:relative}
+.xh-fc-top-b{background:linear-gradient(160deg,#3576E2,#1A47A8)}
+.xh-fc-top-g{background:linear-gradient(160deg,#1F9358,#125F39);height:150px}
+.xh-fc-tag{position:absolute;top:14px;left:14px;font-size:12px;font-weight:600;color:#fff;background:rgba(8,18,38,.5);backdrop-filter:blur(6px);padding:5px 11px;border-radius:9px}
+.xh-fc-pro{position:absolute;top:14px;right:14px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#7A5A12;background:rgba(244,227,180,.96);padding:4px 9px;border-radius:8px}
+.xh-fc-body{background:var(--xh-surface);padding:16px}
+.xh-fc-title{font-weight:600;font-size:15px;color:var(--xh-text);margin-bottom:10px}
+.xh-fc-meta{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--xh-text2);margin-bottom:14px}
+.xh-fc-av{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--xh-accent),#7AA8EE);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700}
+.xh-fc-price{display:flex;align-items:center;justify-content:space-between}
+.xh-fc-p{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;color:var(--xh-text)}
+.xh-fc-p small{font-weight:500;font-size:11px;color:var(--xh-text3);margin-left:3px}
+.xh-fc-pill{font-size:11px;color:var(--xh-text2);background:var(--xh-surface2);padding:4px 9px;border-radius:8px}
+.xh-fc-star{font-size:12px;color:#E0A23B;font-weight:600}
+.xh-fc-front{right:0;top:18px;transform:rotate(4deg);z-index:3;animation:xhFloatF 5.5s ease-in-out infinite}
+.xh-fc-back{left:0;top:80px;width:250px;transform:rotate(-7deg);z-index:2;animation:xhFloatB 6.5s ease-in-out infinite}
+@keyframes xhFloatF{0%,100%{transform:rotate(4deg) translateY(0)}50%{transform:rotate(4deg) translateY(-14px)}}
+@keyframes xhFloatB{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(-7deg) translateY(10px)}}
+@media(max-width:980px){.xh-hcards{min-height:380px;max-width:300px}.xh-fc{width:260px}.xh-fc-back{width:215px}}
+@media(max-width:560px){.xh-hcards{min-height:340px;transform:scale(.9)}}
+@media(prefers-reduced-motion:reduce){.xh-fc{animation:none!important}}
+      `}
+</style>
 
       {/* Theme toggle */}
       <button
@@ -239,13 +264,13 @@ export default function HomePage() {
         </div>
 
         {/* SIGNATURE: escrow waterline card (fixed dark — works in both themes) */}
-        <aside aria-label="How escrow works" style={{background:'#0b1b33',borderRadius:20,padding:'26px 26px 0',color:'#cfe0ff',boxShadow:'0 30px 60px -20px rgba(11,27,51,.45)',position:'relative',overflow:'hidden'}}>
+        <aside aria-label="How escrow works" style={{background:'#0b1b33',borderRadius:20,padding:'14px 26px 0',color:'#cfe0ff',boxShadow:'0 30px 60px -20px rgba(11,27,51,.45)',position:'relative',overflow:'hidden'}}>
           <div className="xh-display" style={{fontWeight:700,fontSize:17,color:'#fff',marginBottom:4}}>Every trade crosses the harbor</div>
-          <div style={{fontSize:13,color:'#8fa6cc',marginBottom:16}}>Watch how your payment travels — start to finish, on-chain.</div>
+          <div style={{fontSize:13,color:'#8fa6cc',marginBottom:9}}>Watch how your payment travels — start to finish, on-chain.</div>
           <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',fontSize:10.5,letterSpacing:'0.08em',color:'#7e96bf',padding:'0 4px'}}>
             <span>BUYER&nbsp;DOCK</span><span>SELLER&nbsp;DOCK</span>
           </div>
-          <div style={{position:'relative',height:140,marginTop:8}}>
+          <div style={{position:'relative',height:110,marginTop:6}}>
             <div style={{position:'absolute',top:36,left:16,right:16,height:2,background:'repeating-linear-gradient(90deg,#33507e 0 8px,transparent 8px 16px)'}}/>
             <div className="xh-node" style={{left:6}} title="EscrowCreate"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
             <div className="xh-node" style={{left:'calc(50% - 23px)'}} title="Delivery"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg></div>
@@ -255,13 +280,13 @@ export default function HomePage() {
             <div className="xh-node-label" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
             <div className="xh-node-label" style={{right:-22}}><b>Escrow releases</b>seller paid automatically</div>
           </div>
-          <div style={{position:'relative',height:50,margin:'0 -26px'}}>
-            <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:50,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <div style={{position:'relative',height:38,margin:'0 -26px'}}>
+            <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:38,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M0 30 Q 75 10 150 30 T 300 30 T 450 30 T 600 30 T 750 30 T 900 30 T 1050 30 T 1200 30 V54 H0 Z" fill="#10264a"/>
               <path d="M0 38 Q 75 22 150 38 T 300 38 T 450 38 T 600 38 T 750 38 T 900 38 T 1050 38 T 1200 38 V54 H0 Z" fill="#16335f" opacity=".8"/>
             </svg>
           </div>
-          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'#7e96bf',borderTop:'1px solid #21385f',margin:'0 -26px',padding:'11px 26px',background:'#091628'}}>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'#7e96bf',borderTop:'1px solid #21385f',margin:'0 -26px',padding:'9px 26px',background:'#091628'}}>
             <span>XRPL ESCROW · <span style={{color:'#10b981'}}>NON-CUSTODIAL</span></span>
             <a href="#how-it-works" style={{color:'#7e96bf',textDecoration:'none'}}>how it works ↓</a>
           </div>
@@ -276,7 +301,7 @@ export default function HomePage() {
       </div>
 
       {/* STATS BAR */}
-      <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
+      <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
         {[
           ...((!stats || (stats.active_listings || 0) < 4) ? [ {v:'0%', l:'Listing fees'}, {v:'3–5s', l:'Settlement'}, {v:'XRPL', l:'Built on-chain'} ] : [ {v: fmtNum(stats.active_listings), l:'Active listings'}, {v: fmtNum(stats.items_traded), l:'Trades settled'}, {v: fmtNum(stats.total_users), l:'Traders'} ]),
           {v: '100%', l:'Escrow-protected', green:true},
@@ -290,13 +315,17 @@ export default function HomePage() {
 
       {/* CATEGORY CARDS */}
       <div className="xh-cat-grid">
-        {CATS.map(c=>(
-          <Link key={c.key} href={'/listings?category='+c.key} className="xh-cat">
+        {CATS.map((c,i)=>(
+          <Link key={c.key} href={'/listings?category='+c.key} className={i===0?'xh-cat xh-feat':'xh-cat'}>
             <span className="ico">{CAT_ICONS[c.key]}</span>
-            <span style={{display:'block',fontSize:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
+            <span style={{display:'block',fontSize:i===0?22:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
             <span className="xh-mono" style={{fontSize:11,color:'var(--xh-text3)'}}>{c.sub}</span>
           </Link>
         ))}
+        <Link href="/listings/new" className="xh-promo">
+          <span className="xh-mono" style={{fontSize:11,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(255,255,255,.8)',marginBottom:6}}>Got something to sell?</span>
+          <span style={{fontSize:18,fontWeight:600,color:'#fff'}}>List your own item →</span>
+        </Link>
       </div>
 
       {/* FEATURED */}
@@ -358,7 +387,7 @@ export default function HomePage() {
             {av:'K',c:'#10b981',nm:'keyport',pro:true,loc:'Berlin',bio:'Licensed software key reseller. Adobe, Microsoft, Steam and Origin — every key ships with a vendor-verified receipt.',t:'128',r:'4.95',s:'2m'},
             {av:'L',c:'#6366f1',nm:'captain_lex',pro:false,loc:'Stockholm',bio:'CS2 and Valorant skin trader, four years on the Steam Market. Now exclusive on XRPHarbor for serious collectors.',t:'76',r:'4.8',s:'3h'}
           ].map(cap => (
-            <div key={cap.nm} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:20,display:'flex',flexDirection:'column',gap:14}}>
+            <div key={cap.nm} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:20,display:'flex',flexDirection:'column',gap:14}}>
               <div style={{display:'flex',alignItems:'center',gap:12}}>
                 <div style={{width:46,height:46,borderRadius:'50%',background:cap.c,color:'#fff',fontWeight:700,fontSize:19,display:'grid',placeItems:'center',flex:'none'}}>{cap.av}</div>
                 <div>
@@ -391,14 +420,14 @@ export default function HomePage() {
             {k:'STEP 2 · DELIVERY',title:'Seller delivers',desc:'The account, skins or goods are handed over, then the buyer confirms receipt.'},
             {k:'STEP 3 · ESCROWFINISH',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.'},
           ].map(s=>(
-            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 22px'}}>
+            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:'22px 22px'}}>
               <div className="xh-mono" style={{fontSize:10.5,letterSpacing:'0.08em',color:'var(--xh-accent)',marginBottom:11}}>{s.k}</div>
               <div className="xh-display" style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>{s.title}</div>
               <div style={{fontSize:13.5,color:'var(--xh-text2)',lineHeight:1.6}}>{s.desc}</div>
             </div>
           ))}
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:24,background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderLeft:'3px solid #f59e0b',borderRadius:12,padding:'13px 16px',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:24,background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderLeft:'3px solid #f59e0b',borderRadius:12,padding:'13px 16px',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',maxWidth:720,marginLeft:'auto',marginRight:'auto'}}>
           <span style={{fontSize:18}}>🛟</span>
           <span style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.5}}>Something wrong? Open a dispute and reclaim your XRP — the seller can never release funds without your confirmation.</span>
         </div>
@@ -417,7 +446,7 @@ export default function HomePage() {
             {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'3% fee — 1.5% with Pro',p:'No hidden percentages, no payment-processor cuts. Most platforms stack 13–20% in fees.',ic:'coin'},
             {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP settles the same everywhere — no conversion fees, no regional account limits.',ic:'globe'}
           ].map(w => (
-            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,padding:22}}>
+            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:22}}>
               <div style={{width:44,height:44,borderRadius:12,display:'grid',placeItems:'center',marginBottom:14,background:w.bg,color:w.fg}}>
                 {w.ic==='lock' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>}
                 {w.ic==='bolt' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z"/></svg>}
@@ -439,7 +468,7 @@ export default function HomePage() {
         </div>
         <div style={{maxWidth:760,margin:'0 auto'}}>
           {[
-            {q:'What is XRPL escrow and why should I trust it?',a:(<>XRPL escrow is a native feature of the XRP Ledger that locks XRP between two parties. When you buy here, your XRP isn’t held by us — it’s locked by the ledger itself via an <code>EscrowCreate</code> transaction. The seller can’t touch it until you confirm receipt, and if they never deliver the escrow expires and your XRP returns automatically.</>),open:true},
+            {q:'What is XRPL escrow and why should I trust it?',a:(<>XRPL escrow is a native feature of the XRP Ledger that locks XRP between two parties. When you buy here, your XRP isn’t held by us — it’s locked by the ledger itself via an <code>EscrowCreate</code> transaction. The seller can’t touch it until you confirm receipt, and if they never deliver the escrow expires and your XRP returns automatically.</>),open:false},
             {q:'What fees does XRPHarbor charge?',a:(<>A flat <b>3% per sale</b> for standard sellers, or <b>1.5% with Pro</b>, deducted automatically from the seller’s payout. No buyer fees, no listing fees, no withdrawal fees. The optional <code>Featured</code> upgrade costs 10 XRP for seven days.</>),open:false},
             {q:'How do I get XRP to buy something?',a:(<>Install Xaman, buy XRP from an exchange like Coinbase or Binance, then withdraw to your Xaman address. Connect Xaman here and you’re ready to trade — about fifteen minutes the first time.</>),open:false},
             {q:'What if the seller does not deliver?',a:(<>You simply don’t release the escrow, so the seller can’t access the XRP. After the escrow window (seven days for physical items, 24 hours for digital) you can cancel and your XRP returns. Open a dispute if you need our team to review.</>),open:false},
