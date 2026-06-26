@@ -182,8 +182,8 @@ export default function HomePage() {
         .xh-node.done svg{stroke:#34d399}
         .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
         .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
-        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:linear-gradient(135deg,#0A2342,#173A86);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(10,35,66,.45)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
-        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block}
+        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:linear-gradient(135deg,#0A2342,#173A86);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(10,35,66,.45)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
+        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}
         .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
         .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
         .xh-cat .ico svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -264,13 +264,13 @@ export default function HomePage() {
         </div>
 
         {/* SIGNATURE: escrow waterline card (fixed dark — works in both themes) */}
-        <aside aria-label="How escrow works" style={{background:'#0b1b33',borderRadius:20,padding:'26px 26px 0',color:'#cfe0ff',boxShadow:'0 30px 60px -20px rgba(11,27,51,.45)',position:'relative',overflow:'hidden'}}>
+        <aside aria-label="How escrow works" style={{background:'#0b1b33',borderRadius:20,padding:'14px 26px 0',color:'#cfe0ff',boxShadow:'0 30px 60px -20px rgba(11,27,51,.45)',position:'relative',overflow:'hidden'}}>
           <div className="xh-display" style={{fontWeight:700,fontSize:17,color:'#fff',marginBottom:4}}>Every trade crosses the harbor</div>
-          <div style={{fontSize:13,color:'#8fa6cc',marginBottom:16}}>Watch how your payment travels — start to finish, on-chain.</div>
+          <div style={{fontSize:13,color:'#8fa6cc',marginBottom:9}}>Watch how your payment travels — start to finish, on-chain.</div>
           <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',fontSize:10.5,letterSpacing:'0.08em',color:'#7e96bf',padding:'0 4px'}}>
             <span>BUYER&nbsp;DOCK</span><span>SELLER&nbsp;DOCK</span>
           </div>
-          <div style={{position:'relative',height:140,marginTop:8}}>
+          <div style={{position:'relative',height:110,marginTop:6}}>
             <div style={{position:'absolute',top:36,left:16,right:16,height:2,background:'repeating-linear-gradient(90deg,#33507e 0 8px,transparent 8px 16px)'}}/>
             <div className="xh-node" style={{left:6}} title="EscrowCreate"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
             <div className="xh-node" style={{left:'calc(50% - 23px)'}} title="Delivery"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg></div>
@@ -280,13 +280,13 @@ export default function HomePage() {
             <div className="xh-node-label" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
             <div className="xh-node-label" style={{right:-22}}><b>Escrow releases</b>seller paid automatically</div>
           </div>
-          <div style={{position:'relative',height:50,margin:'0 -26px'}}>
-            <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:50,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <div style={{position:'relative',height:38,margin:'0 -26px'}}>
+            <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:38,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M0 30 Q 75 10 150 30 T 300 30 T 450 30 T 600 30 T 750 30 T 900 30 T 1050 30 T 1200 30 V54 H0 Z" fill="#10264a"/>
               <path d="M0 38 Q 75 22 150 38 T 300 38 T 450 38 T 600 38 T 750 38 T 900 38 T 1050 38 T 1200 38 V54 H0 Z" fill="#16335f" opacity=".8"/>
             </svg>
           </div>
-          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'#7e96bf',borderTop:'1px solid #21385f',margin:'0 -26px',padding:'11px 26px',background:'#091628'}}>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'#7e96bf',borderTop:'1px solid #21385f',margin:'0 -26px',padding:'9px 26px',background:'#091628'}}>
             <span>XRPL ESCROW · <span style={{color:'#10b981'}}>NON-CUSTODIAL</span></span>
             <a href="#how-it-works" style={{color:'#7e96bf',textDecoration:'none'}}>how it works ↓</a>
           </div>
