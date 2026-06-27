@@ -40,18 +40,18 @@ const ICON_PATHS = {
 };
 
 const CSS = `
-.xh-listings{font-family:var(--xh-body);color:#14161a}
+.xh-listings{font-family:var(--xh-body);color:var(--xh-text)}
 .xh-listings h1{font-family:var(--xh-display);font-weight:800;color:#fff}
 
 .xh-mast{background:#0b1b33;color:#fff;border-radius:14px;position:relative;overflow:hidden;margin:-8px 0 24px}
 .xh-mast-in{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:30px 32px 40px;position:relative;z-index:1}
-.xh-crumb{font-family:var(--xh-mono);font-size:11px;color:#7e96bf;margin-bottom:10px;letter-spacing:0.06em}
+.xh-crumb{font-family:var(--xh-mono);font-size:11px;color:var(--xh-text3);margin-bottom:10px;letter-spacing:0.06em}
 .xh-crumb b{color:#cfe0ff;font-weight:500}
 .xh-mast h1{font-size:32px;letter-spacing:-0.02em;display:flex;align-items:center;gap:14px;line-height:1.1;margin:0}
 .xh-mast h1 .ico{width:46px;height:46px;border-radius:13px;background:rgba(59,130,246,0.2);border:1px solid rgba(125,160,255,0.3);display:grid;place-items:center;flex-shrink:0}
 .xh-mast h1 .ico svg{width:24px;height:24px;stroke:#9cc0ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .xh-mast p{color:#9db4da;font-size:14px;margin-top:8px;max-width:560px;line-height:1.5}
-.xh-mast-stats{display:flex;gap:24px;font-family:var(--xh-mono);font-size:11px;color:#7e96bf;text-align:right;letter-spacing:0.04em;flex-shrink:0;padding-top:6px}
+.xh-mast-stats{display:flex;gap:24px;font-family:var(--xh-mono);font-size:11px;color:var(--xh-text3);text-align:right;letter-spacing:0.04em;flex-shrink:0;padding-top:6px}
 .xh-mast-stats b{display:block;font-size:20px;color:#fff;font-weight:500;margin-bottom:3px;letter-spacing:0;font-family:var(--xh-display)}
 .xh-mast-wave{position:absolute;bottom:-1px;left:0;right:0;height:30px;opacity:0.45;z-index:0}
 .xh-mast-wave svg{width:100%;height:100%}
@@ -60,52 +60,52 @@ const CSS = `
 
 .xh-side{position:sticky;top:80px;align-self:start;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 96px);overflow-y:auto;padding-bottom:8px;padding-right:4px}
 .xh-side::-webkit-scrollbar{width:4px}
-.xh-side::-webkit-scrollbar-thumb{background:#e7e9ed;border-radius:2px}
-.xh-fg{border:1px solid #e7e9ed;border-radius:14px;padding:16px 18px;background:#fff}
-.xh-fg h4{font-family:var(--xh-mono);font-size:11px;letter-spacing:0.08em;color:#5b6472;margin:0 0 12px;font-weight:500}
-.xh-fi{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:6px 0;color:#5b6472;cursor:pointer;-webkit-user-select:none;user-select:none}
-.xh-fi:hover{color:#14161a}
-.xh-fi.on{color:#1d4ed8;font-weight:600}
-.xh-fi .box{width:16px;height:16px;border:1.5px solid #e7e9ed;border-radius:5px;display:grid;place-items:center;flex:none;background:#fff;transition:all 0.15s}
-.xh-fi.on .box{background:#3b82f6;border-color:#3b82f6}
+.xh-side::-webkit-scrollbar-thumb{background:var(--xh-border);border-radius:2px}
+.xh-fg{border:1px solid var(--xh-border);border-radius:14px;padding:16px 18px;background:#fff}
+.xh-fg h4{font-family:var(--xh-mono);font-size:11px;letter-spacing:0.08em;color:var(--xh-text2);margin:0 0 12px;font-weight:500}
+.xh-fi{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:6px 0;color:var(--xh-text2);cursor:pointer;-webkit-user-select:none;user-select:none}
+.xh-fi:hover{color:var(--xh-text)}
+.xh-fi.on{color:#1668D6;font-weight:600}
+.xh-fi .box{width:16px;height:16px;border:1.5px solid var(--xh-border);border-radius:5px;display:grid;place-items:center;flex:none;background:#fff;transition:all 0.15s}
+.xh-fi.on .box{background:var(--xh-accent);border-color:var(--xh-accent)}
 .xh-fi.on .box::after{content:"✓";color:#fff;font-size:10.5px;line-height:1}
 .xh-fi .count{margin-left:auto;font-family:var(--xh-mono);font-size:10.5px;color:#a8b0bc}
 .xh-price-in{display:flex;gap:8px;align-items:center}
-.xh-price-in input{flex:1;min-width:0;width:100%;font:inherit;font-size:13px;font-family:var(--xh-mono);padding:8px 10px;border:1px solid #e7e9ed;border-radius:8px;background:#f5f6f8;color:#14161a}
-.xh-price-in input:focus{outline:2px solid #3b82f6;background:#fff}
-.xh-escrow-note{font-size:12.5px;color:#5b6472;background:#f5f6f8;border:1px solid #e7e9ed;border-left:3px solid #10b981;border-radius:10px;padding:12px 14px;line-height:1.45}
+.xh-price-in input{flex:1;min-width:0;width:100%;font:inherit;font-size:13px;font-family:var(--xh-mono);padding:8px 10px;border:1px solid var(--xh-border);border-radius:8px;background:var(--xh-surface2);color:var(--xh-text)}
+.xh-price-in input:focus{outline:2px solid var(--xh-accent);background:#fff}
+.xh-escrow-note{font-size:12.5px;color:var(--xh-text2);background:var(--xh-surface2);border:1px solid var(--xh-border);border-left:3px solid #10b981;border-radius:10px;padding:12px 14px;line-height:1.45}
 
 .xh-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .xh-search{flex:1;display:flex;gap:8px;min-width:240px}
-.xh-search input{flex:1;font:inherit;font-size:14px;padding:10px 16px;border:1px solid #e7e9ed;border-radius:10px;background:#f5f6f8;color:#14161a;min-width:0}
-.xh-search input:focus{outline:2px solid #3b82f6;background:#fff}
-.xh-search button{background:#3b82f6;color:#fff;border:none;padding:0 18px;border-radius:10px;font-weight:500;cursor:pointer;font-size:14px}
-.xh-search button:hover{background:#1d4ed8}
-.xh-sort{font:inherit;font-size:13.5px;font-weight:500;padding:10px 14px;border:1px solid #e7e9ed;border-radius:10px;background:#fff;color:#14161a;cursor:pointer}
+.xh-search input{flex:1;font:inherit;font-size:14px;padding:10px 16px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface2);color:var(--xh-text);min-width:0}
+.xh-search input:focus{outline:2px solid var(--xh-accent);background:#fff}
+.xh-search button{background:var(--xh-accent);color:#fff;border:none;padding:0 18px;border-radius:10px;font-weight:500;cursor:pointer;font-size:14px}
+.xh-search button:hover{background:#1668D6}
+.xh-sort{font:inherit;font-size:13.5px;font-weight:500;padding:10px 14px;border:1px solid var(--xh-border);border-radius:10px;background:#fff;color:var(--xh-text);cursor:pointer}
 
-.xh-rline{font-family:var(--xh-mono);font-size:12px;color:#5b6472;margin-bottom:14px}
-.xh-rline b{color:#14161a;font-weight:500}
+.xh-rline{font-family:var(--xh-mono);font-size:12px;color:var(--xh-text2);margin-bottom:14px}
+.xh-rline b{color:var(--xh-text);font-weight:500}
 
 .xh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
-.xh-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:#1d4ed8;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.22);border-radius:999px;padding:5px 12px}
+.xh-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:#1668D6;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.22);border-radius:999px;padding:5px 12px}
 .xh-chip i{font-style:normal;cursor:pointer;opacity:0.55}
 .xh-chip i:hover{opacity:1}
-.xh-chip-clear{background:transparent;border:0;color:#5b6472;font-size:12.5px;cursor:pointer;padding:5px 8px;text-decoration:underline}
+.xh-chip-clear{background:transparent;border:0;color:var(--xh-text2);font-size:12.5px;cursor:pointer;padding:5px 8px;text-decoration:underline}
 
 .xh-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 
-.xh-empty{text-align:center;padding:64px 24px;background:#f5f6f8;border:1px solid #e7e9ed;border-radius:14px;color:#5b6472}
+.xh-empty{text-align:center;padding:64px 24px;background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:14px;color:var(--xh-text2)}
 .xh-empty .ico{font-size:38px;margin-bottom:12px;opacity:0.55}
-.xh-empty .t{font-size:16px;font-weight:600;color:#14161a;margin-bottom:6px}
+.xh-empty .t{font-size:16px;font-weight:600;color:var(--xh-text);margin-bottom:6px}
 .xh-empty .s{font-size:13px;margin-bottom:16px}
-.xh-empty button{background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:500;cursor:pointer}
-.xh-empty button:hover{background:#1d4ed8}
+.xh-empty button{background:var(--xh-accent);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:500;cursor:pointer}
+.xh-empty button:hover{background:#1668D6}
 
 .xh-load{text-align:center;margin-top:28px}
-.xh-load button{background:#fff;border:1px solid #e7e9ed;color:#5b6472;border-radius:10px;padding:10px 28px;font-size:14px;cursor:pointer;font-family:var(--xh-mono)}
-.xh-load button:hover{border-color:#3b82f6;color:#1d4ed8}
+.xh-load button{background:#fff;border:1px solid var(--xh-border);color:var(--xh-text2);border-radius:10px;padding:10px 28px;font-size:14px;cursor:pointer;font-family:var(--xh-mono)}
+.xh-load button:hover{border-color:var(--xh-accent);color:#1668D6}
 
-.xh-skel{background:#f5f6f8;border:1px solid #e7e9ed;border-radius:14px;height:280px;animation:xhSkel 1.4s ease-in-out infinite}
+.xh-skel{background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:14px;height:280px;animation:xhSkel 1.4s ease-in-out infinite}
 @keyframes xhSkel{0%,100%{opacity:1}50%{opacity:0.5}}
 
 @media (max-width:920px){
@@ -310,7 +310,7 @@ function ListingsContent() {
             <h4 onClick={() => toggleF('price')} style={{cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>PRICE · XRP<span style={{fontSize:10,opacity:0.55,transition:'transform .2s',transform:openF.price?'rotate(180deg)':'none'}}>▾</span></h4>
             {openF.price && <div className="xh-price-in">
               <input placeholder="min" value={minPrice} onChange={e => setMinPrice(e.target.value)} inputMode="decimal" />
-              <span style={{ color: '#5b6472' }}>–</span>
+              <span style={{ color: 'var(--xh-text2)' }}>–</span>
               <input placeholder="max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} inputMode="decimal" />
             </div>}
           </div>
@@ -390,7 +390,7 @@ function ListingsContent() {
 
 export default function ListingsPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 40, color: '#5b6472', textAlign: 'center', fontFamily: '"Inter",system-ui,sans-serif' }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ padding: 40, color: 'var(--xh-text2)', textAlign: 'center', fontFamily: '"Inter",system-ui,sans-serif' }}>Loading…</div>}>
       <ListingsContent />
     </Suspense>
   );
