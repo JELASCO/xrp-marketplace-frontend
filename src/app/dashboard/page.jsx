@@ -29,7 +29,7 @@ function Pill({status}) {
 
 function Metric({icon,label,value,unit,sub,subColor}) {
   return (
-    <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,padding:'15px 16px'}}>
+    <div style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border)',borderRadius:14,padding:'15px 16px'}}>
       <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12.5,color:'var(--text2)'}}>{icon}<span>{label}</span></div>
       <div style={{fontSize:23,fontWeight:600,color:'var(--text)',marginTop:6,fontFamily:'monospace'}}>{value}{unit&&<span style={{fontSize:12,fontWeight:500,color:'var(--text2)'}}> {unit}</span>}</div>
       {sub&&<div style={{fontSize:11.5,color:subColor||'var(--text2)',marginTop:3}}>{sub}</div>}
@@ -138,7 +138,7 @@ export default function DashboardPage() {
   const linePath = pts.map((p,i) => (i?'L':'M')+p[0]+','+p[1]).join(' ');
   const areaPath = 'M'+pts[0][0]+','+(CH-PAD)+' '+pts.map(p => 'L'+p[0]+','+p[1]).join(' ')+' L'+pts[DAYS-1][0]+','+(CH-PAD)+' Z';
   const earned30 = buckets.reduce((a,b) => a+b, 0);
-  const card = {background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,padding:'16px 18px'};
+  const card = {background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border)',borderRadius:14,padding:'16px 18px'};
 
   return (
     <div style={{maxWidth:980, margin:'0 auto', padding:'0 4px'}}>
@@ -235,9 +235,9 @@ export default function DashboardPage() {
       </div>
 
       <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-        <Link href="/listings/new" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:500,padding:'12px 14px',border:'1px solid var(--border2)',borderRadius:11,color:'var(--text)',textDecoration:'none',background:'var(--surface)'}}>List an item</Link>
-        <Link href="/store/create" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:500,padding:'12px 14px',border:'1px solid var(--border2)',borderRadius:11,color:'var(--text)',textDecoration:'none',background:'var(--surface)'}}>Create store</Link>
-        <Link href="/listings" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:500,padding:'12px 14px',border:'1px solid var(--border2)',borderRadius:11,color:'var(--text)',textDecoration:'none',background:'var(--surface)'}}>Browse market</Link>
+        <Link href="/listings/new" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:500,padding:'12px 14px',border:'1px solid var(--border2)',borderRadius:11,color:'var(--text)',textDecoration:'none',background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}>List an item</Link>
+        <Link href="/store/create" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:500,padding:'12px 14px',border:'1px solid var(--border2)',borderRadius:11,color:'var(--text)',textDecoration:'none',background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}>Create store</Link>
+        <Link href="/listings" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:500,padding:'12px 14px',border:'1px solid var(--border2)',borderRadius:11,color:'var(--text)',textDecoration:'none',background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}>Browse market</Link>
       </div>
 
     </div>

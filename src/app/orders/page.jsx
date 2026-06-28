@@ -222,7 +222,7 @@ export default function OrdersPage() {
       {xummModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}}
           onClick={e => { if(e.target===e.currentTarget){ closeXummModal(); } }}>
-          <div style={{background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:380,width:'100%'}}>
+          <div style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:380,width:'100%'}}>
             {xummModal.hasFee && (xummModal.mode==='commission'||xummModal.mode==='pay') && (() => {
               const curIdx = xummModal.mode==='commission' ? 0 : 1;
               return (
@@ -262,7 +262,7 @@ export default function OrdersPage() {
       )}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24,flexWrap:'wrap',gap:12}}>
         <h1 style={{fontSize:22,fontWeight:700,color:'var(--text)',letterSpacing:'-0.02em'}}>My Orders</h1>
-        <div style={{display:'flex',background:'var(--surface)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden'}}>
+        <div style={{display:'flex',background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden'}}>
           {['buyer','seller'].map(r => (
             <button key={r} onClick={() => setRole(r)} style={{padding:'7px 16px',fontSize:13,fontWeight:500,cursor:'pointer',border:'none',background:role===r?'var(--accent)':'transparent',color:role===r?'#fff':'var(--text2)',fontFamily:'inherit'}}>
               {r==='buyer'?'Purchases':'Sales'}
@@ -270,7 +270,7 @@ export default function OrdersPage() {
           ))}
         </div>
       </div>
-      {loading && <div style={{display:'flex',flexDirection:'column',gap:8}}>{[1,2,3].map(i=><div key={i} style={{height:72,background:'var(--surface)',borderRadius:10,border:'1px solid var(--border)'}}/>)}</div>}
+      {loading && <div style={{display:'flex',flexDirection:'column',gap:8}}>{[1,2,3].map(i=><div key={i} style={{height:72,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',borderRadius:10,border:'1px solid var(--border)'}}/>)}</div>}
       {!loading && orders.length===0 && (
         <div style={{textAlign:'center',padding:'60px 20px'}}>
           <div style={{fontSize:40,marginBottom:12}}>📭</div>
@@ -284,12 +284,12 @@ export default function OrdersPage() {
           const exp = open === order.id;
           const stepIdx = STEP_IDX[order.status] || 0;
           return (
-            <div key={order.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
+            <div key={order.id} style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
               <button onClick={() => toggleOpen(order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'16px 18px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
                 {order.images && order.images[0] ? (
-                  <img src={order.images[0]} alt='' style={{width:48,height:48,borderRadius:8,objectFit:'cover',flexShrink:0,background:'var(--surface)'}}/>
+                  <img src={order.images[0]} alt='' style={{width:48,height:48,borderRadius:8,objectFit:'cover',flexShrink:0,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}/>
                 ) : (
-                  <div style={{width:48,height:48,borderRadius:8,background:'var(--surface)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>📦</div>
+                  <div style={{width:48,height:48,borderRadius:8,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>📦</div>
                 )}
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{order.listing_title||'Item'}</div>

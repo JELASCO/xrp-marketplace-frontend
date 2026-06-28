@@ -4,17 +4,18 @@
 @tailwind utilities;
 
 :root {
-  --bg:        #ffffff;
-  --bg2:       #f7f8fa;
-  --surface:   #f5f6f8;
-  --surface2:  #eef0f4;
-  --border:    rgba(0,0,0,0.06);
-  --border2:   rgba(0,0,0,0.10);
-  --text:      #14161a;
-  --text2:     #5b6370;
-  --text3:     #9ca3af;
-  --accent:    #3b82f6;
-  --accent2:   #60a5fa;
+  --xh-bg:#F1F6FC;--xh-bg2:#E7EFFA;--xh-surface:#F7FAFE;--xh-surface2:#EAF1FB;--xh-border:rgba(10,35,66,.13);--xh-border2:rgba(10,35,66,.20);--xh-tint:#EAF1FB;--xh-text:#0A2342;--xh-text2:#3D5A80;--xh-text3:#7C92B2;--xh-accent:#2080F5;--xh-accent2:#2F8BFF;
+  --bg: #F1F6FC;
+  --bg2: #E7EFFA;
+  --surface: #F7FAFE;
+  --surface2: #EAF1FB;
+  --border: rgba(10,35,66,.13);
+  --border2: rgba(10,35,66,.20);
+  --text: #0A2342;
+  --text2: #3D5A80;
+  --text3: #7C92B2;
+  --accent: #2080F5;
+  --accent2: #2F8BFF;
   --green:     #10b981;
   --amber:     #f59e0b;
   --red:       #ef4444;
