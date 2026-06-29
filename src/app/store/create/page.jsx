@@ -18,9 +18,9 @@ async function uploadImage(file) {
 }
 
 const C = {
-  ink: '#14161a', muted: '#5b6370', line: '#e7e9ed', lineStrong: '#cfd2d7',
-  bg: '#ffffff', bgSoft: '#f5f6f8', bgSofter: '#eef0f4',
-  blue: '#3b82f6', blueDark: '#2563eb', green: '#10b981',
+  ink: 'var(--xh-text)', muted: 'var(--xh-text2)', line: 'var(--xh-border)', lineStrong: 'var(--xh-border)',
+  bg: '#ffffff', bgSoft: 'var(--xh-surface2)', bgSofter: 'var(--xh-surface2)',
+  blue: 'var(--xh-accent)', blueDark: 'var(--xh-accent)', green: '#10b981',
 };
 
 const CAT_TREE = {
@@ -327,7 +327,7 @@ export default function CreateStorePage() {
               What buyers will see
             </div>
             <div style={{ background: C.bg, border: `1px solid ${C.line}`, borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' }} aria-hidden="true" />
+              <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, var(--xh-accent) 100%)' }} aria-hidden="true" />
               <div style={{ padding: '0 16px 16px', position: 'relative' }}>
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: logoUrl ? ('center/cover no-repeat url(' + logoUrl + ')') : C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, border: `3px solid ${C.bg}`, marginTop: -28 }} aria-hidden="true">{logoUrl ? '' : initials}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: C.ink }}>

@@ -60,7 +60,7 @@ export default function MessagesPage() {
         ) : convos.length === 0 ? (
           <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>No conversations yet.<br/><br/>Browse listings and click<br/>💬 Message Seller to start.</div>
         ) : convos.map(c => (
-          <div key={c.listing_id+c.other_username} onClick={() => openConvo(c)} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', background: selected?.listing_id === c.listing_id ? 'rgba(59,130,246,0.1)' : 'transparent', borderLeft: selected?.listing_id === c.listing_id ? '3px solid #3b82f6' : '3px solid transparent', transition: 'all 0.15s' }}>
+          <div key={c.listing_id+c.other_username} onClick={() => openConvo(c)} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', background: selected?.listing_id === c.listing_id ? 'rgba(59,130,246,0.1)' : 'transparent', borderLeft: selected?.listing_id === c.listing_id ? '3px solid var(--accent)' : '3px solid transparent', transition: 'all 0.15s' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{c.other_username}</span>
               {Number(c.unread) > 0 && <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 10, fontSize: 10, padding: '1px 6px' }}>{c.unread}</span>}
@@ -90,7 +90,7 @@ export default function MessagesPage() {
               return (
                 <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
                   <div style={{ maxWidth: '70%', background: mine ? 'var(--accent)' : 'var(--surface)', borderRadius: mine ? '12px 12px 2px 12px' : '12px 12px 12px 2px', padding: '8px 12px' }}>
-                    {!mine && <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 2, fontWeight: 600 }}>{m.sender_username}</div>}
+                    {!mine && <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2, fontWeight: 600 }}>{m.sender_username}</div>}
                     <div style={{ fontSize: 13, color: 'var(--text)' }}>{m.content}</div>
                     <div style={{ fontSize: 10, color: mine ? 'rgba(255,255,255,0.6)' : 'var(--text3)', marginTop: 2, textAlign: mine ? 'right' : 'left' }}>
                       {new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}

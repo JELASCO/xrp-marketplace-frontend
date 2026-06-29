@@ -87,7 +87,7 @@ export default function SettingsPage() {
             {avatars.map((url, i) => {
               const isSelected = avatarUrl === url;
               return (
-                <button key={i} type="button" onClick={() => setAvatarUrl(url)} style={{background:'var(--bg)',border: isSelected ? '2px solid #3b82f6' : '1px solid var(--border2)',borderRadius:12,padding:8,cursor:'pointer',transition:'all 0.15s',aspectRatio:'1'}}>
+                <button key={i} type="button" onClick={() => setAvatarUrl(url)} style={{background:'var(--bg)',border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border2)',borderRadius:12,padding:8,cursor:'pointer',transition:'all 0.15s',aspectRatio:'1'}}>
                   <img src={url} alt="avatar" style={{width:'100%',height:'100%',borderRadius:8,display:'block'}} />
                 </button>
               );

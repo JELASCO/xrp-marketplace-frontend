@@ -4,6 +4,7 @@
 @tailwind utilities;
 
 :root {
+  --xh-display:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;--xh-body:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;--xh-mono:'DM Mono',monospace;
   --xh-bg:#F1F6FC;--xh-bg2:#E7EFFA;--xh-surface:#F7FAFE;--xh-surface2:#EAF1FB;--xh-border:rgba(10,35,66,.13);--xh-border2:rgba(10,35,66,.20);--xh-tint:#EAF1FB;--xh-text:#0A2342;--xh-text2:#3D5A80;--xh-text3:#7C92B2;--xh-accent:#2080F5;--xh-accent2:#2F8BFF;
   --bg: #F1F6FC;
   --bg2: #E7EFFA;

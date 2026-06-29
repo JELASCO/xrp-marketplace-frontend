@@ -72,7 +72,7 @@ export default function Navbar() {
         * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; }
         @media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}
       `}</style>
-      <nav style={{background:'#f5f6f8',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(0,0,0,0.08)',position:'sticky',top:0,zIndex:50,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}>
+      <nav style={{background:'#f5f6f8',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(0,0,0,0.08)',position:'sticky',boxShadow:'0 1px 2px rgba(10,35,66,.04),0 4px 14px -6px rgba(10,35,66,.10)',top:0,zIndex:50,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{fontWeight:800,fontSize:18,color:'#14161a',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2080F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg>

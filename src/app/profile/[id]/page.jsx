@@ -81,7 +81,7 @@ export default function ProfilePage() {
     <div style={{maxWidth:800,margin:'0 auto'}}>
       {/* Header */}
       <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:28,marginBottom:24,display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
-        <div style={{width:72,height:72,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:700,color:'#fff',flexShrink:0,overflow:'hidden'}}>
+        <div style={{width:72,height:72,borderRadius:'50%',background:'linear-gradient(135deg,var(--accent),#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:700,color:'#fff',flexShrink:0,overflow:'hidden'}}>
           {avatar ? <img src={avatar} alt={user.username} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e => { e.target.style.display = 'none'; }}/> : initials}
         </div>
         <div style={{flex:1,minWidth:0}}>
@@ -94,7 +94,7 @@ export default function ProfilePage() {
         </div>
         <div style={{display:'flex',gap:8,flexShrink:0}}>
           {user.store_handle && (
-            <Link href={'/store/'+user.store_handle} style={{background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',color:'#3b82f6',borderRadius:8,padding:'8px 14px',fontSize:13,fontWeight:600,textDecoration:'none',whiteSpace:'nowrap'}}>
+            <Link href={'/store/'+user.store_handle} style={{background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',color:'var(--accent)',borderRadius:8,padding:'8px 14px',fontSize:13,fontWeight:600,textDecoration:'none',whiteSpace:'nowrap'}}>
               Visit store →
             </Link>
           )}
@@ -139,7 +139,7 @@ export default function ProfilePage() {
       {/* Tabs */}
       <div style={{display:'flex',gap:0,borderBottom:'1px solid rgba(255,255,255,0.08)',marginBottom:16}}>
         {[{key:'listings',label:'Listings ('+listings.length+')'},{key:'reviews',label:'Reviews ('+reviews.length+')'}].map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{padding:'10px 16px',background:'none',border:'none',borderBottom:tab===t.key?'2px solid #3b82f6':'2px solid transparent',color:tab===t.key?'var(--text)':'var(--text2)',fontSize:13,fontWeight:tab===t.key?600:500,cursor:'pointer',marginBottom:-1}}>
+          <button key={t.key} onClick={() => setTab(t.key)} style={{padding:'10px 16px',background:'none',border:'none',borderBottom:tab===t.key?'2px solid var(--accent)':'2px solid transparent',color:tab===t.key?'var(--text)':'var(--text2)',fontSize:13,fontWeight:tab===t.key?600:500,cursor:'pointer',marginBottom:-1}}>
             {t.label}
           </button>
         ))}
@@ -170,7 +170,7 @@ export default function ProfilePage() {
             {reviews.map(r => (
               <div key={r.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:16,display:'flex',gap:12,alignItems:'flex-start'}}>
                 <Link href={'/profile/'+r.reviewer_id} style={{textDecoration:'none',flexShrink:0}}>
-                  <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',overflow:'hidden'}}>
+                  <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--accent),#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',overflow:'hidden'}}>
                     {r.reviewer_avatar ? <img src={r.reviewer_avatar} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : (r.reviewer_username || '??').slice(0,2).toUpperCase()}
                   </div>
                 </Link>

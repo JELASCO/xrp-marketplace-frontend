@@ -63,7 +63,7 @@ export default function ProPage() {
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>⭐ Pro Membership</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 16 }}>
             <span style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>{pricing ? pricing.pro.xrp : '—'}</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#3b82f6' }}>XRP</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>XRP</span>
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>/ {pricing ? pricing.pro.days : 30} days</span>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -84,7 +84,7 @@ export default function ProPage() {
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>🔥 Feature a Listing</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 16 }}>
             <span style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>{pricing ? pricing.featured.xrp : '—'}</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#3b82f6' }}>XRP</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>XRP</span>
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>/ {pricing ? pricing.featured.days : 7} days</span>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
