@@ -42,7 +42,7 @@ function Switch({ checked, onChange, label }) {
   return (
     <button type="button" role="switch" aria-checked={checked} aria-label={label} onClick={onChange}
       style={{ position: 'relative', width: 40, height: 24, flexShrink: 0, border: 'none', padding: 0, cursor: 'pointer', borderRadius: 999, background: checked ? C.blue : C.lineStrong, transition: 'background 0.15s' }}>
-      <span style={{ position: 'absolute', top: 2, left: 2, width: 20, height: 20, background: '#fff', borderRadius: '50%', transition: 'transform 0.15s', transform: checked ? 'translateX(16px)' : 'translateX(0)', boxShadow: '0 1px 2px rgba(0,0,0,0.15)' }} />
+      <span style={{ position: 'absolute', top: 2, left: 2, width: 20, height: 20, background: 'var(--xh-surface)', borderRadius: '50%', transition: 'transform 0.15s', transform: checked ? 'translateX(16px)' : 'translateX(0)', boxShadow: '0 1px 2px rgba(0,0,0,0.15)' }} />
     </button>
   );
 }
