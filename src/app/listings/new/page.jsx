@@ -72,7 +72,7 @@ const CSS = `
 .xh-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:32px;padding:0 0 60px;align-items:start}
 .xh-col{display:flex;flex-direction:column;gap:18px}
 
-.xh-card{background:#fff;border:1px solid var(--xh-border);border-radius:14px;padding:22px 24px}
+.xh-card{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:22px 24px}
 .xh-card .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:6px}
 .xh-card .sec-head .lbl{font-family:var(--xh-mono);font-size:10.5px;letter-spacing:0.08em;color:#1668D6;text-transform:uppercase;font-weight:500}
 .xh-card .sec-head h2{font-size:17px;color:var(--xh-text)}
@@ -85,7 +85,7 @@ const CSS = `
 .xh-field label .req{color:#ef4444}
 .xh-field .helper{font-size:12px;color:var(--xh-text2);line-height:1.45}
 .xh-field input[type=text],.xh-field input[type=number],.xh-field input[type=url],.xh-field textarea,.xh-field select{
-  width:100%;background:#fff;border:1px solid var(--xh-border);border-radius:10px;
+  width:100%;background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:10px;
   padding:11px 14px;font-size:14px;color:var(--xh-text);font-family:inherit;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box
 }
 .xh-field input:focus,.xh-field textarea:focus,.xh-field select:focus{outline:none;border-color:var(--xh-accent);box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
@@ -95,7 +95,7 @@ const CSS = `
 .xh-field .count.over{color:#ef4444}
 
 .xh-cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-.xh-cat-btn{padding:14px 6px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff;border:1px solid var(--xh-border);font-family:inherit;color:var(--xh-text2);transition:all 0.15s}
+.xh-cat-btn{padding:14px 6px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--xh-surface);border:1px solid var(--xh-border);font-family:inherit;color:var(--xh-text2);transition:all 0.15s}
 .xh-cat-btn:hover{border-color:var(--xh-accent);color:#1668D6}
 .xh-cat-btn.on{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-color:var(--xh-accent);color:#1668D6}
 .xh-cat-btn .emoji{font-size:22px}
@@ -129,11 +129,11 @@ const CSS = `
 @keyframes xhPulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
 .xh-chips{display:flex;gap:6px;flex-wrap:wrap}
-.xh-chip{font-family:var(--xh-mono);font-size:11.5px;color:var(--xh-text2);border:1px solid var(--xh-border);background:#fff;border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;transition:all 0.15s;font-family:var(--xh-mono)}
+.xh-chip{font-family:var(--xh-mono);font-size:11.5px;color:var(--xh-text2);border:1px solid var(--xh-border);background:var(--xh-surface);border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;transition:all 0.15s;font-family:var(--xh-mono)}
 .xh-chip:hover{border-color:var(--xh-accent);color:#1668D6}
 .xh-chip.on{background:#0b1b33;color:#fff;border-color:#0b1b33}
 
-.xh-taginput{border:1px solid var(--xh-border);border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff;transition:border-color 0.15s,box-shadow 0.15s}
+.xh-taginput{border:1px solid var(--xh-border);border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--xh-surface);transition:border-color 0.15s,box-shadow 0.15s}
 .xh-taginput:focus-within{border-color:var(--xh-accent);box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
 .xh-tag{font-family:var(--xh-mono);font-size:11.5px;background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:999px;padding:4px 10px 4px 12px;color:var(--xh-text);display:flex;align-items:center;gap:6px}
 .xh-tag button{cursor:pointer;color:var(--xh-text2);background:none;border:none;font-weight:500;padding:0;font-size:13px;font-family:inherit}
@@ -150,7 +150,7 @@ const CSS = `
 .xh-toggle{position:relative;width:42px;height:24px;flex:none}
 .xh-toggle input{display:none}
 .xh-toggle .track{display:block;width:100%;height:100%;background:var(--xh-border);border-radius:999px;position:relative;transition:background 0.15s;cursor:pointer}
-.xh-toggle .track::before{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.18);transition:transform 0.15s}
+.xh-toggle .track::before{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--xh-surface);box-shadow:0 1px 3px rgba(0,0,0,0.18);transition:transform 0.15s}
 .xh-toggle input:checked + .track{background:var(--xh-accent)}
 .xh-toggle input:checked + .track::before{transform:translateX(18px)}
 
@@ -165,7 +165,7 @@ const CSS = `
 .xh-btn:disabled{cursor:not-allowed;opacity:0.6}
 .xh-btn-primary{background:var(--xh-accent);color:#fff;box-shadow:0 6px 18px rgba(59,130,246,0.28)}
 .xh-btn-primary:hover:not(:disabled){background:#1668D6;transform:translateY(-1px)}
-.xh-btn-ghost{background:#fff;border-color:var(--xh-border);color:var(--xh-text)}
+.xh-btn-ghost{background:var(--xh-surface);border-color:var(--xh-border);color:var(--xh-text)}
 .xh-btn-ghost:hover:not(:disabled){border-color:var(--xh-accent)}
 
 .xh-err{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#b91c1c;font-family:var(--xh-body)}
@@ -202,7 +202,7 @@ const CSS = `
 .xh-prev .mini .steps .s{flex:1}
 .xh-prev .mini .steps .s .ic{width:22px;height:22px;margin:0 auto 4px;border-radius:6px;background:#10264a;border:1px solid #2c4571;display:grid;place-items:center;font-size:11px}
 .xh-prev .mini .steps .arrow{color:#33507e;font-size:11px;padding-top:5px}
-.xh-prev .seller{background:#fff;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;font-size:12px}
+.xh-prev .seller{background:var(--xh-surface);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;font-size:12px}
 .xh-prev .seller .av{width:30px;height:30px;border-radius:50%;background:var(--xh-accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
 .xh-prev .seller .nm{font-weight:600;font-size:12.5px;color:var(--xh-text)}
 .xh-prev .seller .st{font-size:10.5px;color:var(--xh-text2);margin-top:1px}
