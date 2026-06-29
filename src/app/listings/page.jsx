@@ -61,27 +61,27 @@ const CSS = `
 .xh-side{position:sticky;top:80px;align-self:start;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 96px);overflow-y:auto;padding-bottom:8px;padding-right:4px}
 .xh-side::-webkit-scrollbar{width:4px}
 .xh-side::-webkit-scrollbar-thumb{background:var(--xh-border);border-radius:2px}
-.xh-fg{border:1px solid var(--xh-border);border-radius:14px;padding:16px 18px;background:#fff}
+.xh-fg{border:1px solid var(--xh-border);border-radius:14px;padding:16px 18px;background:var(--xh-surface)}
 .xh-fg h4{font-family:var(--xh-mono);font-size:11px;letter-spacing:0.08em;color:var(--xh-text2);margin:0 0 12px;font-weight:500}
 .xh-fi{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:6px 0;color:var(--xh-text2);cursor:pointer;-webkit-user-select:none;user-select:none}
 .xh-fi:hover{color:var(--xh-text)}
 .xh-fi.on{color:#1668D6;font-weight:600}
-.xh-fi .box{width:16px;height:16px;border:1.5px solid var(--xh-border);border-radius:5px;display:grid;place-items:center;flex:none;background:#fff;transition:all 0.15s}
+.xh-fi .box{width:16px;height:16px;border:1.5px solid var(--xh-border);border-radius:5px;display:grid;place-items:center;flex:none;background:var(--xh-surface);transition:all 0.15s}
 .xh-fi.on .box{background:var(--xh-accent);border-color:var(--xh-accent)}
 .xh-fi.on .box::after{content:"✓";color:#fff;font-size:10.5px;line-height:1}
 .xh-fi .count{margin-left:auto;font-family:var(--xh-mono);font-size:10.5px;color:#a8b0bc}
 .xh-price-in{display:flex;gap:8px;align-items:center}
 .xh-price-in input{flex:1;min-width:0;width:100%;font:inherit;font-size:13px;font-family:var(--xh-mono);padding:8px 10px;border:1px solid var(--xh-border);border-radius:8px;background:var(--xh-surface2);color:var(--xh-text)}
-.xh-price-in input:focus{outline:2px solid var(--xh-accent);background:#fff}
+.xh-price-in input:focus{outline:2px solid var(--xh-accent);background:var(--xh-surface)}
 .xh-escrow-note{font-size:12.5px;color:var(--xh-text2);background:var(--xh-surface2);border:1px solid var(--xh-border);border-left:3px solid #10b981;border-radius:10px;padding:12px 14px;line-height:1.45}
 
 .xh-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .xh-search{flex:1;display:flex;gap:8px;min-width:240px}
 .xh-search input{flex:1;font:inherit;font-size:14px;padding:10px 16px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface2);color:var(--xh-text);min-width:0}
-.xh-search input:focus{outline:2px solid var(--xh-accent);background:#fff}
+.xh-search input:focus{outline:2px solid var(--xh-accent);background:var(--xh-surface)}
 .xh-search button{background:var(--xh-accent);color:#fff;border:none;padding:0 18px;border-radius:10px;font-weight:500;cursor:pointer;font-size:14px}
 .xh-search button:hover{background:#1668D6}
-.xh-sort{font:inherit;font-size:13.5px;font-weight:500;padding:10px 14px;border:1px solid var(--xh-border);border-radius:10px;background:#fff;color:var(--xh-text);cursor:pointer}
+.xh-sort{font:inherit;font-size:13.5px;font-weight:500;padding:10px 14px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface);color:var(--xh-text);cursor:pointer}
 
 .xh-rline{font-family:var(--xh-mono);font-size:12px;color:var(--xh-text2);margin-bottom:14px}
 .xh-rline b{color:var(--xh-text);font-weight:500}
@@ -102,7 +102,7 @@ const CSS = `
 .xh-empty button:hover{background:#1668D6}
 
 .xh-load{text-align:center;margin-top:28px}
-.xh-load button{background:#fff;border:1px solid var(--xh-border);color:var(--xh-text2);border-radius:10px;padding:10px 28px;font-size:14px;cursor:pointer;font-family:var(--xh-mono)}
+.xh-load button{background:var(--xh-surface);border:1px solid var(--xh-border);color:var(--xh-text2);border-radius:10px;padding:10px 28px;font-size:14px;cursor:pointer;font-family:var(--xh-mono)}
 .xh-load button:hover{border-color:var(--xh-accent);color:#1668D6}
 
 .xh-skel{background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:14px;height:280px;animation:xhSkel 1.4s ease-in-out infinite}
