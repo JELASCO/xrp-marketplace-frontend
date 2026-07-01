@@ -46,10 +46,10 @@ const CSS = `
 .xh-mast{background:#0b1b33;color:#fff;border-radius:14px;position:relative;overflow:hidden;margin:-8px 0 24px}
 .xh-mast-in{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:30px 32px 40px;position:relative;z-index:1}
 .xh-crumb{font-family:var(--xh-mono);font-size:11px;color:var(--xh-text3);margin-bottom:10px;letter-spacing:0.06em}
-.xh-crumb b{color:#cfe0ff;font-weight:500}
+.xh-crumb b{color:rgba(59,130,246,0.14);font-weight:500}
 .xh-mast h1{font-size:32px;letter-spacing:-0.02em;display:flex;align-items:center;gap:14px;line-height:1.1;margin:0}
 .xh-mast h1 .ico{width:46px;height:46px;border-radius:13px;background:rgba(59,130,246,0.2);border:1px solid rgba(125,160,255,0.3);display:grid;place-items:center;flex-shrink:0}
-.xh-mast h1 .ico svg{width:24px;height:24px;stroke:#9cc0ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.xh-mast h1 .ico svg{width:24px;height:24px;stroke:rgba(59,130,246,0.22);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .xh-mast p{color:#9db4da;font-size:14px;margin-top:8px;max-width:560px;line-height:1.5}
 .xh-mast-stats{display:flex;gap:24px;font-family:var(--xh-mono);font-size:11px;color:var(--xh-text3);text-align:right;letter-spacing:0.04em;flex-shrink:0;padding-top:6px}
 .xh-mast-stats b{display:block;font-size:20px;color:#fff;font-weight:500;margin-bottom:3px;letter-spacing:0;font-family:var(--xh-display)}
