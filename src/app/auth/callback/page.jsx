@@ -7,7 +7,7 @@ import { api } from '../../../lib/api';
 function Spinner() {
   return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh',flexDirection:'column',gap:16}}>
-      <div style={{width:40,height:40,border:'2px solid #3b82f6',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
+      <div style={{width:40,height:40,border:'2px solid var(--accent)',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
       <div style={{fontSize:14,color:'var(--text2)'}}>Verifying...</div>
       <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
     </div>
