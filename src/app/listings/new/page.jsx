@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
-const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e'; // free public demo key — replace with your own from imgbb.com
+const IMGBB_KEY = process.env.NEXT_PUBLIC_IMGBB_KEY; // free public demo key — replace with your own from imgbb.com
 const CATS = [
   { key:'games',    label:'Games',           emoji:'🎮' },
   { key:'graphics', label:'Graphics & Art',  emoji:'🎨' },
