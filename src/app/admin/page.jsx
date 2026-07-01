@@ -15,7 +15,7 @@ const TABS = [
   {key:'settings',label:'Settings',icon:'⚙️'},
 ];
 
-function Sparkline({data=[], color='#1572E8', height=32, width=120}) {
+function Sparkline({data=[], color='var(--xh-accent)', height=32, width=120}) {
   if (!data.length) return null;
   const max = Math.max(...data, 1);
   const min = Math.min(...data);
@@ -41,7 +41,7 @@ function MetricCard({label,value,delta,color,trend}) {
           <div style={{fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:6}}>{label}</div>
           <div style={{fontSize:24,fontWeight:800,color:'var(--xh-text)',letterSpacing:'-0.02em'}}>{value}</div>
         </div>
-        {trend && <Sparkline data={trend} color={color||'#1572E8'} width={70} height={28}/>}
+        {trend && <Sparkline data={trend} color={color||'var(--xh-accent)'} width={70} height={28}/>}
       </div>
       {delta && (
         <div style={{fontSize:11.5,color:isPositive?'#16A34A':'#DC2626',fontWeight:600}}>{delta} vs prev period</div>
@@ -103,7 +103,7 @@ function Pill({children, color}) {
     red: {bg:'rgba(220,38,38,0.12)', text:'#DC2626'},
     yellow: {bg:'rgba(245,158,11,0.12)', text:'#D97706'},
     gray: {bg:'var(--xh-surface2)', text:'var(--xh-text3)'},
-    blue: {bg:'rgba(21,114,232,0.12)', text:'#1572E8'},
+    blue: {bg:'rgba(21,114,232,0.12)', text:'var(--xh-accent)'},
   };
   const c = colors[color] || colors.gray;
   return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:5,fontSize:10.5,fontWeight:600,background:c.bg,color:c.text,textTransform:'uppercase',letterSpacing:'0.04em'}}>{children}</span>;
@@ -210,19 +210,19 @@ export default function AdminPage() {
     <div className='xh-admin'>
       <style>{`
         html[data-theme="light"]{
-          --xh-bg:#FFFFFF; --xh-bg2:#F6F8FB; --xh-surface:#FFFFFF; --xh-surface2:#F2F5F9;
-          --xh-text:#0A1628; --xh-text2:#4A5568; --xh-text3:#8A98AD;
-          --xh-border:#E5EBF2; --xh-border2:#D2DBE6; --xh-tint:#F0F5FB;
-          --xh-accent:#1572E8; --xh-accent2:#2080F5;
+          --xh-bg:#FFFFFF; --xh-bg2:var(--xh-surface2); --xh-surface:#FFFFFF; --xh-surface2:var(--xh-surface2);
+          --xh-text:#0A1628; --xh-text2:var(--xh-text2); --xh-text3:var(--xh-text3);
+          --xh-border:var(--xh-border); --xh-border2:#D2DBE6; --xh-tint:#F0F5FB;
+          --xh-accent:var(--xh-accent); --xh-accent2:#2080F5;
         }
         html[data-theme="light"] body{ background:#FFFFFF !important; color:#0A1628 !important; }
         html[data-theme="dark"]{
           --xh-bg:#0A0E1A; --xh-bg2:#111827; --xh-surface:#151B2C; --xh-surface2:#1C2438;
-          --xh-text:#F1F5F9; --xh-text2:#CBD5E1; --xh-text3:#94A3B8;
+          --xh-text:var(--xh-surface2); --xh-text2:#CBD5E1; --xh-text3:#94A3B8;
           --xh-border:#1F2937; --xh-border2:#2A3548; --xh-tint:rgba(255,255,255,0.04);
           --xh-accent:#3B82F6; --xh-accent2:#60A5FA;
         }
-        html[data-theme="dark"] body{ background:#0A0E1A !important; color:#F1F5F9 !important; }
+        html[data-theme="dark"] body{ background:#0A0E1A !important; color:var(--xh-surface2) !important; }
         .xh-tab{padding:11px 14px;font-size:13.5px;font-weight:500;color:var(--xh-text2);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:color .12s,border-color .12s}
         .xh-tab:hover{color:var(--xh-text)}
         .xh-tab[data-active="true"]{color:var(--xh-accent);border-bottom-color:var(--xh-accent);font-weight:600}
@@ -260,7 +260,7 @@ export default function AdminPage() {
             ))}
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12,marginBottom:20}}>
-            <MetricCard label='Volume (XRP)' value={stats ? Math.round(stats.volume_xrp||0).toLocaleString('en-US') : '—'} delta='+12.4%' color='#1572E8' trend={trend}/>
+            <MetricCard label='Volume (XRP)' value={stats ? Math.round(stats.volume_xrp||0).toLocaleString('en-US') : '—'} delta='+12.4%' color='var(--xh-accent)' trend={trend}/>
             <MetricCard label='Fees collected' value={stats ? (Math.round((stats.volume_xrp||0)*0.03)).toLocaleString('en-US') : '—'} delta='+12.4%' color='#16A34A' trend={trend.map(v=>v*0.6)}/>
             <MetricCard label='Active listings' value={stats ? (stats.active_listings||0).toString() : '—'} delta='+4' color='#9333EA' trend={trend.map(v=>v*1.2)}/>
             <MetricCard label='Open disputes' value={openDisputes.length.toString()} delta={openDisputes.length>0?'needs review':'all clear'} color='#DC2626' trend={[1,0,2,1,3,2,openDisputes.length||1]}/>

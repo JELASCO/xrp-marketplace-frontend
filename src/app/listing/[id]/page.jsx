@@ -7,11 +7,11 @@ import { useAuthStore } from '../../../lib/store';
 import XummLoginModal from '../../../components/XummLoginModal';
 
 const CAT_BG = {
-  games:    'linear-gradient(135deg,#dbeafe,#eff6ff)',
-  graphics: 'linear-gradient(135deg,#ede9fe,#faf5ff)',
-  software: 'linear-gradient(135deg,#ccfbf1,#f0fdfa)',
-  accounts: 'linear-gradient(135deg,#f1f5f9,#f8fafc)',
-  other:    'linear-gradient(135deg,#fef3c7,#fffbeb)',
+  games:    'linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05))',
+  graphics: 'linear-gradient(135deg,rgba(139,92,246,0.16),rgba(139,92,246,0.05))',
+  software: 'linear-gradient(135deg,rgba(20,184,166,0.16),rgba(20,184,166,0.05))',
+  accounts: 'linear-gradient(135deg,rgba(148,163,184,0.12),rgba(148,163,184,0.04))',
+  other:    'linear-gradient(135deg,rgba(245,158,11,0.16),rgba(245,158,11,0.05))',
 };
 const CAT_LABEL = { games:'GAMES', graphics:'GRAPHICS', software:'SOFTWARE', accounts:'ACCOUNTS', other:'OTHER' };
 const CAT_EMOJI = { games:'🎮', graphics:'🎨', software:'💻', accounts:'👤', other:'📦' };
@@ -28,13 +28,13 @@ const CSS = `
 
 .xh-prod-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:42px;padding:22px 0 50px}
 
-.xh-main-img{aspect-ratio:4/3;border-radius:18px;background:linear-gradient(135deg,#dbeafe,#eff6ff);display:grid;place-items:center;font-size:84px;position:relative;border:1px solid var(--xh-border);overflow:hidden}
+.xh-main-img{aspect-ratio:4/3;border-radius:18px;background:linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05));display:grid;place-items:center;font-size:84px;position:relative;border:1px solid var(--xh-border);overflow:hidden}
 .xh-main-img img{width:100%;height:100%;object-fit:cover}
 .xh-main-img .badge{position:absolute;top:14px;left:14px;font-family:var(--xh-mono);font-size:11px;background:rgba(11,27,51,0.85);color:#fff;padding:5px 11px;border-radius:7px;letterSpacing:0.04em}
 .xh-main-img .share{position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:2}
 .xh-main-img .share button{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.94);display:grid;place-items:center;font-size:16px;cursor:pointer;border:1px solid var(--xh-border);color:var(--xh-text);padding:0}
 .xh-main-img .share button:hover{border-color:var(--xh-accent);color:#1668D6}
-.xh-main-img .share button.on{color:#ef4444;border-color:#fecaca;background:var(--xh-surface)}
+.xh-main-img .share button.on{color:#ef4444;border-color:rgba(239,68,68,0.16);background:var(--xh-surface)}
 .xh-main-img .sold-overlay{position:absolute;inset:0;background:rgba(11,27,51,0.55);display:grid;place-items:center}
 .xh-main-img .sold-overlay span{font-family:var(--xh-mono);background:#ef4444;color:#fff;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:500;letter-spacing:0.06em}
 
@@ -71,7 +71,7 @@ const CSS = `
 .xh-btn-ghost{background:var(--xh-surface);border-color:var(--xh-border);color:var(--xh-text)}
 .xh-btn-ghost:hover:not(:disabled){border-color:var(--xh-accent);color:#1668D6}
 
-.xh-mini-line{background:#0b1b33;border-radius:12px;padding:16px;color:#cfe0ff;margin-bottom:16px}
+.xh-mini-line{background:#0b1b33;border-radius:12px;padding:16px;color:rgba(59,130,246,0.14);margin-bottom:16px}
 .xh-mini-line .t{font-family:var(--xh-mono);font-size:10.5px;letter-spacing:0.08em;color:var(--xh-text3);margin-bottom:14px}
 .xh-mini-steps{display:flex;align-items:flex-start;gap:6px}
 .xh-ms{flex:1;text-align:center;font-size:11px;color:#aebfdd;line-height:1.35}
@@ -100,7 +100,7 @@ const CSS = `
 .xh-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .xh-tags span{font-family:var(--xh-mono);font-size:11.5px;color:var(--xh-text2);border:1px solid var(--xh-border);border-radius:999px;padding:5px 12px;background:var(--xh-surface)}
 
-.xh-buy-error{margin-top:12px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#b91c1c;font-size:13px}
+.xh-buy-error{margin-top:12px;padding:10px 14px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.16);border-radius:8px;color:#b91c1c;font-size:13px}
 
 .xh-order-pane{background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:12px;padding:18px;text-align:center;margin-bottom:16px}
 .xh-order-pane .t{color:var(--xh-text);font-weight:600;margin-bottom:8px;font-size:14px}
@@ -120,7 +120,7 @@ const CSS = `
 .xh-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .xh-mini-card{border:1px solid var(--xh-border);border-radius:14px;overflow:hidden;background:var(--xh-surface);transition:all 0.18s;display:block;text-decoration:none;color:inherit}
 .xh-mini-card:hover{transform:translateY(-3px);box-shadow:0 16px 32px -14px rgba(20,22,26,0.18)}
-.xh-mini-card .th{aspect-ratio:4/3;background:linear-gradient(135deg,#dbeafe,#eff6ff);display:grid;place-items:center;font-size:30px;overflow:hidden}
+.xh-mini-card .th{aspect-ratio:4/3;background:linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05));display:grid;place-items:center;font-size:30px;overflow:hidden}
 .xh-mini-card .th img{width:100%;height:100%;object-fit:cover}
 .xh-mini-card .cb{padding:12px 14px}
 .xh-mini-card .cb .t{font-weight:600;font-size:13.5px;margin-bottom:7px;color:var(--xh-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

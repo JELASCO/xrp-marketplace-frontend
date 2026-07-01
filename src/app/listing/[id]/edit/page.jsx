@@ -15,13 +15,13 @@ const CSS = `
 
 .xh-form-mast{background:#0b1b33;color:#fff;border-radius:16px;padding:28px 30px 36px;margin:14px 0 18px;position:relative;overflow:hidden}
 .xh-form-mast .crumb{font-family:var(--xh-mono);font-size:11.5px;color:var(--xh-text3);letter-spacing:0.04em;margin-bottom:10px;text-transform:uppercase}
-.xh-form-mast .crumb b{color:#cfe0ff;font-weight:500}
+.xh-form-mast .crumb b{color:rgba(59,130,246,0.14);font-weight:500}
 .xh-form-mast h1{font-size:28px;display:flex;align-items:center;gap:14px;margin:0 0 6px;color:#fff}
 .xh-form-mast h1 .icon{width:40px;height:40px;border-radius:10px;background:#f59e0b;display:grid;place-items:center;font-size:20px;flex:none}
 .xh-form-mast .sub{color:#aebfdd;font-size:14px;max-width:640px;line-height:1.55;margin-top:6px}
 .xh-form-mast .step-rail{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
 .xh-form-mast .step{font-family:var(--xh-mono);font-size:11px;color:var(--xh-text3);background:rgba(255,255,255,0.05);border:1px solid #21385f;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;letter-spacing:0.04em}
-.xh-form-mast .step.on{color:#cfe0ff;background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.35)}
+.xh-form-mast .step.on{color:rgba(59,130,246,0.14);background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.35)}
 .xh-form-mast .step .num{width:18px;height:18px;border-radius:50%;background:#10264a;display:grid;place-items:center;font-size:10px;color:var(--xh-text3)}
 .xh-form-mast .step.on .num{background:var(--xh-accent);color:#fff}
 .xh-form-mast .wave{position:absolute;bottom:-2px;left:0;right:0;height:24px;pointer-events:none}
@@ -36,8 +36,8 @@ const CSS = `
 .xh-card .sec-head .lbl.danger{color:#ef4444}
 .xh-card .sec-head h2{font-size:17px;color:var(--xh-text)}
 .xh-card .sec-head .hint{font-size:12px;color:var(--xh-text2);font-family:var(--xh-mono)}
-.xh-card.boost{background:linear-gradient(135deg,#fffbeb,#fff8e1);border-color:#fde68a}
-.xh-card.danger{background:#fef2f2;border-color:#fecaca}
+.xh-card.boost{background:linear-gradient(135deg,rgba(245,158,11,0.05),#fff8e1);border-color:#fde68a}
+.xh-card.danger{background:rgba(239,68,68,0.05);border-color:rgba(239,68,68,0.16)}
 
 .xh-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .xh-field:last-child{margin-bottom:0}
@@ -87,7 +87,7 @@ const CSS = `
 
 .xh-danger-body{margin-top:4px}
 .xh-danger-body .s{font-size:13px;color:var(--xh-text2);line-height:1.55;margin-bottom:14px}
-.xh-danger-confirm{background:var(--xh-surface);border:1px solid #fecaca;border-radius:10px;padding:14px}
+.xh-danger-confirm{background:var(--xh-surface);border:1px solid rgba(239,68,68,0.16);border-radius:10px;padding:14px}
 .xh-danger-confirm .t{font-size:13px;color:var(--xh-text);margin-bottom:12px;font-weight:500}
 .xh-danger-confirm .row{display:flex;gap:8px}
 
@@ -105,10 +105,10 @@ const CSS = `
 .xh-btn-warn:hover:not(:disabled){background:#d97706;transform:translateY(-1px)}
 .xh-btn-danger{background:#ef4444;color:#fff}
 .xh-btn-danger:hover:not(:disabled){background:#dc2626}
-.xh-btn-danger-ghost{background:var(--xh-surface);border-color:#fecaca;color:#b91c1c}
-.xh-btn-danger-ghost:hover:not(:disabled){background:#fef2f2;border-color:#ef4444}
+.xh-btn-danger-ghost{background:var(--xh-surface);border-color:rgba(239,68,68,0.16);color:#b91c1c}
+.xh-btn-danger-ghost:hover:not(:disabled){background:rgba(239,68,68,0.05);border-color:#ef4444}
 
-.xh-err{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#b91c1c}
+.xh-err{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.16);border-radius:8px;padding:10px 14px;font-size:13px;color:#b91c1c}
 
 .xh-loading{max-width:480px;margin:80px auto;text-align:center;color:var(--xh-text2);font-family:var(--xh-mono);font-size:13px}
 
@@ -118,7 +118,7 @@ const CSS = `
 .xh-prev .head{display:flex;align-items:center;justify-content:space-between;font-family:var(--xh-mono);font-size:10.5px;color:var(--xh-text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--xh-border)}
 .xh-prev .head .live{color:#10b981;display:flex;align-items:center;gap:5px}
 .xh-prev .head .live::before{content:"";width:6px;height:6px;border-radius:50%;background:#10b981;animation:xhPulse 2s infinite}
-.xh-prev-img{aspect-ratio:4/3;border-radius:12px;background:linear-gradient(135deg,#dbeafe,#eff6ff);display:grid;place-items:center;font-size:54px;position:relative;border:1px solid var(--xh-border);margin-bottom:8px;overflow:hidden}
+.xh-prev-img{aspect-ratio:4/3;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05));display:grid;place-items:center;font-size:54px;position:relative;border:1px solid var(--xh-border);margin-bottom:8px;overflow:hidden}
 .xh-prev-img img{width:100%;height:100%;object-fit:cover}
 .xh-prev-img .badge{position:absolute;top:9px;left:9px;font-family:var(--xh-mono);font-size:9.5px;background:rgba(11,27,51,0.85);color:#fff;padding:3px 7px;border-radius:5px;letter-spacing:0.04em}
 .xh-prev .cat{font-family:var(--xh-mono);font-size:10px;letter-spacing:0.06em;color:#1668D6;margin-bottom:5px;text-transform:uppercase}
@@ -435,7 +435,7 @@ export default function EditListingPage() {
               <span className="live">EDITING</span>
             </div>
 
-            <div className="xh-prev-img" style={{ background: 'linear-gradient(135deg,#dbeafe,#eff6ff)' }}>
+            <div className="xh-prev-img" style={{ background: 'linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05))' }}>
               {listing.images?.[0]
                 ? <img src={listing.images[0]} alt="cover" />
                 : <span style={{ opacity: 0.6 }}>🖼</span>}
