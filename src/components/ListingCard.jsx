@@ -38,8 +38,8 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
-          background: '#fff',
-          border: '1px solid ' + (is_featured ? '#bfdbfe' : '#e7e9ed'),
+          background: 'var(--xh-surface)',
+          border: '1px solid ' + (is_featured ? '#bfdbfe' : 'var(--xh-border)'),
           borderRadius: 14,
           overflow: 'hidden',
           cursor: 'pointer',
@@ -87,7 +87,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
             <span style={{
               position: 'absolute', top: 10, right: 10,
               fontFamily: MONO, fontSize: 10,
-              background: '#1d4ed8', color: '#fff',
+              background: '#1668D6', color: '#fff',
               padding: '4px 8px', borderRadius: 6,
               fontWeight: 500, letterSpacing: '0.04em',
             }}>FEATURED</span>
@@ -102,10 +102,10 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
                 position: 'absolute', bottom: 10, right: 10,
                 width: 32, height: 32, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.95)',
-                border: '1px solid #e7e9ed',
+                border: '1px solid var(--xh-border)',
                 display: 'grid', placeItems: 'center',
                 cursor: 'pointer', fontSize: 14,
-                color: isFavorited ? '#ef4444' : '#5b6472',
+                color: isFavorited ? '#ef4444' : 'var(--xh-text2)',
                 opacity: (hover || isFavorited) ? 1 : 0,
                 transition: 'opacity 0.15s',
               }}
@@ -133,13 +133,13 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           {/* Title */}
           <div style={{
             fontWeight: 600, fontSize: 14.5,
-            marginBottom: 5, color: '#14161a',
+            marginBottom: 5, color: 'var(--xh-text)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{title}</div>
 
           {/* Seller row */}
           <div style={{
-            fontSize: 12, color: '#5b6472', marginBottom: 10,
+            fontSize: 12, color: 'var(--xh-text2)', marginBottom: 10,
             display: 'flex', alignItems: 'center', gap: 6,
             minWidth: 0,
           }}>
@@ -147,7 +147,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               onClick={store_handle ? goToStore : undefined}
               style={{
                 width: 16, height: 16, borderRadius: '50%',
-                background: '#3b82f6', color: '#fff',
+                background: 'var(--xh-accent)', color: '#fff',
                 fontSize: 9, display: 'grid', placeItems: 'center',
                 fontWeight: 600, cursor: store_handle ? 'pointer' : 'default',
                 flexShrink: 0,
@@ -176,7 +176,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
             <span style={{
               fontFamily: MONO, fontWeight: 500, fontSize: 14.5,
-              color: '#1d4ed8',
+              color: '#1668D6',
             }}>{Number(price_xrp).toLocaleString('en-US')} {currency || 'XRP'}</span>
             <span style={{
               fontSize: 11, fontWeight: 600, color: '#10b981',
