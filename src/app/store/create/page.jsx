@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 
-const IMGBB_KEY = 'd9c8b5dfc9a388958e85b58d7668d78e';
+const IMGBB_KEY = process.env.NEXT_PUBLIC_IMGBB_KEY;
 async function uploadImage(file) {
   if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5MB');
   const fd = new FormData();
