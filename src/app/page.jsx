@@ -354,7 +354,7 @@ export default function HomePage() {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg>
           TRUSTED CAPTAINS · TOP THIS MONTH
         </div>
-        <div style={{display:'flex',alignItems:'flex-end',justifyContent:space-between',gap:16,marginBottom:20,flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:16,marginBottom:20,flexWrap:'wrap'}}>
           <div>
             <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',lineHeight:1.15}}>The harbor&rsquo;s busiest docks</h2>
             <p style={{fontSize:14,color:'var(--xh-text2)',marginTop:6,maxWidth:520}}>Verified sellers with the highest ratings and the most completed trades.</p>
@@ -381,10 +381,10 @@ export default function HomePage() {
               <div style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.55,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{cap.bio}</div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',background:'var(--xh-bg2)',borderRadius:10,overflow:'hidden'}}>
                 <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'var(--xh-text)',lineHeight:1,marginBottom:4}}>{cap.t}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>TRADES</div></div>
-                <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'#f59e0b',lineHeight:1,marginBottom:4}}>♅ {cap.r}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>RATING</div></div>
+                <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'#f59e0b',lineHeight:1,marginBottom:4}}>★ {cap.r}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>RATING</div></div>
                 <div style={{padding:'12px 6px',textAlign:'center'}}><div style={{fontWeight:700,fontSize:15,color:'#10b981',lineHeight:1,marginBottom:4}}>{cap.s}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>AVG SHIP</div></div>
               </div>
-              <Link href="/listings" style={{display:'flex',alignItems:'center',justifyContent:space-between',paddingTop:13,borderTop:'1px solid var(--xh-border)',fontSize:12.5,fontWeight:600,color:'var(--xh-accent)'}}>Visit dock <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
+              <Link href="/listings" style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:13,borderTop:'1px solid var(--xh-border)',fontSize:12.5,fontWeight:600,color:'var(--xh-accent)'}}>Visit dock <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
             </div>
           ))}
         </div>
