@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api';
 import ListingCard from '../components/ListingCard';
+import RadioRoom from '../components/RadioRoom';
 import { useAuthStore } from '../lib/store';
 import XummLoginModal from '../components/XummLoginModal';
 import { useXrpPrice } from '../lib/xrpPrice';
@@ -320,6 +321,9 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* RADIO ROOM · live XRPL traffic */}
+      <RadioRoom />
+
       {/* LATEST */}
       <div style={{marginBottom:48}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
@@ -350,7 +354,7 @@ export default function HomePage() {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg>
           TRUSTED CAPTAINS · TOP THIS MONTH
         </div>
-        <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:16,marginBottom:20,flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'flex-end',justifyContent:space-between',gap:16,marginBottom:20,flexWrap:'wrap'}}>
           <div>
             <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',lineHeight:1.15}}>The harbor&rsquo;s busiest docks</h2>
             <p style={{fontSize:14,color:'var(--xh-text2)',marginTop:6,maxWidth:520}}>Verified sellers with the highest ratings and the most completed trades.</p>
@@ -377,10 +381,10 @@ export default function HomePage() {
               <div style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.55,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{cap.bio}</div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',background:'var(--xh-bg2)',borderRadius:10,overflow:'hidden'}}>
                 <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'var(--xh-text)',lineHeight:1,marginBottom:4}}>{cap.t}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>TRADES</div></div>
-                <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'#f59e0b',lineHeight:1,marginBottom:4}}>★ {cap.r}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>RATING</div></div>
+                <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'#f59e0b',lineHeight:1,marginBottom:4}}>♅ {cap.r}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>RATING</div></div>
                 <div style={{padding:'12px 6px',textAlign:'center'}}><div style={{fontWeight:700,fontSize:15,color:'#10b981',lineHeight:1,marginBottom:4}}>{cap.s}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>AVG SHIP</div></div>
               </div>
-              <Link href="/listings" style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:13,borderTop:'1px solid var(--xh-border)',fontSize:12.5,fontWeight:600,color:'var(--xh-accent)'}}>Visit dock <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
+              <Link href="/listings" style={{display:'flex',alignItems:'center',justifyContent:space-between',paddingTop:13,borderTop:'1px solid var(--xh-border)',fontSize:12.5,fontWeight:600,color:'var(--xh-accent)'}}>Visit dock <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
             </div>
           ))}
         </div>
@@ -388,7 +392,7 @@ export default function HomePage() {
 
       {/* HOW ESCROW KEEPS YOU SAFE */}
       <div id="how-it-works" style={{background:'var(--xh-bg2)',borderRadius:18,padding:'40px 28px',marginBottom:36}}>
-        <h2 className="xh-display" style={{fontSize:23,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>Verified by the ledger</h2>
+        <h2 className="xh-display" style={{fontSize:23,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:removed)}}>Verified by the ledger</h2>
         <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Every step is a real XRPL transaction you can verify yourself.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:16}}>
           {[
@@ -471,46 +475,6 @@ export default function HomePage() {
         <svg style={{position:'absolute',left:0,right:0,bottom:-2,width:'100%',height:44,opacity:.16}} viewBox="0 0 1200 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 30 Q 100 5 200 30 T 400 30 T 600 30 T 800 30 T 1000 30 T 1200 30 V60 H0 Z" fill="#fff"/></svg>
       </div>
 
-      {/* FOOTER */}
-      <footer style={{marginTop:48,paddingTop:40,borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))'}}>
-        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:32,maxWidth:1200,margin:'0 auto',padding:'0 16px',fontSize:14}}>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,fontWeight:700,fontSize:16}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2080F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg><span>XRP<span style={{color:'var(--xh-accent, #3b82f6)'}}>Harbor</span></span></div>
-            <p style={{color:'var(--xh-text3, #6b7280)',lineHeight:1.6,margin:0,maxWidth:320}}>The safe harbor for gaming assets. P2P trading with XRPL escrow protection.</p>
-            <div style={{display:'flex',gap:14,marginTop:16}}>
-              <a href="https://x.com/xrpharbor" target="_blank" rel="noopener" aria-label="X / Twitter" style={{color:'var(--xh-text3, #6b7280)',textDecoration:'none',fontSize:18}}>𝕏</a>
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Marketplace</div>
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              <Link href="/listings" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Browse</Link>
-              <Link href="/listings/new" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>List item</Link>
-              <Link href="/pro" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>XRPHarbor Pro</Link>
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Resources</div>
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              <a href="#how-it-works" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>How escrow works</a>
-              <Link href="/tos#fees" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Fees</Link>
-              <a href="mailto:support@xrpharbor.com" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Support</a>
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Legal</div>
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              <Link href="/tos" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Terms</Link>
-              <Link href="/privacy" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Privacy</Link>
-              <a href="mailto:contact@xrpharbor.com" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Contact</a>
-            </div>
-          </div>
-        </div>
-        <div style={{maxWidth:1200,margin:'32px auto 0',padding:'24px 16px 32px',borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12,fontSize:13,color:'var(--xh-text3, #6b7280)'}}>
-          <div>© 2026 XRPHarbor · Built on the XRP Ledger</div>
-          <div>Trade at your own risk · No financial advice</div>
-        </div>
-      </footer>
     </div>
   );
 }
