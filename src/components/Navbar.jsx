@@ -1,4 +1,4 @@
-'use client'; // chart-room
+'use client'; // v2
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -28,19 +28,9 @@ export default function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [unread, setUnread] = useState(0);
-  const [dark, setDark] = useState(false);
   const router = useRouter();
   const notifRef = useRef(null);
   const menuRef = useRef(null);
-
-  useEffect(() => {
-    try { setDark(document.documentElement.getAttribute('data-theme') === 'dark'); } catch (e) {}
-  }, []);
-  function toggleTheme() {
-    const next = dark ? 'light' : 'dark';
-    setDark(!dark);
-    try { document.documentElement.setAttribute('data-theme', next); localStorage.setItem('xrph-theme', next); } catch (e) {}
-  }
 
   useEffect(() => {
     if (!showNotifs && !showMenu) return;
@@ -79,64 +69,50 @@ export default function Navbar() {
   return (
     <>
       <style>{`
+        * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; }
         @media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}
       `}</style>
-      <nav style={{background:'color-mix(in srgb, var(--bg) 86%, transparent)',backdropFilter:'blur(12px)',borderBottom:'1px solid var(--border)',position:'sticky',top:0,zIndex:50}}>
-        <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:58,display:'flex',alignItems:'center',gap:12}}>
-          <Link href="/" style={{textDecoration:'none',color:'var(--text)',flexShrink:0,display:'flex',alignItems:'center',gap:9}}>
-            <svg width="30" height="30" viewBox="0 0 34 34" fill="none" style={{color:'var(--beacon)',flexShrink:0}} aria-hidden="true">
-              <circle cx="17" cy="17" r="15.5" stroke="currentColor" strokeWidth="1.6"/>
-              <circle cx="17" cy="9.4" r="2.6" stroke="currentColor" strokeWidth="1.6"/>
-              <path d="M17 12v13.4M12.4 15.2h9.2M9.2 20.2c.6 3.6 3.8 6 7.8 6s7.2-2.4 7.8-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              <path d="M9.2 20.2l-1.9-1.4M9.2 20.2l2.3-.4M24.8 20.2l1.9-1.4M24.8 20.2l-2.3-.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
-            <span style={{fontSize:18,fontWeight:700,letterSpacing:'-.01em'}}>
-              <span style={{fontFamily:'var(--f-mono)',fontWeight:600,letterSpacing:'.04em'}}>XRP</span><span style={{fontFamily:'var(--f-serif)',fontStyle:'italic',fontSize:20,marginLeft:1}}>Harbor</span>
-            </span>
+      <nav style={{background:'#f5f6f8',backdropFilter:'blur(12px)',borderBottom:'1px solid rgba(0,0,0,0.08)',position:'sticky',boxShadow:'0 1px 2px rgba(10,35,66,.04),0 4px 14px -6px rgba(10,35,66,.10)',top:0,zIndex:50,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}>
+        <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:56,display:'flex',alignItems:'center',gap:12}}>
+          <Link href="/" style={{fontWeight:800,fontSize:18,color:'#14161a',textDecoration:'none',letterSpacing:'-0.02em',flexShrink:0,display:'flex',alignItems:'center',gap:8}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2080F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg>
+            <span>XRP<span style={{color:'var(--accent)'}}>Harbor</span></span>
           </Link>
           {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
-            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'var(--surface)',border:'1px solid var(--border2)',color:'var(--text)',borderRadius:8}}
-              placeholder="Search the harbor…" value={search} onChange={e=>setSearch(e.target.value)}/>
-            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',color:'#14161a',borderRadius:8,fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif'}}
+              placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8b8f96',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </form>)}
-          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:4,marginLeft:'auto'}}>
+          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[{href:'/listings',label:'Marketplace'},...(user?[{href:'/dashboard',label:'Dashboard'}]:[]),{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
-              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
-                onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'}}>
+              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'#14161a',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
+                onMouseEnter={e=>{e.currentTarget.style.color='var(--accent)';e.currentTarget.style.background='rgba(59,130,246,0.08)';e.currentTarget.style.border='1px solid rgba(59,130,246,0.15)'}}
+                onMouseLeave={e=>{e.currentTarget.style.color='#14161a';e.currentTarget.style.background='transparent';e.currentTarget.style.border='1px solid transparent'}}>
                 {l.label}
               </Link>
             ))}
           </div>
-          <div className="xrp-price" style={{fontSize:12,fontFamily:'var(--f-mono)',color:'var(--text2)',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:6,padding:'5px 10px',whiteSpace:'nowrap'}}>
-            XRP <span style={{color: priceDir==='up' ? 'var(--starboard)' : priceDir==='down' ? 'var(--port)' : 'var(--text)', transition:'color 0.3s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(xrpPrice < 10 ? 4 : 2) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
+          <div className="xrp-price" style={{fontSize:12,fontFamily:'monospace',color:'#14161a',background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',borderRadius:6,padding:'4px 10px',whiteSpace:'nowrap'}}>
+            XRP <span style={{color: priceDir==='up' ? '#34d399' : priceDir==='down' ? '#f87171' : 'var(--green)', transition:'color 0.3s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(xrpPrice < 10 ? 4 : 2) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
           </div>
-          <button onClick={toggleTheme} aria-label="Toggle theme"
-            style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'transparent',border:'1px solid var(--border2)',borderRadius:'50%',cursor:'pointer',color:'var(--text2)',flexShrink:0,padding:0}}>
-            {dark ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M3 12h2M19 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-            )}
-          </button>
           {user ? (
             <>
             <div ref={notifRef} style={{position:'relative'}}>
               <button onClick={openNotifs} aria-label="Notifications"
-                style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,cursor:'pointer',color:'var(--text2)',position:'relative',padding:0,flexShrink:0}}>
+                style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',borderRadius:8,cursor:'pointer',color:'#14161a',position:'relative',padding:0,flexShrink:0}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                {unread > 0 && <span style={{position:'absolute',top:-4,right:-4,minWidth:16,height:16,padding:'0 4px',background:'var(--port)',color:'#fff',fontSize:10,fontWeight:700,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>{unread>9?'9+':unread}</span>}
+                {unread > 0 && <span style={{position:'absolute',top:-4,right:-4,minWidth:16,height:16,padding:'0 4px',background:'#ef4444',color:'#14161a',fontSize:10,fontWeight:700,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>{unread>9?'9+':unread}</span>}
               </button>
               {showNotifs && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:300,maxHeight:380,overflowY:'auto',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:300,maxHeight:380,overflowY:'auto',background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
                   <div style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:700,color:'var(--text)'}}>Notifications</div>
                   {notifs.length === 0 ? (
                     <div style={{padding:'24px 14px',textAlign:'center',fontSize:12,color:'var(--text3)'}}>No notifications yet</div>
                   ) : notifs.map(n => (
                     <div key={n.id} onClick={()=>{ setShowNotifs(false); const oid=n.payload&&n.payload.orderId; const lid=n.payload&&n.payload.listingId; router.push(oid?'/orders':lid?('/listing/'+lid):'/orders'); }}
-                      style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:n.is_read?'transparent':'color-mix(in srgb, var(--beacon) 8%, transparent)',display:'flex',gap:10,alignItems:'flex-start'}}>
+                      style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:n.is_read?'transparent':'rgba(59,130,246,0.06)',display:'flex',gap:10,alignItems:'flex-start'}}>
                       <span style={{fontSize:16,lineHeight:1.2,flexShrink:0}}>{NOTIF_ICONS[n.type] || '🔔'}</span>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,color:'var(--text)',fontWeight:n.is_read?400:600}}>{NOTIF_LABELS[n.type] || n.type}</div>
@@ -150,16 +126,16 @@ export default function Navbar() {
             </div>
             <div ref={menuRef} style={{position:'relative'}}>
               <button onClick={()=>setShowMenu(v=>!v)}
-                style={{display:'flex',alignItems:'center',gap:8,background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'var(--text)',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
-                <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,var(--beacon),var(--tide))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'var(--on-beacon)',flexShrink:0}}>
+                style={{display:'flex',alignItems:'center',gap:8,background:'#ffffff',border:'1px solid rgba(0,0,0,0.1)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#14161a',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
+                <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#3b82f6,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#14161a',flexShrink:0}}>
                   {user.username?.slice(0,2).toUpperCase()}
                 </div>
-                <span style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{user.username}</span>
+                <span style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#14161a'}}>{user.username}</span>
               </button>
               {showMenu && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 0',boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,padding:'5px 0',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
                   {!(user.proUntil && new Date(user.proUntil).getTime() > Date.now()) && (<>
-                    <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--beacon)',fontWeight:600,textDecoration:'none'}}>⭐ Upgrade to Pro</Link>
+                    <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#c4880c',fontWeight:600,textDecoration:'none'}}>⭐ Upgrade to Pro</Link>
                     <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
                   </>)}
                   {[{href:'/listings/new',label:'List an Item'},{href:'/store/create',label:'Create store'},{href:'/dashboard',label:'Dashboard'},{href:'/orders',label:'My Orders'},{href:'/messages',label:'Messages'},{href:'/favorites',label:'Favorites'},{href:'/profile/'+user.id,label:'My Profile'},{href:'/settings',label:'Settings'}].map(i=>(
@@ -172,23 +148,96 @@ export default function Navbar() {
                   ))}
                   {user.role==='admin' && <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--accent2)',textDecoration:'none'}}>Admin Panel</Link>}
                   <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
-                  <button onClick={()=>{logout();setShowMenu(false);}} style={{width:'100%',textAlign:'left',padding:'9px 16px',fontSize:13,color:'var(--port)',background:'none',border:'none',cursor:'pointer'}}>
+                  <button onClick={()=>{logout();setShowMenu(false);}} style={{width:'100%',textAlign:'left',padding:'9px 16px',fontSize:13,color:'#f87171',background:'none',border:'none',cursor:'pointer'}}>
                     Sign out
                   </button>
                 </div>
               )}
-            </div>
+              </div>
             </>
           ) : (
             <button onClick={()=>setShowLogin(true)}
-              style={{display:'flex',alignItems:'center',gap:7,background:'#2080F5',color:'#fff',border:'none',borderRadius:999,padding:'8px 16px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M16.5 14.5h.01"/></svg>
-              Connect Xaman
+              style={{display:'flex',alignItems:'center',gap:6,background:'var(--accent)',color:'#14161a',border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+ Connect Xaman
             </button>
           )}
         </div>
       </nav>
       {showLogin && <XummLoginModal onClose={()=>setShowLogin(false)}/>}
     </>
+  );
+}
+
+
+function NotificationsBell() {
+  const items = useNotificationsStore(s => s.items);
+  const unread = useNotificationsStore(s => s.unread);
+  const markRead = useNotificationsStore(s => s.markRead);
+  const markAllRead = useNotificationsStore(s => s.markAllRead);
+  const [open, setOpen] = useState(false);
+
+  function labelFor(n) {
+    const t = n.type;
+    const p = n.payload || {};
+    if (t === 'new_order') return 'New order on "' + (p.listingTitle || 'listing') + '"';
+    if (t === 'order_completed') return 'Order completed';
+    if (t === 'dispute_opened') return 'Dispute opened on your order';
+    if (t === 'dispute_resolved') return 'Dispute resolved' + (p.favorBuyer ? ' (refunded)' : ' (released)');
+    if (t === 'new_review') return 'New review (' + (p.rating || '') + 'â)';
+    return t;
+  }
+  function timeAgo(d) {
+    if (!d) return '';
+    const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.floor(s/60) + 'm';
+    if (s < 86400) return Math.floor(s/3600) + 'h';
+    return Math.floor(s/86400) + 'd';
+  }
+
+  return (
+    <div style={{position:'relative'}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:8,cursor:'pointer',color:'var(--text2)',position:'relative',padding:0}}>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
+        {unread > 0 && (
+          <span style={{position:'absolute',top:-4,right:-4,background:'var(--red)',color:'#14161a',fontSize:10,fontWeight:700,minWidth:16,height:16,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px',border:'2px solid #0a0d13'}}>{unread > 9 ? '9+' : unread}</span>
+        )}
+      </button>
+      {open && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{position:'fixed',inset:0,zIndex:99}}/>
+          <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:340,maxWidth:'90vw',maxHeight:440,overflow:'hidden',display:'flex',flexDirection:'column',background:'var(--surface)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',zIndex:100}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderBottom:'1px solid var(--border)'}}>
+              <span style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>Notifications</span>
+              {unread > 0 && (
+                <button onClick={markAllRead} style={{background:'none',border:'none',color:'var(--accent2)',fontSize:11,cursor:'pointer',padding:0}}>Mark all read</button>
+              )}
+            </div>
+            <div style={{overflowY:'auto',flex:1}}>
+              {items.length === 0 ? (
+                <div style={{padding:'30px 16px',textAlign:'center',color:'var(--text3)',fontSize:12}}>No notifications yet</div>
+              ) : items.map(n => {
+                const orderId = n.payload && n.payload.orderId;
+                const inner = (
+                  <div style={{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.04)',background:n.is_read?'transparent':'rgba(59,130,246,0.06)',display:'flex',alignItems:'flex-start',gap:8,cursor:orderId?'pointer':'default'}}>
+                    {!n.is_read && <span style={{width:6,height:6,borderRadius:'50%',background:'var(--accent)',marginTop:6,flexShrink:0}}/>}
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,color:'var(--text)',lineHeight:1.4}}>{labelFor(n)}</div>
+                      <div style={{fontSize:10,color:'var(--text3)',marginTop:2}}>{timeAgo(n.created_at)} ago</div>
+                    </div>
+                  </div>
+                );
+                const onClick = () => { if (!n.is_read) markRead(n.id); setOpen(false); };
+                return orderId ? (
+                  <Link key={n.id} href={'/orders/' + orderId} onClick={onClick} style={{textDecoration:'none'}}>{inner}</Link>
+                ) : (
+                  <div key={n.id} onClick={onClick}>{inner}</div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
