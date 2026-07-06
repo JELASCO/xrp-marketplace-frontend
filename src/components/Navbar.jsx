@@ -91,7 +91,7 @@ export default function Navbar() {
               <path d="M9.2 20.2l-1.9-1.4M9.2 20.2l2.3-.4M24.8 20.2l1.9-1.4M24.8 20.2l-2.3-.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
             </svg>
             <span style={{fontSize:18,fontWeight:700,letterSpacing:'-.01em'}}>
-              <span style={{fontFamily:'DM Mono,monospace',fontWeight:600,letterSpacing:'.04em'}}>XRP</span><span style={{fontFamily:'Georgia,serif',fontStyle:'italic',fontSize:20,marginLeft:1}}>Harbor</span>
+              XRP<span style={{color:'#2080F5'}}>Harbor</span>
             </span>
           </Link>
           {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
