@@ -455,7 +455,7 @@ export default function HomePage() {
       </div>
 
       {/* FOOTER */}
-      <footer style={{marginTop:48,paddingTop:40,background:'var(--bg)',borderTop:'1px solid var(--border)'}}>
+      <footer style={{marginTop:40,paddingTop:28,background:'var(--bg)',borderTop:'1px solid var(--border)',width:'100vw',marginLeft:'calc(50% - 50vw)'}}>
         <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:32,maxWidth:1200,margin:'0 auto',padding:'0 16px',fontSize:14}}>
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,fontWeight:700,fontSize:16}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2080F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg><span>XRP<span style={{color:'var(--xh-accent, #3b82f6)'}}>Harbor</span></span></div>
@@ -489,7 +489,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div style={{maxWidth:1200,margin:'32px auto 0',padding:'24px 16px 32px',borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12,fontSize:13,color:'var(--xh-text3, #6b7280)'}}>
+        <div style={{maxWidth:1200,margin:'22px auto 0',padding:'16px 16px 20px',borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12,fontSize:13,color:'var(--xh-text3, #6b7280)'}}>
           <div>© 2026 XRPHarbor · Built on the XRP Ledger</div>
           <div>Trade at your own risk · No financial advice</div>
         </div>
