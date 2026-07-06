@@ -80,12 +80,13 @@ export default function Navbar() {
     <>
       <style>{`
         @media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}
+        html[data-theme="dark"] .xh-logo-ring{stroke:#fff}
       `}</style>
       <nav style={{background:'color-mix(in srgb, var(--bg) 86%, transparent)',backdropFilter:'blur(12px)',borderBottom:'1px solid var(--border)',position:'sticky',top:0,zIndex:50}}>
         <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:58,display:'flex',alignItems:'center',gap:12}}>
           <Link href="/" style={{textDecoration:'none',color:'var(--text)',flexShrink:0,display:'flex',alignItems:'center',gap:9}}>
             <svg width="30" height="30" viewBox="0 0 34 34" fill="none" style={{color:'#2080F5',flexShrink:0}} aria-hidden="true">
-              <circle cx="17" cy="17" r="15.5" stroke="#0A1628" strokeWidth="1.6"/>
+              <circle className="xh-logo-ring" cx="17" cy="17" r="15.5" stroke="#0A1628" strokeWidth="1.6"/>
               <circle cx="17" cy="9.4" r="2.6" stroke="currentColor" strokeWidth="1.6"/>
               <path d="M17 12v13.4M12.4 15.2h9.2M9.2 20.2c.6 3.6 3.8 6 7.8 6s7.2-2.4 7.8-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
               <path d="M9.2 20.2l-1.9-1.4M9.2 20.2l2.3-.4M24.8 20.2l1.9-1.4M24.8 20.2l-2.3-.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
