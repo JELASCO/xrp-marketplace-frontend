@@ -1,7 +1,5 @@
 import './globals.css';
 import Navbar from '../components/Navbar';
-import LedgerStrip from '../components/LedgerStrip';
-import Footer from '../components/Footer';
 import Providers from '../components/Providers';
 import ToastHost from '../components/ToastHost';
 import ConfirmHost from '../components/ConfirmHost';
@@ -54,13 +52,11 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0, background: 'var(--bg)', color: 'var(--text)', fontFamily: "'Hanken Grotesk', 'Segoe UI', system-ui, sans-serif" }}>
+      <body style={{ margin: 0, padding: 0, background: 'var(--bg)', color: 'var(--text)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif' }}>
         <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('xrph-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}" }} />
         <Providers>
-          <LedgerStrip />
           <Navbar />
-          <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px', minHeight: '60vh' }}>{children}</main>
-          <Footer />
+          <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>{children}</main>
           <ToastHost />
           <ConfirmHost />
         </Providers>
