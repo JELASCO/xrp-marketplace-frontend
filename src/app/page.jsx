@@ -195,23 +195,6 @@ export default function HomePage() {
       `}
 </style>
 
-      {/* Theme toggle */}
-      <button
-        onClick={() => setTheme(dark ? 'light' : 'dark')}
-        aria-label="Toggle theme"
-        title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-        style={{
-          position:'fixed', top:78, right:18, zIndex:40,
-          width:40, height:40, borderRadius:10,
-          background:'var(--xh-surface)', border:'1px solid var(--xh-border2)', color:'var(--xh-text)',
-          fontSize:18, cursor:'pointer',
-          boxShadow:'0 4px 14px rgba(13,30,58,0.10)',
-          display:'flex', alignItems:'center', justifyContent:'center',
-        }}
-      >
-        {dark ? '☀️' : '🌙'}
-      </button>
-
       {/* HERO — split: copy left, escrow waterline right */}
       <div className="xh-hero-grid">
         <div>
@@ -472,7 +455,7 @@ export default function HomePage() {
       </div>
 
       {/* FOOTER */}
-      <footer style={{marginTop:48,paddingTop:40,borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))'}}>
+      <footer style={{marginTop:48,paddingTop:40,background:'var(--bg)',borderTop:'1px solid var(--border)'}}>
         <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:32,maxWidth:1200,margin:'0 auto',padding:'0 16px',fontSize:14}}>
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,fontWeight:700,fontSize:16}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2080F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg><span>XRP<span style={{color:'var(--xh-accent, #3b82f6)'}}>Harbor</span></span></div>
