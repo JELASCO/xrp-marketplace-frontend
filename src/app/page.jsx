@@ -175,13 +175,16 @@ export default function HomePage() {
         .xh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
         .xh-chips a{font-size:12.5px;font-weight:500;color:var(--xh-text2);border:1px solid var(--xh-border);border-radius:999px;padding:6px 13px;background:var(--xh-surface);text-decoration:none;transition:all .15s}
         .xh-chips a:hover{color:var(--xh-accent);border-color:var(--xh-accent)}
-        .xh-node{position:absolute;top:14px;width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#10264a;border:1px solid #2c4571;transition:transform .2s,border-color .2s}
-        .xh-node:hover{transform:translateY(-3px);border-color:#3b82f6}
-        .xh-node svg{width:19px;height:19px;stroke:#7eb0ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-        .xh-node.done{background:rgba(16,185,129,.16);border-color:rgba(16,185,129,.45)}
-        .xh-node.done svg{stroke:#34d399}
-        .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:#aebfdd;width:120px;text-align:center;line-height:1.4}
-        .xh-node-label b{display:block;color:#fff;font-weight:600;font-size:12px;margin-bottom:2px}
+        .xh-escrow{--ec-bg:#fff;--ec-fg:#3D5A80;--ec-ink:#0A1628;--ec-sub:#3D5A80;--ec-mut:#7C92B2;--ec-line:rgba(10,35,66,.18);--ec-border:1px solid rgba(10,35,66,.12);--ec-shadow:0 1px 2px rgba(10,35,66,.05),0 24px 50px -24px rgba(10,35,66,.25);--ec-tile-bg:#EAF1FB;--ec-tile-bd:rgba(10,35,66,.12);--ec-tile-fg:#2080F5;--ec-done-bg:rgba(22,163,74,.12);--ec-done-bd:rgba(22,163,74,.30);--ec-done-fg:#16a34a;--ec-lbl:#7C92B2;--ec-lbl-b:#0A1628;--ec-sail:#2080F5;--ec-wave1:#d9e8fb;--ec-wave2:#c4dbf7;--ec-foot-bg:#F8FBFF;--ec-foot-bd:rgba(10,35,66,.12);--ec-foot-fg:#7C92B2;--ec-foot-link:#2080F5}
+        html[data-theme="dark"] .xh-escrow{--ec-bg:#0b1b33;--ec-fg:#cfe0ff;--ec-ink:#fff;--ec-sub:#8fa6cc;--ec-mut:#7e96bf;--ec-line:#33507e;--ec-border:1px solid transparent;--ec-shadow:0 30px 60px -20px rgba(11,27,51,.45);--ec-tile-bg:#10264a;--ec-tile-bd:#2c4571;--ec-tile-fg:#7eb0ff;--ec-done-bg:rgba(16,185,129,.16);--ec-done-bd:rgba(16,185,129,.45);--ec-done-fg:#34d399;--ec-lbl:#aebfdd;--ec-lbl-b:#fff;--ec-sail:#bcd4ff;--ec-wave1:#10264a;--ec-wave2:#16335f;--ec-foot-bg:#091628;--ec-foot-bd:#21385f;--ec-foot-fg:#7e96bf;--ec-foot-link:#7e96bf}
+        .xh-wave-1{fill:var(--ec-wave1)}.xh-wave-2{fill:var(--ec-wave2)}
+        .xh-node{position:absolute;top:14px;width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:var(--ec-tile-bg);border:1px solid var(--ec-tile-bd);transition:transform .2s,border-color .2s}
+        .xh-node:hover{transform:translateY(-3px);border-color:var(--ec-tile-fg)}
+        .xh-node svg{width:19px;height:19px;stroke:var(--ec-tile-fg);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+        .xh-node.done{background:var(--ec-done-bg);border-color:var(--ec-done-bd)}
+        .xh-node.done svg{stroke:var(--ec-done-fg)}
+        .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:var(--ec-lbl);width:120px;text-align:center;line-height:1.4}
+        .xh-node-label b{display:block;color:var(--ec-lbl-b);font-weight:600;font-size:12px;margin-bottom:2px}
         .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:linear-gradient(135deg,#0A2342,#173A86);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(10,35,66,.45)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
         .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}
         .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
@@ -223,31 +226,31 @@ export default function HomePage() {
         </div>
 
         {/* SIGNATURE: escrow waterline card (fixed dark — works in both themes) */}
-        <aside aria-label="How escrow works" style={{background:'#0b1b33',borderRadius:20,padding:'14px 26px 0',color:'#cfe0ff',boxShadow:'0 30px 60px -20px rgba(11,27,51,.45)',position:'relative',overflow:'hidden'}}>
-          <div className="xh-display" style={{fontWeight:700,fontSize:17,color:'#fff',marginBottom:4}}>Every trade crosses the harbor</div>
-          <div style={{fontSize:13,color:'#8fa6cc',marginBottom:9}}>Watch how your payment travels — start to finish, on-chain.</div>
-          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',fontSize:10.5,letterSpacing:'0.08em',color:'#7e96bf',padding:'0 4px'}}>
+        <aside aria-label="How escrow works" className="xh-escrow" style={{background:'var(--ec-bg)',borderRadius:20,padding:'14px 26px 0',color:'var(--ec-fg)',boxShadow:'var(--ec-shadow)',border:'var(--ec-border)',position:'relative',overflow:'hidden'}}>
+          <div className="xh-display" style={{fontWeight:700,fontSize:17,color:'var(--ec-ink)',marginBottom:4}}>Every trade crosses the harbor</div>
+          <div style={{fontSize:13,color:'var(--ec-sub)',marginBottom:9}}>Watch how your payment travels — start to finish, on-chain.</div>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',fontSize:10.5,letterSpacing:'0.08em',color:'var(--ec-mut)',padding:'0 4px'}}>
             <span>BUYER&nbsp;DOCK</span><span>SELLER&nbsp;DOCK</span>
           </div>
           <div style={{position:'relative',height:110,marginTop:6}}>
-            <div style={{position:'absolute',top:36,left:16,right:16,height:2,background:'repeating-linear-gradient(90deg,#33507e 0 8px,transparent 8px 16px)'}}/>
+            <div style={{position:'absolute',top:36,left:16,right:16,height:2,background:'repeating-linear-gradient(90deg,var(--ec-line) 0 8px,transparent 8px 16px)'}}/>
             <div className="xh-node" style={{left:6}} title="EscrowCreate"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
             <div className="xh-node" style={{left:'calc(50% - 23px)'}} title="Delivery"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg></div>
             <div className="xh-node done" style={{right:6}} title="EscrowFinish"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
-            <span className="xh-sail" aria-hidden="true" style={{position:'absolute',top:18,left:18,color:'#bcd4ff',filter:'drop-shadow(0 2px 4px rgba(11,27,51,.5))',animation:'xhsail 9s ease-in-out infinite'}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span>
+            <span className="xh-sail" aria-hidden="true" style={{position:'absolute',top:18,left:18,color:'var(--ec-sail)',filter:'drop-shadow(0 2px 4px rgba(11,27,51,.35))',animation:'xhsail 9s ease-in-out infinite'}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span>
             <div className="xh-node-label" style={{left:-22}}><b>Payment locked</b>EscrowCreate on XRPL</div>
             <div className="xh-node-label" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
             <div className="xh-node-label" style={{right:-22}}><b>Escrow releases</b>seller paid automatically</div>
           </div>
           <div style={{position:'relative',height:38,margin:'0 -26px'}}>
             <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:38,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0 30 Q 75 10 150 30 T 300 30 T 450 30 T 600 30 T 750 30 T 900 30 T 1050 30 T 1200 30 V54 H0 Z" fill="#10264a"/>
-              <path d="M0 38 Q 75 22 150 38 T 300 38 T 450 38 T 600 38 T 750 38 T 900 38 T 1050 38 T 1200 38 V54 H0 Z" fill="#16335f" opacity=".8"/>
+              <path className="xh-wave-1" d="M0 30 Q 75 10 150 30 T 300 30 T 450 30 T 600 30 T 750 30 T 900 30 T 1050 30 T 1200 30 V54 H0 Z"/>
+              <path className="xh-wave-2" d="M0 38 Q 75 22 150 38 T 300 38 T 450 38 T 600 38 T 750 38 T 900 38 T 1050 38 T 1200 38 V54 H0 Z" opacity=".8"/>
             </svg>
           </div>
-          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'#7e96bf',borderTop:'1px solid #21385f',margin:'0 -26px',padding:'9px 26px',background:'#091628'}}>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'var(--ec-foot-fg)',borderTop:'1px solid var(--ec-foot-bd)',margin:'0 -26px',padding:'9px 26px',background:'var(--ec-foot-bg)'}}>
             <span>XRPL ESCROW · <span style={{color:'#10b981'}}>NON-CUSTODIAL</span></span>
-            <a href="#how-it-works" style={{color:'#7e96bf',textDecoration:'none'}}>how it works ↓</a>
+            <a href="#how-it-works" style={{color:'var(--ec-foot-link)',textDecoration:'none'}}>how it works ↓</a>
           </div>
         </aside>
       </div>
