@@ -492,7 +492,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div style={{maxWidth:1200,margin:'22px auto 0',padding:'16px 16px 20px',borderTop:'1px solid var(--xh-border, rgba(0,0,0,0.06))',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12,fontSize:13,color:'var(--xh-text3, #6b7280)'}}>
+        <div style={{maxWidth:1200,margin:'22px auto 0',padding:'16px 16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12,fontSize:13,color:'var(--xh-text3, #6b7280)'}}>
           <div>© 2026 XRPHarbor · Built on the XRP Ledger</div>
         </div>
       </footer>
