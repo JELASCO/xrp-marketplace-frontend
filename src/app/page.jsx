@@ -458,7 +458,7 @@ export default function HomePage() {
       </div>
 
       {/* FOOTER */}
-      <footer style={{marginTop:40,paddingTop:28,background:'transparent',borderTop:'1px solid var(--border)',width:'100vw',marginLeft:'calc(50% - 50vw)'}}>
+      <footer style={{marginTop:40,paddingTop:28,background:'var(--bg)',borderTop:'1px solid var(--border)',width:'100vw',marginLeft:'calc(50% - 50vw)'}}>
         <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:32,maxWidth:1200,margin:'0 auto',padding:'0 16px',fontSize:14}}>
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,fontWeight:700,fontSize:16}}><svg width="22" height="22" viewBox="0 0 34 34" fill="none" style={{color:'#2080F5',flexShrink:0}} aria-hidden="true"><circle className="xh-logo-ring" cx="17" cy="17" r="15.5" stroke="#0A1628" strokeWidth="1.6"/><circle cx="17" cy="9.4" r="2.6" stroke="currentColor" strokeWidth="1.6"/><path d="M17 12v13.4M12.4 15.2h9.2M9.2 20.2c.6 3.6 3.8 6 7.8 6s7.2-2.4 7.8-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M9.2 20.2l-1.9-1.4M9.2 20.2l2.3-.4M24.8 20.2l1.9-1.4M24.8 20.2l-2.3-.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg><span>XRP<span style={{color:'#2080F5'}}>Harbor</span></span></div>
