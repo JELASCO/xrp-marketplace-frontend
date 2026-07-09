@@ -65,14 +65,30 @@ export default function HomePage() {
   const [ledgerSeq, setLedgerSeq] = useState(null);
   const [ledgerClose, setLedgerClose] = useState(3.9);
   useEffect(() => {
-    let seq = 106200000 + Math.floor((Date.now() / 1000 - 1781222400) / 3.9);
-    if (!Number.isFinite(seq) || seq < 90000000) seq = 106200000;
-    setLedgerSeq(seq);
-    const t = setInterval(() => {
-      seq += 1; setLedgerSeq(seq);
-      setLedgerClose(+(3.6 + Math.random() * 0.7).toFixed(1));
-    }, 3900);
-    return () => clearInterval(t);
+    let seed = 106200000 + Math.floor((Date.now() / 1000 - 1781222400) / 3.9);
+    if (Number.isFinite(seed) && seed > 90000000) setLedgerSeq(seed);
+    let ws, alive = true, retry = null, lastCloseTs = null;
+    const connect = () => {
+      try { ws = new WebSocket('wss://s1.ripple.com'); } catch (e) { return; }
+      ws.onopen = () => { try { ws.send(JSON.stringify({ id: 1, command: 'subscribe', streams: ['ledger'] })); } catch (e) {} };
+      ws.onmessage = (ev) => {
+        let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+        let idx = null;
+        if (m.type === 'ledgerClosed') idx = m.ledger_index;
+        else if (m.result && m.result.ledger_index) idx = m.result.ledger_index;
+        else if (m.result && m.result.validated_ledger) idx = m.result.validated_ledger.seq;
+        if (idx) {
+          setLedgerSeq(idx);
+          const now = Date.now();
+          if (lastCloseTs) setLedgerClose(+Math.min(9, Math.max(2, (now - lastCloseTs) / 1000)).toFixed(1));
+          lastCloseTs = now;
+        }
+      };
+      ws.onclose = () => { if (alive) retry = setTimeout(connect, 4000); };
+      ws.onerror = () => { try { ws.close(); } catch (e) {} };
+    };
+    connect();
+    return () => { alive = false; if (retry) clearTimeout(retry); try { if (ws) ws.close(); } catch (e) {} };
   }, []);
 
   // Recent escrow activity — live from the ledger via GET /api/activity.
