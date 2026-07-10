@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    domains: ['cdn.xrpmarket.app', 'localhost'],
-  },
   async rewrites() {
     return [
       {
