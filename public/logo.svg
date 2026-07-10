@@ -1,8 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="112" fill="#2080F5"/>
-  <g stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" fill="none">
-    <circle cx="256" cy="150" r="38"/>
-    <path d="M256 188v186M188 232h136M150 300c9 52 56 88 106 88s97-36 106-88"/>
-    <path d="M150 300l-28-20M150 300l34-6M362 300l28-20M362 300l-34-6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34" width="34" height="34" fill="none">
+  <style>.ring{stroke:#0A1628}@media (prefers-color-scheme:dark){.ring{stroke:#fff}}</style>
+  <circle class="ring" cx="17" cy="17" r="15.5" stroke="#0A1628" stroke-width="1.6"/>
+  <g stroke="#2080F5" stroke-width="1.6" stroke-linecap="round">
+    <circle cx="17" cy="9.4" r="2.6"/>
+    <path d="M17 12v13.4M12.4 15.2h9.2M9.2 20.2c.6 3.6 3.8 6 7.8 6s7.2-2.4 7.8-6"/>
+    <path d="M9.2 20.2l-1.9-1.4M9.2 20.2l2.3-.4M24.8 20.2l1.9-1.4M24.8 20.2l-2.3-.4"/>
   </g>
 </svg>
