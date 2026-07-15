@@ -56,7 +56,7 @@ export default function ProPage() {
 
       {done && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '14px 16px', color: '#34d399', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>{done}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
+      <div id="pricing" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
         {/* Pro subscription */}
         <div style={{ background: C.card, border: `1px solid ${proActive ? 'rgba(59,130,246,0.4)' : C.border}`, borderRadius: 16, padding: 28, position: 'relative' }}>
           {proActive && <div style={{ position: 'absolute', top: 14, right: 14, fontSize: 11, fontWeight: 700, background: 'rgba(59,130,246,0.15)', color: 'var(--accent)', borderRadius: 6, padding: '3px 8px' }}>ACTIVE</div>}
