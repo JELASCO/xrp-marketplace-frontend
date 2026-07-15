@@ -31,11 +31,12 @@ const C = {
 };
 
 const CAT_TREE = {
-  'Games': ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','World of Warcraft','Apex Legends','Roblox','Minecraft','Call of Duty','Old School RuneScape','RuneScape 3','Path of Exile','Diablo 4','Rust','Team Fortress 2','PUBG','Genshin Impact','Grand Theft Auto V','EA FC 24','Overwatch 2','Escape from Tarkov','ARC Raiders','New World','Lost Ark','Albion Online','Final Fantasy XIV','Warframe','Destiny 2','Other'],
-  'Graphics & Art': ['Logos','Illustrations','3D & models','UI/UX kits','Avatars / PFP','Textures'],
-  'Software & Tools': ['Licenses & keys','Scripts & bots','Plugins','Templates','Source code'],
-  'Accounts': ['Game accounts','Social media','Streaming','Subscriptions'],
-  'Other': ['Gift cards','eBooks & guides','Collectibles','Misc'],
+  'Games': ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','Apex Legends','Roblox','Minecraft','OSRS','Path of Exile','Rust','Genshin Impact','GTA V','Warframe','Other'],
+  'Graphics & Art': ['Logos','Illustrations','3D models','UI/UX kits','Avatars / PFP','Textures & materials','Animation rigs','Motion graphics','Brushes & presets','Font assets','Design templates','Other'],
+  'Education': ['Courses & tutorials','eBooks & guides','Mentorship sessions','Design resources','Other'],
+  'Software & Tools': ['Licenses & keys','Scripts & bots','Plugins','Templates','Source code','Other'],
+  'Accounts': ['Game accounts','Social media','Streaming','Subscriptions','Other'],
+  'Other': ['Gift cards','Collectibles','Misc','Other'],
 };
 const CAT_KEYS = Object.keys(CAT_TREE);
 const RESPONSES = ['Within 4 hours (business hours)', 'Within 12 hours', 'Within 24 hours', 'Within 48 hours'];
@@ -74,6 +75,7 @@ export default function CreateStorePage() {
   const [handle, setHandle] = useState('');
   const [cats, setCats] = useState([]);
   const [activeCat, setActiveCat] = useState('Games');
+  const [otherText, setOtherText] = useState({});
   const [tagline, setTagline] = useState('');
   const [about, setAbout] = useState('');
   const [autoAccept, setAutoAccept] = useState(true);
@@ -116,7 +118,13 @@ export default function CreateStorePage() {
     }).catch(() => {});
   }, [user, router]);
 
-  const toggleCat = (c) => setCats((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : (prev.length >= 8 ? prev : [...prev, c]));
+  const toggleCat = (c) => setCats((prev) => {
+    if (prev.includes(c)) {
+      if (c === 'Other') setOtherText((t) => { const n = {...t}; delete n[activeCat]; return n; });
+      return prev.filter((x) => x !== c);
+    }
+    return prev.length >= 8 ? prev : [...prev, c];
+  });
 
   const handleLogoFile = async (file) => {
     if (!file) return;
@@ -233,6 +241,17 @@ export default function CreateStorePage() {
                     );
                   })}
                 </div>
+                {cats.includes('Other') && (
+                  <div style={{ marginTop: 10 }}>
+                    <textarea
+                      placeholder={`Describe what you sell under "${activeCat} — Other"…`}
+                      value={otherText[activeCat] || ''}
+                      onChange={(e) => setOtherText((t) => ({ ...t, [activeCat]: e.target.value }))}
+                      style={{ ...inputStyle, minHeight: 72, resize: 'vertical', lineHeight: 1.5 }}
+                    />
+                    <div style={hintStyle}>This appears on your store page so buyers know what to expect.</div>
+                  </div>
+                )}
                 <div style={hintStyle}>Pick a category, then the items you sell. {cats.length}/8 selected.</div>
               </div>
             </section>
