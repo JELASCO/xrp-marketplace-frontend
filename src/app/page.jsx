@@ -495,7 +495,7 @@ export default function HomePage() {
             <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Resources</div>
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               <a href="#how-it-works" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>How escrow works</a>
-              <Link href="/tos#fees" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Fees</Link>
+              <Link href="/pro#pricing" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Fees</Link>
               <a href="mailto:support@xrpharbor.com" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Support</a>
             </div>
           </div>
