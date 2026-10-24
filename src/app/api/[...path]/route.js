@@ -721,11 +721,114 @@ function getStore() {
   return globalThis.__xrpharborStore;
 }
 
-function enrichListing(store, l) {
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const XRPL_CLASSIC_RE = /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/;
+const XRPL_XADDR_RE = /^[XT][1-9A-HJ-NP-Za-km-z]{46}$/;
+
+function hasPrototypePollution(value, seen = new WeakSet()) {
+  if (!value || typeof value !== 'object') return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    return value.some(item => hasPrototypePollution(item, seen));
+  }
+  const ownNames = Object.getOwnPropertyNames(value);
+  for (const key of ownNames) {
+    if (DANGEROUS_KEYS.has(key)) return true;
+    if (value[key] && typeof value[key] === 'object' && hasPrototypePollution(value[key], seen)) return true;
+  }
+  return false;
+}
+
+function stripPrototypePollution(value, seen = new WeakSet()) {
+  if (!value || typeof value !== 'object') return value;
+  if (seen.has(value)) return value;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      if (value[i] && typeof value[i] === 'object') {
+        value[i] = stripPrototypePollution(value[i], seen);
+      }
+    }
+    return value;
+  }
+  for (const key of Object.getOwnPropertyNames(value)) {
+    if (DANGEROUS_KEYS.has(key)) {
+      delete value[key];
+    } else if (value[key] && typeof value[key] === 'object') {
+      value[key] = stripPrototypePollution(value[key], seen);
+    }
+  }
+  return value;
+}
+
+function isValidUuid(val) {
+  return typeof val === 'string' && UUID_RE.test(val.trim());
+}
+
+function isValidWalletAddress(val) {
+  if (typeof val !== 'string') return false;
+  const trimmed = val.trim();
+  return XRPL_CLASSIC_RE.test(trimmed) || XRPL_XADDR_RE.test(trimmed);
+}
+
+function validatePositiveAmount(val, max = 100000000) {
+  if (val === null || val === undefined || typeof val === 'boolean' || typeof val === 'object') return false;
+  if (typeof val === 'string' && val.trim() === '') return false;
+  const num = typeof val === 'number' ? val : Number(String(val).trim());
+  return Number.isFinite(num) && num > 0 && num >= 0.000001 && num <= max;
+}
+
+function sanitizeString(val, maxLen = 1000) {
+  if (typeof val !== 'string') return '';
+  const cleaned = val.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+  return maxLen > 0 ? cleaned.slice(0, maxLen) : cleaned;
+}
+
+function validateListingPayload(body, partial = false) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { valid: false, error: 'Request body must be a JSON object' };
+  }
+  if (!partial || body.title !== undefined) {
+    if (typeof body.title !== 'string' || body.title.trim().length < 2) {
+      return { valid: false, error: 'Title is required and must be at least 2 characters' };
+    }
+    if (body.title.trim().length > 120) {
+      return { valid: false, error: 'Title must not exceed 120 characters' };
+    }
+  }
+  const hasPrice = body.priceXrp !== undefined || body.price_xrp !== undefined;
+  const rawPrice = body.priceXrp !== undefined ? body.priceXrp : body.price_xrp;
+  if (!partial || hasPrice) {
+    if (!validatePositiveAmount(rawPrice)) {
+      return { valid: false, error: 'priceXrp must be a valid positive number' };
+    }
+  }
+  if (body.description !== undefined && body.description !== null) {
+    if (typeof body.description !== 'string' || body.description.length > 5000) {
+      return { valid: false, error: 'Description must be a string up to 5000 characters' };
+    }
+  }
+  if (body.quantity !== undefined && body.quantity !== null && body.quantity !== '') {
+    const q = Number(body.quantity);
+    if (!Number.isInteger(q) || q < 1 || q > 100000) {
+      return { valid: false, error: 'Quantity must be an integer between 1 and 100,000' };
+    }
+  }
+  if (body.status !== undefined && body.status !== null) {
+    if (!['active', 'paused', 'sold', 'removed'].includes(body.status)) {
+      return { valid: false, error: 'Invalid listing status' };
+    }
+  }
+  return { valid: true };
+}
+
+function enrichListing(store, l, viewerUser = null) {
   if (!l) return null;
   const u = store.users.find(x => x.id === l.seller_id) || {};
   const isPro = Boolean(u.pro_until && new Date(u.pro_until).getTime() > Date.now());
-  return {
+  const copy = {
     ...l,
     username: u.username || 'seller',
     reputation_score: u.reputation_score ?? 4.9,
@@ -734,6 +837,12 @@ function enrichListing(store, l) {
     store_handle: u.store_handle || null,
     seller_is_pro: isPro,
   };
+  const isOwnerOrAdmin = viewerUser && (viewerUser.id === l.seller_id || viewerUser.role === 'admin');
+  if (!isOwnerOrAdmin) {
+    delete copy.digital_content;
+    delete copy.digital_link;
+  }
+  return copy;
 }
 
 function jsonRes(data, status = 200) {
@@ -812,7 +921,24 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   const searchParams = req.nextUrl ? req.nextUrl.searchParams : new URL(req.url).searchParams;
   let body = {};
   if (bodyText) {
-    try { body = JSON.parse(bodyText); } catch {}
+    if (/"(__proto__|constructor|prototype)"\s*:/.test(bodyText)) {
+      return jsonRes({ error: 'Invalid input: prototype pollution keys are not allowed' }, 400);
+    }
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      return jsonRes({ error: 'Malformed JSON payload' }, 400);
+    }
+    if (hasPrototypePollution(body)) {
+      stripPrototypePollution(body);
+      return jsonRes({ error: 'Invalid input: prototype pollution keys are not allowed' }, 400);
+    }
+    stripPrototypePollution(body);
+  }
+  for (const [k] of searchParams.entries()) {
+    if (DANGEROUS_KEYS.has(k)) {
+      return jsonRes({ error: 'Invalid query parameter' }, 400);
+    }
   }
 
   // Auth routes
@@ -823,6 +949,9 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
   if (method === 'POST' && pathStr === 'auth/verify') {
     let walletAddress = body.walletAddress || null;
+    if (walletAddress && !isValidWalletAddress(walletAddress)) {
+      return jsonRes({ error: 'Invalid wallet address' }, 400);
+    }
     const key = (process.env.XUMM_API_KEY || '').trim();
     const secret = (process.env.XUMM_API_SECRET || '').trim();
     if (!walletAddress && body.uuid && !String(body.uuid).startsWith('xumm-') && key && secret) {
@@ -880,6 +1009,25 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     });
   }
 
+  // Admin routes
+  if (segments[0] === 'admin' || (segments[0] === 'disputes' && segments[2] === 'resolve')) {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    if (u.role !== 'admin') return jsonRes({ error: 'Admin only' }, 403);
+    if (pathStr === 'admin/stats' && method === 'GET') {
+      return jsonRes({
+        totalUsers: store.users.length,
+        activeListings: store.listings.filter(l => l.status === 'active').length,
+        completedOrders: store.orders.filter(o => o.status === 'completed').length,
+        totalRevenue: 0,
+      });
+    }
+    if (pathStr === 'admin/users' && method === 'GET') return jsonRes(store.users);
+    if (pathStr === 'admin/disputes' && method === 'GET') return jsonRes([]);
+    if (pathStr === 'admin/reports' && method === 'GET') return jsonRes([]);
+    return jsonRes({ ok: true });
+  }
+
   // Stats & Activity
   if (method === 'GET' && pathStr === 'stats') {
     const activeListings = store.listings.filter(l => l.status === 'active').length;
@@ -916,11 +1064,19 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     const category = searchParams.get('category') || '';
     const game = searchParams.get('game') || '';
     const search = (searchParams.get('search') || '').toLowerCase();
-    const minPrice = parseFloat(searchParams.get('minPrice') || '');
-    const maxPrice = parseFloat(searchParams.get('maxPrice') || '');
+    const rawMinPrice = searchParams.get('minPrice');
+    const rawMaxPrice = searchParams.get('maxPrice');
+    if (rawMinPrice !== null && rawMinPrice !== '' && (!Number.isFinite(Number(rawMinPrice)) || Number(rawMinPrice) < 0)) {
+      return jsonRes({ error: 'minPrice must be a non-negative number' }, 400);
+    }
+    if (rawMaxPrice !== null && rawMaxPrice !== '' && (!Number.isFinite(Number(rawMaxPrice)) || Number(rawMaxPrice) < 0)) {
+      return jsonRes({ error: 'maxPrice must be a non-negative number' }, 400);
+    }
+    const minPrice = parseFloat(rawMinPrice || '');
+    const maxPrice = parseFloat(rawMaxPrice || '');
     const sort = searchParams.get('sort') || 'newest';
-    const limit = parseInt(searchParams.get('limit') || '48', 10);
-    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '48', 10) || 48));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0);
 
     let rows = store.listings.filter(l => l.status === 'active').map(l => enrichListing(store, l));
     if (category) rows = rows.filter(l => l.category === category);
@@ -945,67 +1101,73 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   if (method === 'POST' && pathStr === 'listings') {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Please sign in to list an item' }, 401);
-    const { title, description, category, game, platform, priceXrp, images, isDigital, digitalContent, digitalLink, quantity, deliveryTime, tags } = body;
-    if (!title || !priceXrp) return jsonRes({ error: 'title and priceXrp required' }, 400);
+    const check = validateListingPayload(body, false);
+    if (!check.valid) return jsonRes({ error: check.error }, 400);
+    const { title, description, category, game, platform, priceXrp, price_xrp, images, isDigital, digitalContent, digitalLink, quantity, deliveryTime, tags } = body;
+    const finalPrice = Number(priceXrp !== undefined ? priceXrp : price_xrp);
     const newListing = {
       id: crypto.randomUUID(),
       seller_id: u.id,
-      title,
-      description: description || '',
-      category: category || 'other',
-      game: game || null,
-      platform: platform || null,
-      price_xrp: Number(priceXrp),
+      title: sanitizeString(title, 120),
+      description: description ? sanitizeString(description, 5000) : '',
+      category: category ? sanitizeString(category, 30) : 'other',
+      game: game ? sanitizeString(game, 60) : null,
+      platform: platform ? sanitizeString(platform, 30) : null,
+      price_xrp: finalPrice,
       currency: 'XRP',
-      images: Array.isArray(images) ? images : [],
+      images: Array.isArray(images) ? images.slice(0, 10) : [],
       status: 'active',
       is_featured: false,
       featured_until: null,
       is_digital: Boolean(isDigital ?? true),
-      digital_content: digitalContent || null,
-      digital_link: digitalLink || null,
+      digital_content: digitalContent ? sanitizeString(String(digitalContent), 10000) : null,
+      digital_link: digitalLink ? sanitizeString(String(digitalLink), 1000) : null,
       quantity: Math.max(1, parseInt(quantity, 10) || 1),
       quantity_sold: 0,
-      delivery_time: deliveryTime || 'instant',
-      tags: Array.isArray(tags) ? tags.filter(Boolean).slice(0, 8) : [],
+      delivery_time: deliveryTime ? sanitizeString(String(deliveryTime), 40) : 'instant',
+      tags: Array.isArray(tags) ? tags.filter(Boolean).slice(0, 8).map(t => sanitizeString(String(t), 40)) : [],
       views: 1,
       created_at: nowIso(),
     };
     store.listings.unshift(newListing);
-    return jsonRes(enrichListing(store, newListing), 201);
+    return jsonRes(enrichListing(store, newListing, u), 201);
   }
 
   if (segments[0] === 'listings' && segments[1] && segments[2] === 'view' && method === 'POST') {
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid listing ID' }, 400);
     const l = store.listings.find(x => x.id === segments[1]);
     if (l) l.views = (l.views || 0) + 1;
     return jsonRes({ ok: true });
   }
 
   if (segments[0] === 'listings' && segments[1] && segments.length === 2) {
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid listing ID' }, 400);
     const l = store.listings.find(x => x.id === segments[1]);
     if (!l) return jsonRes({ error: 'Listing not found' }, 404);
     if (method === 'GET') {
       l.views = (l.views || 0) + 1;
       const u = ensureAuthUser(store, req);
-      const copy = { ...enrichListing(store, l) };
-      if (!u || u.id !== l.seller_id) {
-        delete copy.digital_content;
-        delete copy.digital_link;
-      }
-      return jsonRes(copy);
+      return jsonRes(enrichListing(store, l, u));
     }
     if (method === 'PATCH') {
       const u = ensureAuthUser(store, req);
-      if (!u || u.id !== l.seller_id) return jsonRes({ error: 'Forbidden' }, 403);
+      if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+      if (u.id !== l.seller_id && u.role !== 'admin') return jsonRes({ error: 'Forbidden' }, 403);
+      const check = validateListingPayload(body, true);
+      if (!check.valid) return jsonRes({ error: check.error }, 400);
+      const nextPrice = body.price_xrp !== undefined ? body.price_xrp : body.priceXrp;
       Object.assign(l, {
-        title: body.title ?? l.title,
-        description: body.description ?? l.description,
-        price_xrp: body.price_xrp != null ? Number(body.price_xrp) : l.price_xrp,
+        title: body.title !== undefined ? sanitizeString(body.title, 120) : l.title,
+        description: body.description !== undefined ? sanitizeString(body.description, 5000) : l.description,
+        price_xrp: nextPrice !== undefined ? Number(nextPrice) : l.price_xrp,
         status: body.status ?? l.status,
       });
-      return jsonRes(enrichListing(store, l));
+      return jsonRes(enrichListing(store, l, u));
     }
     if (method === 'DELETE') {
+      const u = ensureAuthUser(store, req);
+      if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+      if (u.id !== l.seller_id && u.role !== 'admin') return jsonRes({ error: 'Forbidden' }, 403);
       const idx = store.listings.findIndex(x => x.id === segments[1]);
       if (idx !== -1) store.listings.splice(idx, 1);
       return jsonRes({ ok: true });
@@ -1016,9 +1178,14 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   if (method === 'POST' && pathStr === 'orders') {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Please sign in to purchase' }, 401);
-    const l = store.listings.find(x => x.id === body.listingId && x.status === 'active');
+    const listingId = body.listingId !== undefined ? body.listingId : body.listing_id;
+    if (!isValidUuid(listingId)) return jsonRes({ error: 'Valid listingId (UUID) is required' }, 400);
+    const l = store.listings.find(x => x.id === listingId && x.status === 'active');
     if (!l) return jsonRes({ error: 'Listing not found or not active' }, 404);
     if (l.seller_id === u.id) return jsonRes({ error: 'Cannot buy your own listing' }, 400);
+    if (l.quantity != null && l.quantity_sold != null && l.quantity_sold >= l.quantity) {
+      return jsonRes({ error: 'This item is sold out' }, 400);
+    }
     const seller = store.users.find(x => x.id === l.seller_id) || {};
     const commissionRate = 0.03;
     const commission = Number((l.price_xrp * commissionRate).toFixed(6));
@@ -1059,16 +1226,24 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   }
 
   if (segments[0] === 'orders' && segments[1]) {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
     const orderId = segments[1];
+    if (!isValidUuid(orderId)) return jsonRes({ error: 'Invalid order ID' }, 400);
     const order = store.orders.find(x => x.id === orderId);
     if (!order) return jsonRes({ error: 'Order not found' }, 404);
     const listing = store.listings.find(x => x.id === order.listing_id) || {};
+    const isBuyer = u.id === order.buyer_id;
+    const isSeller = u.id === order.seller_id;
+    const isAdmin = u.role === 'admin';
 
     if (segments.length === 2 && method === 'GET') {
+      if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
       return jsonRes(order);
     }
 
     if (segments[2] === 'delivery' && method === 'GET') {
+      if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can access delivery' }, 403);
       if (!['delivered', 'completed'].includes(order.status)) {
         return jsonRes({
           isDigital: true,
@@ -1087,6 +1262,10 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'xumm-payload' && method === 'POST') {
+      if (!isBuyer) return jsonRes({ error: 'Forbidden' }, 403);
+      if (!['pending', 'accepted', 'awaiting_payment'].includes(order.status)) {
+        return jsonRes({ error: 'Order is not awaiting payment' }, 400);
+      }
       order.escrow_finish_after = Math.floor(Date.now() / 1000);
       const payload = await createXummOrDemoPayload({
         TransactionType: 'EscrowCreate',
@@ -1104,6 +1283,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'status' && method === 'GET') {
+      if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
       if (order.status === 'pending' && order.escrow_finish_after) {
         order.status = 'escrow_locked';
         order.escrow_sequence = Math.floor(100000 + Math.random() * 900000);
@@ -1127,6 +1307,10 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'confirm' && method === 'POST') {
+      if (!isBuyer) return jsonRes({ error: 'Forbidden' }, 403);
+      if (['completed', 'refunded', 'disputed', 'cancelled'].includes(order.status)) {
+        return jsonRes({ error: 'Order already ' + order.status }, 400);
+      }
       order.escrow_confirm_pending = true;
       const payload = await createXummOrDemoPayload({
         TransactionType: 'EscrowFinish',
@@ -1137,26 +1321,107 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       return jsonRes({ xumm: payload, orderId: order.id });
     }
 
+    if (segments[2] === 'escrow' && segments[3] === 'cancel' && method === 'POST') {
+      if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can reclaim this escrow' }, 403);
+      if (!order.escrow_sequence) return jsonRes({ error: 'No active escrow on this order' }, 400);
+      const payload = await createXummOrDemoPayload({
+        TransactionType: 'EscrowCancel',
+        Account: order.buyer_wallet_address,
+        Owner: order.buyer_wallet_address,
+        OfferSequence: order.escrow_sequence,
+      });
+      return jsonRes({ xumm: payload, orderId: order.id });
+    }
+
+    if (segments[2] === 'escrow' && segments[3] === 'claim' && method === 'POST') {
+      if (!isSeller) return jsonRes({ error: 'Only the seller can claim this payout' }, 403);
+      if (order.status !== 'release_approved') return jsonRes({ error: 'No release has been approved for this order' }, 400);
+      const payload = await createXummOrDemoPayload({
+        TransactionType: 'EscrowFinish',
+        Account: order.seller_wallet_address,
+        Owner: order.buyer_wallet_address,
+        OfferSequence: order.escrow_sequence || 100001,
+      });
+      return jsonRes({ xumm: payload, orderId: order.id });
+    }
+
     if (segments[2] === 'deliver' && method === 'POST') {
+      if (!isSeller) return jsonRes({ error: 'Only the seller can mark this order delivered' }, 403);
+      if (!['escrow_locked', 'in_escrow'].includes(order.status)) {
+        return jsonRes({ error: 'Order is not awaiting delivery' }, 400);
+      }
       order.status = 'delivered';
       order.updated_at = nowIso();
       return jsonRes({ status: 'delivered' });
     }
 
     if (segments[2] === 'cancel' && method === 'POST') {
+      if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
+      if (!['pending', 'awaiting_payment'].includes(order.status)) {
+        return jsonRes({ error: 'This order can no longer be cancelled' }, 400);
+      }
       order.status = 'cancelled';
       order.updated_at = nowIso();
       return jsonRes({ status: 'cancelled' });
     }
 
     if (segments[2] === 'review' && method === 'POST') {
+      if (!isBuyer) return jsonRes({ error: 'Only the buyer can review this order' }, 403);
+      const rawRating = body.rating;
+      const r = typeof rawRating === 'boolean' || rawRating === null || rawRating === undefined || rawRating === '' ? NaN : Number(rawRating);
+      if (!Number.isInteger(r) || r < 1 || r > 5) {
+        return jsonRes({ error: 'Rating must be an integer between 1 and 5' }, 400);
+      }
+      if (body.comment !== undefined && body.comment !== null && (typeof body.comment !== 'string' || body.comment.length > 2000)) {
+        return jsonRes({ error: 'Review comment must be a string up to 2000 characters' }, 400);
+      }
+      if (order.status !== 'completed') {
+        return jsonRes({ error: 'Can only review completed orders' }, 400);
+      }
       return jsonRes({ ok: true });
     }
 
     if (segments[2] === 'dispute' && method === 'POST') {
+      if (!isBuyer && !isSeller) return jsonRes({ error: 'Forbidden' }, 403);
+      if (['completed', 'cancelled', 'refunded'].includes(order.status)) {
+        return jsonRes({ error: 'This order is already ' + order.status + ' and cannot be disputed.' }, 400);
+      }
+      if (body.reason !== undefined && body.reason !== null && (typeof body.reason !== 'string' || body.reason.length > 2000)) {
+        return jsonRes({ error: 'Dispute reason must be a string up to 2000 characters' }, 400);
+      }
       order.status = 'disputed';
       return jsonRes({ status: 'disputed' });
     }
+  }
+
+  // Offers
+  if (method === 'POST' && pathStr === 'offers') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const listingId = body.listingId !== undefined ? body.listingId : body.listing_id;
+    const amountXrp = body.amountXrp !== undefined ? body.amountXrp : body.amount_xrp;
+    if (!isValidUuid(listingId)) return jsonRes({ error: 'Valid listingId (UUID) is required' }, 400);
+    if (!validatePositiveAmount(amountXrp)) return jsonRes({ error: 'amountXrp must be a positive number' }, 400);
+    if (body.message !== undefined && body.message !== null && (typeof body.message !== 'string' || body.message.length > 1000)) {
+      return jsonRes({ error: 'Offer message must be a string up to 1000 characters' }, 400);
+    }
+    const l = store.listings.find(x => x.id === listingId && x.status === 'active');
+    if (!l) return jsonRes({ error: 'Listing not found' }, 404);
+    if (l.seller_id === u.id) return jsonRes({ error: 'Cannot offer on own listing' }, 400);
+    const offer = {
+      id: crypto.randomUUID(),
+      listing_id: l.id,
+      buyer_id: u.id,
+      seller_id: l.seller_id,
+      amount_xrp: Number(amountXrp),
+      message: body.message ? sanitizeString(body.message, 1000) : null,
+      currency: l.currency || 'XRP',
+      status: 'pending',
+      created_at: nowIso(),
+      updated_at: nowIso(),
+    };
+    store.offers.unshift(offer);
+    return jsonRes(offer);
   }
 
   // Notifications & Favorites & Stats
@@ -1169,7 +1434,8 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
   if (method === 'POST' && pathStr === 'notifications/read') {
     const u = ensureAuthUser(store, req);
-    if (u) store.notifications.forEach(n => { if (n.user_id === u.id) n.is_read = true; });
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    store.notifications.forEach(n => { if (n.user_id === u.id) n.is_read = true; });
     return jsonRes({ ok: true });
   }
 
@@ -1177,7 +1443,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes([]);
     const ids = new Set(store.favorites.filter(f => f.user_id === u.id).map(f => f.listing_id));
-    return jsonRes(store.listings.filter(l => ids.has(l.id)).map(l => enrichListing(store, l)));
+    return jsonRes(store.listings.filter(l => ids.has(l.id)).map(l => enrichListing(store, l, u)));
   }
 
   if (method === 'GET' && pathStr === 'favorites/ids') {
@@ -1189,6 +1455,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   if (segments[0] === 'favorites' && segments[1]) {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid listing ID' }, 400);
     if (method === 'POST') {
       if (!store.favorites.some(f => f.user_id === u.id && f.listing_id === segments[1])) {
         store.favorites.push({ user_id: u.id, listing_id: segments[1], created_at: nowIso() });
@@ -1223,8 +1490,25 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
       if (method === 'GET') return jsonRes({ store: u.store || null, handle: u.store_handle || null });
       if (method === 'PATCH') {
+        if (!body.name || typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > 80) {
+          return jsonRes({ error: 'Store name is required (max 80 chars)' }, 400);
+        }
+        if (!body.handle || typeof body.handle !== 'string' || !/^[a-z0-9-]{3,40}$/.test(body.handle)) {
+          return jsonRes({ error: 'Store URL must be 3-40 chars: lowercase letters, numbers, hyphens' }, 400);
+        }
+        if (!body.payoutAddress || typeof body.payoutAddress !== 'string' || !isValidWalletAddress(body.payoutAddress.trim())) {
+          return jsonRes({ error: 'Valid XRP Ledger payout address is required' }, 400);
+        }
+        const dupe = store.users.find(x => x.store_handle === body.handle && x.id !== u.id);
+        if (dupe) return jsonRes({ error: 'That store URL is already taken' }, 409);
         u.store_handle = body.handle;
-        u.store = { name: body.name, tagline: body.tagline || '', about: body.about || '', categories: body.categories || [], payoutAddress: body.payoutAddress };
+        u.store = {
+          name: sanitizeString(body.name, 80),
+          tagline: body.tagline ? sanitizeString(String(body.tagline), 200) : '',
+          about: body.about ? sanitizeString(String(body.about), 2000) : '',
+          categories: Array.isArray(body.categories) ? body.categories.slice(0, 4) : [],
+          payoutAddress: body.payoutAddress.trim(),
+        };
         return jsonRes({ store: u.store, handle: u.store_handle });
       }
       if (method === 'DELETE') {
@@ -1233,9 +1517,11 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         return jsonRes({ ok: true });
       }
     } else if (segments[1] && method === 'GET') {
+      if (!/^[a-z0-9-]{2,40}$/i.test(segments[1])) return jsonRes({ error: 'Invalid store handle' }, 400);
       const u = store.users.find(x => x.store_handle === segments[1]);
       if (!u || !u.store) return jsonRes({ error: 'Store not found' }, 404);
-      const listings = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').map(l => enrichListing(store, l));
+      const viewer = ensureAuthUser(store, req);
+      const listings = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').map(l => enrichListing(store, l, viewer));
       return jsonRes({ seller: u, store: u.store, handle: u.store_handle, listings });
     }
   }
@@ -1244,21 +1530,36 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (segments[1] === 'me' && method === 'PATCH') {
       const u = ensureAuthUser(store, req);
       if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
-      if (body.username) u.username = body.username;
-      if (body.bio !== undefined) u.bio = body.bio;
+      if (body.username !== undefined && body.username !== null) {
+        if (typeof body.username !== 'string' || !/^[a-zA-Z0-9_-]{2,40}$/.test(body.username.trim())) {
+          return jsonRes({ error: 'Username must be 2-40 characters (letters, numbers, underscores, hyphens)' }, 400);
+        }
+        u.username = sanitizeString(body.username, 40);
+      }
+      if (body.bio !== undefined && body.bio !== null) {
+        if (typeof body.bio !== 'string' || body.bio.length > 1000) {
+          return jsonRes({ error: 'Bio must be a string up to 1000 characters' }, 400);
+        }
+        u.bio = sanitizeString(body.bio, 1000);
+      }
       return jsonRes(u);
     }
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid user ID' }, 400);
     const target = store.users.find(x => x.id === segments[1]);
     if (segments[2] === 'listings') {
-      return jsonRes(store.listings.filter(l => l.seller_id === segments[1]).map(l => enrichListing(store, l)));
+      const viewer = ensureAuthUser(store, req);
+      return jsonRes(store.listings.filter(l => l.seller_id === segments[1]).map(l => enrichListing(store, l, viewer)));
     }
     if (segments[2] === 'reviews') {
       return jsonRes([]);
     }
     if (target) return jsonRes(target);
+    return jsonRes({ error: 'User not found' }, 404);
   }
 
   if (['messages', 'inquiries', 'offers/received', 'offers/sent'].includes(pathStr) && method === 'GET') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
     return jsonRes([]);
   }
 
