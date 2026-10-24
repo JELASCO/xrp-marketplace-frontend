@@ -38,6 +38,14 @@ const SECURITY_HEADERS = [
     key: 'Content-Security-Policy',
     value: CONTENT_SECURITY_POLICY,
   },
+  {
+    key: 'Access-Control-Allow-Origin',
+    value: 'https://xrpharbor.com',
+  },
+  {
+    key: 'Vary',
+    value: 'Origin',
+  },
 ];
 
 const nextConfig = {
