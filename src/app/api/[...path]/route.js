@@ -707,6 +707,10 @@ function getStore() {
       favorites: [],
       notifications: [],
       offers: [],
+      upgrade_payments: [],
+      usedTxHashes: new Set(),
+      issuedSignInUuids: new Map(),
+      consumedSignInUuids: new Map(),
       messages: [],
       contact_messages: [],
       reviews: [],
@@ -876,9 +880,60 @@ function ensureAuthUser(store, req) {
   return u;
 }
 
+const SIGNIN_UUID_TTL_MS = 5 * 60 * 1000; // 5-minute expiration window
+
+function registerSignInUuid(store, uuid, createdAt = Date.now()) {
+  if (!uuid || typeof uuid !== 'string') return;
+  const norm = uuid.trim();
+  if (!store.issuedSignInUuids) store.issuedSignInUuids = new Map();
+  if (!store.consumedSignInUuids) store.consumedSignInUuids = new Map();
+  store.issuedSignInUuids.set(norm, { createdAt, consumed: false });
+}
+
+function verifyAndConsumeSignInUuid(store, uuid, ttlMs = SIGNIN_UUID_TTL_MS) {
+  if (!uuid || typeof uuid !== 'string' || !uuid.trim() || uuid.trim().length > 128) {
+    return { ok: false, valid: false, error: 'Valid payload uuid is required' };
+  }
+  const norm = uuid.trim();
+  if (!store.issuedSignInUuids) store.issuedSignInUuids = new Map();
+  if (!store.consumedSignInUuids) store.consumedSignInUuids = new Map();
+  const now = Date.now();
+
+  if (store.consumedSignInUuids.has(norm)) {
+    return {
+      ok: false,
+      valid: false,
+      replay: true,
+      error: 'Sign-in payload UUID has already been used (replay rejected)',
+    };
+  }
+  const entry = store.issuedSignInUuids.get(norm);
+  if (entry && entry.consumed) {
+    return {
+      ok: false,
+      valid: false,
+      replay: true,
+      error: 'Sign-in payload UUID has already been used (replay rejected)',
+    };
+  }
+  const createdAt = entry ? entry.createdAt : now;
+  if (now - createdAt > ttlMs) {
+    return {
+      ok: false,
+      valid: false,
+      expired: true,
+      error: 'Sign-in payload UUID has expired (5-minute window exceeded)',
+    };
+  }
+  store.consumedSignInUuids.set(norm, now);
+  store.issuedSignInUuids.set(norm, { createdAt, consumed: true, consumedAt: now });
+  return { ok: true, valid: true, uuid: norm, consumedAt: now };
+}
+
 async function createXummOrDemoPayload(txjson) {
   const key = (process.env.XUMM_API_KEY || '').trim();
   const secret = (process.env.XUMM_API_SECRET || '').trim();
+  const isSignIn = txjson && txjson.TransactionType === 'SignIn';
   if (key && secret) {
     try {
       const r = await fetch('https://xumm.app/api/v1/platform/payload', {
@@ -888,7 +943,7 @@ async function createXummOrDemoPayload(txjson) {
           'x-api-key': key,
           'x-api-secret': secret,
         },
-        body: JSON.stringify({ txjson, options: { expire: 10 } }),
+        body: JSON.stringify({ txjson, options: { expire: isSignIn ? 5 : 10 } }),
       });
       if (r.ok) {
         const d = await r.json();
@@ -944,30 +999,47 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   // Auth routes
   if (method === 'POST' && pathStr === 'auth/signin') {
     const payload = await createXummOrDemoPayload({ TransactionType: 'SignIn' });
+    registerSignInUuid(store, payload.uuid, Date.now());
     return jsonRes(payload);
   }
 
   if (method === 'POST' && pathStr === 'auth/verify') {
-    let walletAddress = body.walletAddress || null;
-    if (walletAddress && !isValidWalletAddress(walletAddress)) {
-      return jsonRes({ error: 'Invalid wallet address' }, 400);
+    const rawUuid = body.uuid;
+    if (!rawUuid || typeof rawUuid !== 'string' || rawUuid.trim().length === 0 || rawUuid.length > 128) {
+      return jsonRes({ error: 'Valid payload uuid is required' }, 400);
     }
+    const cleanUuid = rawUuid.trim();
+    const consumeCheck = verifyAndConsumeSignInUuid(store, cleanUuid, SIGNIN_UUID_TTL_MS);
+    if (!consumeCheck.ok) {
+      return jsonRes({
+        error: consumeCheck.error,
+        replay: Boolean(consumeCheck.replay),
+        expired: Boolean(consumeCheck.expired),
+      }, 400);
+    }
+
+    let walletAddress = null;
     const key = (process.env.XUMM_API_KEY || '').trim();
     const secret = (process.env.XUMM_API_SECRET || '').trim();
-    if (!walletAddress && body.uuid && !String(body.uuid).startsWith('xumm-') && key && secret) {
+    if (!String(cleanUuid).startsWith('xumm-') && key && secret) {
       try {
-        const xr = await fetch(`https://xumm.app/api/v1/platform/payload/${encodeURIComponent(body.uuid)}`, {
+        const xr = await fetch(`https://xumm.app/api/v1/platform/payload/${encodeURIComponent(cleanUuid)}`, {
           headers: { 'x-api-key': key, 'x-api-secret': secret },
         });
         if (xr.ok) {
           const xd = await xr.json();
           if (xd?.meta?.signed && xd?.response?.account) {
             walletAddress = xd.response.account;
+          } else {
+            return jsonRes({ error: 'Not signed yet' }, 400);
           }
         }
       } catch {}
     }
     walletAddress = walletAddress || DEFAULT_DEMO_WALLET;
+    if (!isValidWalletAddress(walletAddress)) {
+      return jsonRes({ error: 'Invalid wallet address' }, 400);
+    }
     let u = store.users.find(x => x.wallet_address === walletAddress);
     if (!u) {
       u = {
@@ -1057,6 +1129,75 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       proCommissionRate: 0.015,
       standardCommissionRate: 0.03,
     });
+  }
+
+  if (method === 'POST' && (pathStr === 'upgrades/payload' || pathStr === 'upgrades/checkout')) {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const kind = body.kind;
+    const pricing = {
+      pro: { days: 30, xrp: parseFloat(process.env.PRO_PRICE_XRP || '50') },
+      featured: { days: parseInt(process.env.FEATURED_DAYS || '7', 10), xrp: parseFloat(process.env.FEATURED_PRICE_XRP || '10') },
+    };
+    if (!kind || typeof kind !== 'string' || !Object.prototype.hasOwnProperty.call(pricing, kind)) {
+      return jsonRes({ error: 'Invalid upgrade kind' }, 400);
+    }
+    if (kind === 'featured') {
+      if (!isValidUuid(body.listingId)) return jsonRes({ error: 'Valid listingId required' }, 400);
+      const l = store.listings.find(x => x.id === body.listingId);
+      if (!l) return jsonRes({ error: 'Listing not found' }, 404);
+      if (l.seller_id !== u.id) return jsonRes({ error: 'Not your listing' }, 403);
+    }
+    // Server-side price authority: xrp and days strictly come from server pricing table, never body
+    const { xrp, days } = pricing[kind];
+    const paymentId = crypto.randomUUID();
+    if (!store.upgrade_payments) store.upgrade_payments = [];
+    store.upgrade_payments.unshift({
+      id: paymentId,
+      user_id: u.id,
+      kind,
+      listing_id: body.listingId || null,
+      amount_xrp: xrp,
+      days,
+      status: 'pending',
+      tx_hash: null,
+      created_at: nowIso(),
+    });
+    const payload = await createXummOrDemoPayload({
+      TransactionType: 'Payment',
+      Account: u.wallet_address,
+      Destination: process.env.PLATFORM_WALLET_ADDRESS || DEFAULT_DEMO_WALLET,
+      Amount: String(Math.round(xrp * 1000000)),
+      Memos: [{ Memo: { MemoData: Buffer.from(`upgrade:${kind}:${paymentId}`).toString('hex').toUpperCase() } }],
+    });
+    return jsonRes({ ...payload, paymentId, amountXrp: xrp, days });
+  }
+
+  if (segments[0] === 'upgrades' && segments[1] && segments[2] === 'verify' && method === 'POST') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid paymentId' }, 400);
+    const p = (store.upgrade_payments || []).find(x => x.id === segments[1]);
+    if (!p) return jsonRes({ error: 'Not found' }, 404);
+    if (p.user_id !== u.id) return jsonRes({ error: 'Forbidden' }, 403);
+    if (p.status === 'confirmed') return jsonRes({ ok: true, alreadyApplied: true });
+    const txHash = body.txHash ? String(body.txHash).trim().toUpperCase() : ('U' + crypto.randomBytes(31).toString('hex').toUpperCase());
+    if (store.usedTxHashes && store.usedTxHashes.has(txHash)) {
+      return jsonRes({ error: 'Duplicate transaction hash (replay attack blocked)' }, 400);
+    }
+    if (store.usedTxHashes) store.usedTxHashes.add(txHash);
+    p.status = 'confirmed';
+    p.tx_hash = txHash;
+    if (p.kind === 'pro') {
+      u.pro_until = futureIso(p.days);
+    } else if (p.kind === 'featured' && p.listing_id) {
+      const l = store.listings.find(x => x.id === p.listing_id);
+      if (l) {
+        l.is_featured = true;
+        l.featured_until = futureIso(p.days);
+      }
+    }
+    return jsonRes({ ok: true, kind: p.kind, days: p.days, txHash });
   }
 
   // Listings
@@ -1186,10 +1327,16 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (l.quantity != null && l.quantity_sold != null && l.quantity_sold >= l.quantity) {
       return jsonRes({ error: 'This item is sold out' }, 400);
     }
+    // Server-side price authority: compute total_xrp, commission_rate, commission_xrp, and seller_receives_xrp
+    // strictly from stored listing and seller records (never from client request body).
     const seller = store.users.find(x => x.id === l.seller_id) || {};
-    const commissionRate = 0.03;
-    const commission = Number((l.price_xrp * commissionRate).toFixed(6));
-    const sellerReceives = Number((l.price_xrp - commission).toFixed(6));
+    const sellerIsPro = Boolean(seller.pro_until && new Date(seller.pro_until).getTime() > Date.now());
+    const commissionRate = sellerIsPro
+      ? parseFloat(process.env.COMMISSION_RATE_PRO || '0.015')
+      : parseFloat(process.env.COMMISSION_RATE || '0.03');
+    const authoritativePriceXrp = Number(Number(l.price_xrp).toFixed(6));
+    const commission = Number((authoritativePriceXrp * commissionRate).toFixed(6));
+    const sellerReceives = Number((authoritativePriceXrp - commission).toFixed(6));
     const order = {
       id: crypto.randomUUID(),
       listing_id: l.id,
@@ -1199,7 +1346,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       seller_id: l.seller_id,
       buyer_wallet_address: u.wallet_address,
       seller_wallet_address: seller.wallet_address || 'rDockMaster9X2pL4nK8vJ6wZ3cT5yB1a2',
-      total_xrp: Number(l.price_xrp),
+      total_xrp: authoritativePriceXrp,
       commission_rate: commissionRate,
       commission_xrp: commission,
       seller_receives_xrp: sellerReceives,
@@ -1266,19 +1413,24 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       if (!['pending', 'accepted', 'awaiting_payment'].includes(order.status)) {
         return jsonRes({ error: 'Order is not awaiting payment' }, 400);
       }
+      // Server-side price authority: compute sellerNet and commission strictly from stored order/listing
+      const authoritativeTotal = Number(Number(order.total_xrp != null ? order.total_xrp : listing.price_xrp).toFixed(6));
+      const authoritativeRate = Number(order.commission_rate != null ? order.commission_rate : 0.03);
+      const commission = Number(Number(order.commission_xrp != null ? order.commission_xrp : (authoritativeTotal * authoritativeRate)).toFixed(6));
+      const sellerNet = Number(Number(order.seller_receives_xrp != null ? order.seller_receives_xrp : (authoritativeTotal - commission)).toFixed(6));
       order.escrow_finish_after = Math.floor(Date.now() / 1000);
       const payload = await createXummOrDemoPayload({
         TransactionType: 'EscrowCreate',
         Account: order.buyer_wallet_address,
         Destination: order.seller_wallet_address,
-        Amount: String(Math.round(Number(order.seller_receives_xrp || order.total_xrp) * 1e6)),
+        Amount: String(Math.round(sellerNet * 1e6)),
       });
       return jsonRes({
         ...payload,
         commission: null,
         commissionXrp: 0,
         feePaid: true,
-        sellerNet: order.seller_receives_xrp || order.total_xrp,
+        sellerNet,
       });
     }
 
@@ -1422,6 +1574,85 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     };
     store.offers.unshift(offer);
     return jsonRes(offer);
+  }
+
+  if (segments[0] === 'offers' && segments[1] && segments[2] === 'accept' && (method === 'PATCH' || method === 'POST')) {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid offer ID' }, 400);
+    const offer = store.offers.find(x => x.id === segments[1]);
+    if (!offer) return jsonRes({ error: 'Offer not found' }, 404);
+    if (offer.seller_id !== u.id) return jsonRes({ error: 'Forbidden' }, 403);
+    if (offer.status !== 'pending') return jsonRes({ error: 'Offer is no longer pending' }, 400);
+
+    // Server-side price authority: compute total_xrp, commission_rate, commission_xrp, and seller_receives_xrp
+    // strictly from stored offer and seller records (ignoring any client request body fields).
+    const sellerIsPro = Boolean(u.pro_until && new Date(u.pro_until).getTime() > Date.now());
+    const acceptRate = sellerIsPro
+      ? parseFloat(process.env.COMMISSION_RATE_PRO || '0.015')
+      : parseFloat(process.env.COMMISSION_RATE || '0.03');
+    const authoritativeOfferXrp = Number(Number(offer.amount_xrp).toFixed(6));
+    const commission = Number((authoritativeOfferXrp * acceptRate).toFixed(6));
+    const sellerReceives = Number((authoritativeOfferXrp - commission).toFixed(6));
+
+    offer.status = 'accepted';
+    offer.updated_at = nowIso();
+    const l = store.listings.find(x => x.id === offer.listing_id);
+    if (l) l.status = 'sold';
+    store.offers.forEach(o => {
+      if (o.listing_id === offer.listing_id && o.id !== offer.id && o.status === 'pending') {
+        o.status = 'declined';
+        o.updated_at = nowIso();
+      }
+    });
+
+    const buyer = store.users.find(x => x.id === offer.buyer_id) || {};
+    const newOrder = {
+      id: crypto.randomUUID(),
+      listing_id: offer.listing_id,
+      listing_title: l ? l.title : 'Digital Item',
+      images: l ? l.images : [],
+      buyer_id: offer.buyer_id,
+      seller_id: u.id,
+      buyer_wallet_address: buyer.wallet_address || DEFAULT_DEMO_WALLET,
+      seller_wallet_address: u.wallet_address,
+      total_xrp: authoritativeOfferXrp,
+      commission_rate: acceptRate,
+      commission_xrp: commission,
+      seller_receives_xrp: sellerReceives,
+      currency: offer.currency || (l && l.currency) || 'XRP',
+      escrow_tx_hash: null,
+      escrow_sequence: null,
+      finish_tx_hash: null,
+      cancel_tx_hash: null,
+      escrow_finish_after: null,
+      status: 'awaiting_payment',
+      created_at: nowIso(),
+      updated_at: nowIso(),
+    };
+    store.orders.unshift(newOrder);
+    offer.order_id = newOrder.id;
+    return jsonRes({
+      ok: true,
+      orderId: newOrder.id,
+      total_xrp: authoritativeOfferXrp,
+      commission_rate: acceptRate,
+      commission_xrp: commission,
+      seller_receives_xrp: sellerReceives,
+    });
+  }
+
+  if (segments[0] === 'offers' && segments[1] && segments[2] === 'decline' && (method === 'PATCH' || method === 'POST')) {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid offer ID' }, 400);
+    const offer = store.offers.find(x => x.id === segments[1]);
+    if (!offer) return jsonRes({ error: 'Offer not found' }, 404);
+    if (offer.seller_id !== u.id) return jsonRes({ error: 'Forbidden' }, 403);
+    if (offer.status !== 'pending') return jsonRes({ error: 'Offer is no longer pending' }, 400);
+    offer.status = 'declined';
+    offer.updated_at = nowIso();
+    return jsonRes({ ok: true });
   }
 
   // Notifications & Favorites & Stats
