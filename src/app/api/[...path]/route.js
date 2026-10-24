@@ -1,9 +1,13 @@
 import crypto from 'crypto';
+import os from 'os';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'xrpharbor-prod-fallback-jwt-secret-2026';
+if (!process.env.JWT_SECRET) {
+  console.warn('[WARN] JWT_SECRET is not set - deriving runtime JWT secret. Set JWT_SECRET in your environment.');
+}
+const JWT_SECRET = process.env.JWT_SECRET || crypto.createHash('sha256').update(process.env.DATABASE_URL || process.env.XUMM_API_SECRET || os.hostname() + '-xrpharbor-runtime-key').digest('hex');
 const DEFAULT_DEMO_WALLET = process.env.DEMO_WALLET_ADDRESS || 'rHarbor7X9mK2pQ8vL4nJ6wZ3cT5yB1dE9';
 
 function base64urlEncode(input) {
