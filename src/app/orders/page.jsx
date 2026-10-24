@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { api } from '../../lib/api';
 import { xhConfirm } from '../../lib/confirm';
 import { useAuthStore } from '../../lib/store';
+import { sanitizeExternalUrl, sanitizeImageUrl } from '../../lib/sanitizeUrl';
 
 const STATUS_MAP = {
   pending:       {label:'Pending',   color:'var(--text2)', bg:'var(--border)'},
@@ -244,8 +245,8 @@ export default function OrdersPage() {
             })()}
             <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Payment in Xaman' : xummModal.mode==='reclaim' ? 'Reclaim Funds in Xaman' : xummModal.mode==='commission' ? 'Pay Marketplace Fee' : 'Lock Payment in Escrow'}</div>
             <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>{xummModal.mode==='release' ? 'Scan to release the escrow to the seller. Your delivery unlocks right after.' : xummModal.mode==='reclaim' ? 'Scan to cancel the escrow and return the funds to your wallet.' : xummModal.mode==='commission' ? `Scan to pay the ${Number(xummModal.commissionXrp).toFixed(2)} XRP marketplace fee. This completes your payment.` : `Scan to lock ${xummModal.sellerNet!=null?Number(xummModal.sellerNet).toFixed(2)+' XRP ':''}in escrow for the seller.`}</div>
-            {xummModal.qrUrl && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={xummModal.qrUrl} alt="Xaman QR" style={{width:192,height:192,display:'block'}}/></div>}
-            {xummModal.deepLink && <a href={xummModal.deepLink} style={{display:'block',background:'var(--accent)',color:'#fff',textAlign:'center',padding:'10px',borderRadius:8,marginBottom:12,fontSize:13,fontWeight:600,textDecoration:'none'}}>Open in Xaman App</a>}
+            {sanitizeImageUrl(xummModal.qrUrl) && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={sanitizeImageUrl(xummModal.qrUrl)} alt="Xaman QR" style={{width:192,height:192,display:'block'}}/></div>}
+            {sanitizeExternalUrl(xummModal.deepLink) && <a href={sanitizeExternalUrl(xummModal.deepLink)} target="_blank" rel="noopener noreferrer" style={{display:'block',background:'var(--accent)',color:'#fff',textAlign:'center',padding:'10px',borderRadius:8,marginBottom:12,fontSize:13,fontWeight:600,textDecoration:'none'}}>Open in Xaman App</a>}
             {xummModal.mode==='commission' ? (
               <button onClick={proceedToEscrow}
                 style={{width:'100%',background:'var(--accent)',border:'none',color:'#fff',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>
@@ -286,8 +287,8 @@ export default function OrdersPage() {
           return (
             <div key={order.id} style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
               <button onClick={() => toggleOpen(order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'16px 18px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
-                {order.images && order.images[0] ? (
-                  <img src={order.images[0]} alt='' style={{width:48,height:48,borderRadius:8,objectFit:'cover',flexShrink:0,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}/>
+                {order.images && sanitizeImageUrl(order.images[0]) ? (
+                  <img src={sanitizeImageUrl(order.images[0])} alt='' style={{width:48,height:48,borderRadius:8,objectFit:'cover',flexShrink:0,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}/>
                 ) : (
                   <div style={{width:48,height:48,borderRadius:8,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>📦</div>
                 )}
@@ -323,9 +324,9 @@ export default function OrdersPage() {
                     <div style={{marginBottom:16,paddingTop:6}}>
                       <div style={{fontSize:10,fontWeight:600,color:'var(--text3)',letterSpacing:'0.05em',marginBottom:8}}>ON-CHAIN PROOF</div>
                       <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                        {order.escrow_tx_hash && <a href={XRPL_TX+order.escrow_tx_hash} target="_blank" rel="noopener" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>🔒 Payment locked in escrow</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.escrow_tx_hash)} ↗</span></a>}
-                        {order.finish_tx_hash && <a href={XRPL_TX+order.finish_tx_hash} target="_blank" rel="noopener" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>✅ Payment released to seller</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.finish_tx_hash)} ↗</span></a>}
-                        {order.cancel_tx_hash && <a href={XRPL_TX+order.cancel_tx_hash} target="_blank" rel="noopener" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>↩️ Funds refunded to buyer</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.cancel_tx_hash)} ↗</span></a>}
+                        {order.escrow_tx_hash && sanitizeExternalUrl(XRPL_TX+order.escrow_tx_hash) && <a href={sanitizeExternalUrl(XRPL_TX+order.escrow_tx_hash)} target="_blank" rel="noopener noreferrer" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>🔒 Payment locked in escrow</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.escrow_tx_hash)} ↗</span></a>}
+                        {order.finish_tx_hash && sanitizeExternalUrl(XRPL_TX+order.finish_tx_hash) && <a href={sanitizeExternalUrl(XRPL_TX+order.finish_tx_hash)} target="_blank" rel="noopener noreferrer" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>✅ Payment released to seller</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.finish_tx_hash)} ↗</span></a>}
+                        {order.cancel_tx_hash && sanitizeExternalUrl(XRPL_TX+order.cancel_tx_hash) && <a href={sanitizeExternalUrl(XRPL_TX+order.cancel_tx_hash)} target="_blank" rel="noopener noreferrer" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12,color:'var(--text2)',textDecoration:'none',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px'}}><span>↩️ Funds refunded to buyer</span><span style={{color:'var(--accent)',fontFamily:'monospace',fontSize:11}}>{shortHash(order.cancel_tx_hash)} ↗</span></a>}
                       </div>
                     </div>
                   )}
@@ -450,10 +451,10 @@ export default function OrdersPage() {
                               </div>
                             </div>
                           )}
-                          {delivery[order.id].link && (
+                          {sanitizeExternalUrl(delivery[order.id].link) && (
                             <div>
                               <div style={{fontSize:11,color:'var(--text3)',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>Download</div>
-                              <a href={delivery[order.id].link} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',background:'var(--accent)',color:'#fff',textDecoration:'none',borderRadius:8,padding:'9px 16px',fontSize:13,fontWeight:600}}>Open download link →</a>
+                              <a href={sanitizeExternalUrl(delivery[order.id].link)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',background:'var(--accent)',color:'#fff',textDecoration:'none',borderRadius:8,padding:'9px 16px',fontSize:13,fontWeight:600}}>Open download link →</a>
                             </div>
                           )}
                         </div>

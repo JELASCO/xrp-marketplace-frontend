@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
 import { useAuthStore } from '../lib/store';
+import { sanitizeExternalUrl, sanitizeImageUrl } from '../lib/sanitizeUrl';
 
 export default function XummLoginModal({ onClose }) {
   const [qrUrl, setQrUrl] = useState(null);
@@ -33,8 +34,8 @@ export default function XummLoginModal({ onClose }) {
     try {
       const resp = await api.auth.startSignIn();
       const { uuid, qrUrl: qr, wsUrl } = resp;
-      setNextUrl(resp.next || resp.nextUrl || resp.deepLink || null);
-      setQrUrl(qr);
+      setNextUrl(sanitizeExternalUrl(resp.next || resp.nextUrl || resp.deepLink || null));
+      setQrUrl(sanitizeImageUrl(qr));
       uuidRef.current = uuid;
       setStatus('pending');
       if (wsUrl) {
@@ -135,11 +136,21 @@ export default function XummLoginModal({ onClose }) {
           </div>
         )}
 
-        {status === 'pending' && qrUrl && (
+        {status === 'pending' && sanitizeImageUrl(qrUrl) && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
             <div style={{ background: '#fff', padding: 12, borderRadius: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
-              <img src={qrUrl} alt="Xaman QR" style={{ width: 192, height: 192, display: 'block' }} />
+              <img src={sanitizeImageUrl(qrUrl)} alt="Xaman QR" style={{ width: 192, height: 192, display: 'block' }} />
             </div>
+            {sanitizeExternalUrl(nextUrl) && (
+              <a
+                href={sanitizeExternalUrl(nextUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 12, color: 'var(--accent, #2080F5)', textDecoration: 'none', fontWeight: 600 }}
+              >
+                Open in Xaman App ↗
+              </a>
+            )}
             <div style={{ fontSize: 13, color: 'var(--text2, #cbd5e1)', textAlign: 'center', lineHeight: 1.6 }}>
               Open <strong style={{ color: 'var(--text, #f8fafc)' }}>Xaman</strong> on your phone and scan to sign in
             </div>

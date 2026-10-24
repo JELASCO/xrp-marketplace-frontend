@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { sanitizeImageUrl } from '../lib/sanitizeUrl';
 
 const CAT_BG = {
   games:    'linear-gradient(135deg,#dbeafe,#eff6ff)',
@@ -60,8 +61,8 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           position: 'relative',
           overflow: 'hidden',
         }}>
-          {images?.[0]
-            ? <img src={images[0]} alt={title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          {sanitizeImageUrl(images?.[0])
+            ? <img src={sanitizeImageUrl(images[0])} alt={title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             : <span style={{ fontSize: 36, opacity: 0.6 }}>{CAT_ICON[catKey] || CAT_ICON.other}</span>}
 
           {/* category badge — top left */}

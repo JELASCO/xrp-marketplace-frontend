@@ -1082,12 +1082,100 @@ function enrichListing(store, l, viewerUser = null) {
   return copy;
 }
 
+const CONTENT_SECURITY_POLICY =
+  "default-src 'self'; " +
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://challenges.cloudflare.com; " +
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+  "font-src 'self' https://fonts.gstatic.com data:; " +
+  "img-src 'self' data: blob: https://xumm.app https://*.xaman.app https://i.ibb.co https://images.unsplash.com https://challenges.cloudflare.com; " +
+  "connect-src 'self' https://xrpharbor.com https://*.xrpharbor.com https://xrp-marketplace-backend-production.up.railway.app https://xumm.app wss://xumm.app https://*.xaman.app wss://*.xaman.app wss://*.xrpl.org https://*.xrpl.org wss://s1.ripple.com https://s1.ripple.com wss://s2.ripple.com https://s2.ripple.com wss://xrplcluster.com https://xrplcluster.com; " +
+  "frame-src 'self' https://xumm.app https://*.xaman.app https://challenges.cloudflare.com blob:; " +
+  "worker-src 'self' blob:; " +
+  "object-src 'none'; " +
+  "base-uri 'self'; " +
+  "form-action 'self'; " +
+  "frame-ancestors 'self'";
+
+const SECURITY_RESPONSE_HEADERS = {
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Content-Security-Policy': CONTENT_SECURITY_POLICY,
+  'Vary': 'Origin',
+};
+
+const ALLOWED_ORIGINS = new Set(
+  [
+    'https://xrpharbor.com',
+    'https://www.xrpharbor.com',
+    'https://xrp-marketplace-frontend.vercel.app',
+    process.env.FRONTEND_URL && process.env.FRONTEND_URL !== '*'
+      ? process.env.FRONTEND_URL.trim().replace(/\/$/, '')
+      : null,
+    ...(process.env.NODE_ENV !== 'production'
+      ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+      : []),
+  ].filter(Boolean)
+);
+
+function getRequestOrigin(req) {
+  if (!req || !req.headers) return '';
+  const raw =
+    typeof req.headers.get === 'function'
+      ? req.headers.get('origin')
+      : req.headers.origin;
+  return typeof raw === 'string' ? raw.trim().replace(/\/$/, '') : '';
+}
+
+function isAllowedOrigin(origin) {
+  return Boolean(origin && ALLOWED_ORIGINS.has(origin));
+}
+
+function getCorsHeaders(req) {
+  const origin = getRequestOrigin(req);
+  if (isAllowedOrigin(origin)) {
+    return {
+      'Vary': 'Origin',
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    };
+  }
+  return {
+    'Vary': 'Origin',
+  };
+}
+
+function withSecurityAndCorsHeaders(resp, req) {
+  const headers = new Headers(resp.headers);
+  for (const [k, v] of Object.entries(SECURITY_RESPONSE_HEADERS)) {
+    headers.set(k, v);
+  }
+  const origin = getRequestOrigin(req);
+  if (isAllowedOrigin(origin)) {
+    headers.set('Access-Control-Allow-Origin', origin);
+    headers.set('Access-Control-Allow-Credentials', 'true');
+  } else {
+    headers.delete('Access-Control-Allow-Origin');
+    headers.delete('Access-Control-Allow-Credentials');
+  }
+  headers.set('Vary', 'Origin');
+  return new Response(resp.body, {
+    status: resp.status,
+    statusText: resp.statusText,
+    headers,
+  });
+}
+
 function jsonRes(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'content-type': 'application/json',
-      'X-Content-Type-Options': 'nosniff',
+      ...SECURITY_RESPONSE_HEADERS,
       ...extraHeaders,
     },
   });
@@ -2087,6 +2175,23 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 }
 
 async function handler(req, ctx) {
+  const origin = getRequestOrigin(req);
+  if (req.method === 'OPTIONS') {
+    if (origin && !isAllowedOrigin(origin)) {
+      return withSecurityAndCorsHeaders(
+        jsonRes({ error: 'CORS origin not allowed' }, 403),
+        req
+      );
+    }
+    return new Response(null, {
+      status: 204,
+      headers: {
+        ...SECURITY_RESPONSE_HEADERS,
+        ...getCorsHeaders(req),
+      },
+    });
+  }
+
   const resolvedParams = ctx && ctx.params ? await ctx.params : {};
   const segments = resolvedParams && resolvedParams.path ? resolvedParams.path : [];
   const pathStr = segments.join('/');
@@ -2095,6 +2200,7 @@ async function handler(req, ctx) {
   const reqHeaders = { 'content-type': 'application/json' };
   const auth = req.headers.get('authorization');
   if (auth) reqHeaders['authorization'] = auth;
+  if (origin && isAllowedOrigin(origin)) reqHeaders['origin'] = origin;
 
   let bodyText = undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -2134,18 +2240,23 @@ async function handler(req, ctx) {
           continue;
         }
         const ct = res.headers.get('content-type') || 'application/json';
-        return new Response(respText, { status: res.status, headers: { 'content-type': ct } });
+        return withSecurityAndCorsHeaders(
+          new Response(respText, { status: res.status, headers: { 'content-type': ct } }),
+          req
+        );
       }
     } catch {
       // Upstream unreachable, try next candidate or fallback to built-in API
     }
   }
 
-  return handleFallbackApi(req, pathStr, segments, bodyText);
+  const fallbackResp = await handleFallbackApi(req, pathStr, segments, bodyText);
+  return withSecurityAndCorsHeaders(fallbackResp, req);
 }
 
-export const GET    = handler;
-export const POST   = handler;
-export const PATCH  = handler;
-export const PUT    = handler;
-export const DELETE = handler;
+export const GET     = handler;
+export const POST    = handler;
+export const PATCH   = handler;
+export const PUT     = handler;
+export const DELETE  = handler;
+export const OPTIONS = handler;

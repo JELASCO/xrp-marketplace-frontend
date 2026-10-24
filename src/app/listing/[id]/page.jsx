@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import XummLoginModal from '../../../components/XummLoginModal';
+import { sanitizeExternalUrl, sanitizeImageUrl } from '../../../lib/sanitizeUrl';
 
 const CAT_BG = {
   games:    'linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05))',
@@ -359,8 +360,8 @@ export default function ListingDetailPage({ params }) {
         {/* Gallery */}
         <div>
           <div className="xh-main-img" style={{ background: CAT_BG[catKey] || CAT_BG.other }}>
-            {listing.images && listing.images.length
-              ? <img src={listing.images[activeImg] || listing.images[0]} alt={listing.title} />
+            {listing.images && listing.images.length && sanitizeImageUrl(listing.images[activeImg] || listing.images[0])
+              ? <img src={sanitizeImageUrl(listing.images[activeImg] || listing.images[0])} alt={listing.title} />
               : <span style={{ fontSize: 84, opacity: 0.6 }}>{CAT_EMOJI[catKey] || '📦'}</span>}
             <span className="badge">{CAT_LABEL[catKey] || 'ITEM'}{listing.game ? ' · ' + listing.game.toUpperCase() : ''}</span>
             <div className="share">
@@ -371,11 +372,14 @@ export default function ListingDetailPage({ params }) {
           </div>
           {listing.images && listing.images.length > 1 && (
             <div className="xh-thumbs">
-              {listing.images.slice(0, 6).map((u, i) => (
-                <button key={i} onClick={() => setActiveImg(i)} className={i === activeImg ? 'on' : ''} aria-label={'View image ' + (i + 1)}>
-                  <img src={u} alt={'thumb ' + (i + 1)} />
-                </button>
-              ))}
+              {listing.images.slice(0, 6).map((u, i) => {
+                const safeThumb = sanitizeImageUrl(u);
+                return safeThumb ? (
+                  <button key={i} onClick={() => setActiveImg(i)} className={i === activeImg ? 'on' : ''} aria-label={'View image ' + (i + 1)}>
+                    <img src={safeThumb} alt={'thumb ' + (i + 1)} />
+                  </button>
+                ) : null;
+              })}
             </div>
           )}
         </div>
@@ -503,7 +507,7 @@ export default function ListingDetailPage({ params }) {
             {similar.map(l => (
               <Link key={l.id} href={'/listing/' + l.id} className="xh-mini-card">
                 <div className="th" style={{ background: CAT_BG[l.category] || CAT_BG.other }}>
-                  {l.images?.[0] ? <img src={l.images[0]} alt={l.title} /> : <span style={{ opacity: 0.6 }}>{CAT_EMOJI[l.category] || '📦'}</span>}
+                  {sanitizeImageUrl(l.images?.[0]) ? <img src={sanitizeImageUrl(l.images[0])} alt={l.title} /> : <span style={{ opacity: 0.6 }}>{CAT_EMOJI[l.category] || '📦'}</span>}
                 </div>
                 <div className="cb">
                   <div className="t">{l.title}</div>
@@ -528,8 +532,8 @@ export default function ListingDetailPage({ params }) {
               <div className="xumm-block">
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--xh-text)', marginBottom: 8 }}>⚡ Complete payment in Xaman</div>
                 <div style={{ fontSize: 12, color: 'var(--xh-text2)', marginBottom: 12 }}>Scan the QR to lock escrow. Seller will review your offer.</div>
-                {offerXumm.qrUrl && <img src={offerXumm.qrUrl} alt="Xaman QR" />}
-                {offerXumm.deepLink && <a href={offerXumm.deepLink}>Open in Xaman app</a>}
+                {sanitizeImageUrl(offerXumm.qrUrl) && <img src={sanitizeImageUrl(offerXumm.qrUrl)} alt="Xaman QR" />}
+                {sanitizeExternalUrl(offerXumm.deepLink) && <a href={sanitizeExternalUrl(offerXumm.deepLink)} target="_blank" rel="noopener noreferrer">Open in Xaman app</a>}
               </div>
             ) : offerSent ? (
               <div className="ok-msg">✅ Offer sent!</div>
