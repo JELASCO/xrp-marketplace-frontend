@@ -800,7 +800,7 @@ const MIME_TO_EXT = {
 };
 const POLYGLOT_RE = /<\s*script\b|javascript\s*:|<\?php|<\s*svg\b|\bonerror\s*=|\bonload\s*=/i;
 
-export function detectImageMagicBytes(buffer) {
+function detectImageMagicBytes(buffer) {
   if (!buffer) return null;
   const buf = Buffer.isBuffer(buffer)
     ? buffer
@@ -861,7 +861,7 @@ export function detectImageMagicBytes(buffer) {
   return null;
 }
 
-export function validateUploadedImage(input, opts = {}) {
+function validateUploadedImage(input, opts = {}) {
   const maxBytes = typeof opts.maxBytes === 'number' && opts.maxBytes > 0 ? opts.maxBytes : MAX_IMAGE_BYTES;
 
   let buf = null;
@@ -953,7 +953,7 @@ export function validateUploadedImage(input, opts = {}) {
   };
 }
 
-export function sanitizeArchivePath(entryInput) {
+function sanitizeArchivePath(entryInput) {
   if (entryInput && typeof entryInput === 'object') {
     const isSymlink =
       entryInput.isSymbolicLink === true ||
@@ -1008,7 +1008,7 @@ export function sanitizeArchivePath(entryInput) {
   return { valid: true, ok: true, safePath: segments.join('/') };
 }
 
-export function validateArchiveEntries(entries) {
+function validateArchiveEntries(entries) {
   if (!Array.isArray(entries)) {
     return { valid: false, ok: false, error: 'Archive entries must be an array' };
   }
