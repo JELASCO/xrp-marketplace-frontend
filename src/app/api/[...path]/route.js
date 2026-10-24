@@ -790,6 +790,239 @@ function sanitizeString(val, maxLen = 1000) {
   return maxLen > 0 ? cleaned.slice(0, maxLen) : cleaned;
 }
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const POLYGLOT_SCAN_BYTES = 4096;
+const MIME_TO_EXT = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+const POLYGLOT_RE = /<\s*script\b|javascript\s*:|<\?php|<\s*svg\b|\bonerror\s*=|\bonload\s*=/i;
+
+export function detectImageMagicBytes(buffer) {
+  if (!buffer) return null;
+  const buf = Buffer.isBuffer(buffer)
+    ? buffer
+    : buffer instanceof Uint8Array
+      ? Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+      : null;
+
+  if (!buf || buf.length < 3) return null;
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    buf.length >= 8 &&
+    buf[0] === 0x89 &&
+    buf[1] === 0x50 &&
+    buf[2] === 0x4e &&
+    buf[3] === 0x47 &&
+    buf[4] === 0x0d &&
+    buf[5] === 0x0a &&
+    buf[6] === 0x1a &&
+    buf[7] === 0x0a
+  ) {
+    return 'image/png';
+  }
+
+  // JPEG: FF D8 FF
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return 'image/jpeg';
+  }
+
+  // GIF: 47 49 46 38 37 61 (GIF87a) or 47 49 46 38 39 61 (GIF89a)
+  if (
+    buf.length >= 6 &&
+    buf[0] === 0x47 &&
+    buf[1] === 0x49 &&
+    buf[2] === 0x46 &&
+    buf[3] === 0x38 &&
+    (buf[4] === 0x37 || buf[4] === 0x39) &&
+    buf[5] === 0x61
+  ) {
+    return 'image/gif';
+  }
+
+  // WEBP: bytes 0..3 === 'RIFF' (52 49 46 46) and bytes 8..11 === 'WEBP' (57 45 42 50)
+  if (
+    buf.length >= 12 &&
+    buf[0] === 0x52 &&
+    buf[1] === 0x49 &&
+    buf[2] === 0x46 &&
+    buf[3] === 0x46 &&
+    buf[8] === 0x57 &&
+    buf[9] === 0x45 &&
+    buf[10] === 0x42 &&
+    buf[11] === 0x50
+  ) {
+    return 'image/webp';
+  }
+
+  return null;
+}
+
+export function validateUploadedImage(input, opts = {}) {
+  const maxBytes = typeof opts.maxBytes === 'number' && opts.maxBytes > 0 ? opts.maxBytes : MAX_IMAGE_BYTES;
+
+  let buf = null;
+  if (Buffer.isBuffer(input)) {
+    buf = input;
+  } else if (input instanceof Uint8Array) {
+    buf = Buffer.from(input.buffer, input.byteOffset, input.byteLength);
+  } else if (typeof input === 'string') {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return { valid: false, ok: false, error: 'Image payload is empty' };
+    }
+
+    let rawBase64 = trimmed;
+    if (/^data:/i.test(trimmed)) {
+      const commaIdx = trimmed.indexOf(',');
+      if (commaIdx === -1) {
+        return { valid: false, ok: false, error: 'Malformed data URI' };
+      }
+      const header = trimmed.slice(0, commaIdx);
+      if (/image\/svg|text\/html|application\/xhtml|application\/javascript|text\/javascript/i.test(header)) {
+        return { valid: false, ok: false, error: 'SVG and HTML uploads are not permitted' };
+      }
+      if (!/;base64$/i.test(header)) {
+        return { valid: false, ok: false, error: 'Data URI must be base64-encoded' };
+      }
+      rawBase64 = trimmed.slice(commaIdx + 1).trim();
+    }
+
+    const compactBase64 = rawBase64.replace(/\s+/g, '');
+    if (!compactBase64 || compactBase64.length === 0) {
+      return { valid: false, ok: false, error: 'Decoded image is empty' };
+    }
+    if (!/^[A-Za-z0-9+/=_-]+$/.test(compactBase64)) {
+      return { valid: false, ok: false, error: 'Invalid base64 encoding' };
+    }
+
+    const normalizedBase64 = compactBase64.replace(/-/g, '+').replace(/_/g, '/');
+    buf = Buffer.from(normalizedBase64, 'base64');
+  } else {
+    return { valid: false, ok: false, error: 'Image input must be a Buffer or base64 string' };
+  }
+
+  if (!buf || buf.length === 0) {
+    return { valid: false, ok: false, error: 'Decoded image is empty' };
+  }
+
+  if (buf.length > maxBytes) {
+    return { valid: false, ok: false, error: 'Image exceeds maximum allowed size (5 MB)' };
+  }
+
+  const mimeType = detectImageMagicBytes(buf);
+  if (!mimeType) {
+    return {
+      valid: false,
+      ok: false,
+      error: 'Invalid or unsupported image magic bytes (only PNG, JPEG, GIF, and WEBP are allowed)',
+    };
+  }
+
+  const headSlice = buf.subarray(0, Math.min(buf.length, POLYGLOT_SCAN_BYTES)).toString('latin1');
+  const tailSlice =
+    buf.length > POLYGLOT_SCAN_BYTES
+      ? buf.subarray(Math.max(0, buf.length - POLYGLOT_SCAN_BYTES)).toString('latin1')
+      : '';
+  const combinedScan = headSlice + '\n' + tailSlice;
+
+  if (POLYGLOT_RE.test(combinedScan)) {
+    return {
+      valid: false,
+      ok: false,
+      error: 'Rejected image containing embedded script or polyglot payload',
+    };
+  }
+
+  const extension = MIME_TO_EXT[mimeType] || 'bin';
+  const uuid = crypto.randomUUID();
+  const safeFilename = `${uuid}.${extension}`;
+
+  return {
+    valid: true,
+    ok: true,
+    mimeType,
+    extension,
+    safeFilename,
+    uuid,
+    size: buf.length,
+    cleanBase64: buf.toString('base64'),
+  };
+}
+
+export function sanitizeArchivePath(entryInput) {
+  if (entryInput && typeof entryInput === 'object') {
+    const isSymlink =
+      entryInput.isSymbolicLink === true ||
+      (typeof entryInput.isSymbolicLink === 'function' && entryInput.isSymbolicLink()) ||
+      /symlink|symbolic|link/i.test(String(entryInput.type || '')) ||
+      Boolean(entryInput.linkname) ||
+      (typeof entryInput.mode === 'number' && (entryInput.mode & 0o170000) === 0o120000);
+
+    if (isSymlink) {
+      return { valid: false, ok: false, error: 'Symbolic links are not permitted in archives' };
+    }
+
+    const extractedPath =
+      entryInput.path ?? entryInput.name ?? entryInput.fileName ?? entryInput.entryName ?? '';
+    return sanitizeArchivePath(extractedPath);
+  }
+
+  if (typeof entryInput !== 'string' || entryInput.length === 0) {
+    return { valid: false, ok: false, error: 'Archive entry path must be a non-empty string' };
+  }
+  if (entryInput.length > 1024) {
+    return { valid: false, ok: false, error: 'Archive entry path exceeds maximum length' };
+  }
+  if (entryInput.includes('\0') || /%00/i.test(entryInput)) {
+    return { valid: false, ok: false, error: 'Archive entry path contains null byte' };
+  }
+  if (/^[\/\\]/.test(entryInput)) {
+    return { valid: false, ok: false, error: 'Archive entry path must not be absolute' };
+  }
+  if (/^[a-zA-Z]:/.test(entryInput) || entryInput.includes(':')) {
+    return { valid: false, ok: false, error: 'Archive entry path must not contain drive prefixes' };
+  }
+  if (
+    /(?:^|[\/\\])\.\.(?:[\/\\]|$)/.test(entryInput) ||
+    /\.\.[\/\\]|[\/\\]\.\./.test(entryInput) ||
+    /%2e%2e/i.test(entryInput)
+  ) {
+    return { valid: false, ok: false, error: 'Zip-Slip path traversal detected in archive entry' };
+  }
+
+  const unified = entryInput.replace(/\\/g, '/').replace(/\/+$/g, '');
+  if (!unified) {
+    return { valid: false, ok: false, error: 'Archive entry path is empty after normalization' };
+  }
+  const segments = unified.split('/');
+  for (const seg of segments) {
+    if (!seg || seg === '.' || seg === '..') {
+      return { valid: false, ok: false, error: 'Unsafe segment in archive entry path' };
+    }
+  }
+
+  return { valid: true, ok: true, safePath: segments.join('/') };
+}
+
+export function validateArchiveEntries(entries) {
+  if (!Array.isArray(entries)) {
+    return { valid: false, ok: false, error: 'Archive entries must be an array' };
+  }
+  const safePaths = [];
+  for (let i = 0; i < entries.length; i++) {
+    const check = sanitizeArchivePath(entries[i]);
+    if (!check.valid) {
+      return { valid: false, ok: false, error: check.error, index: i };
+    }
+    safePaths.push(check.safePath);
+  }
+  return { valid: true, ok: true, safePaths };
+}
+
 function validateListingPayload(body, partial = false) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { valid: false, error: 'Request body must be a JSON object' };
@@ -849,10 +1082,14 @@ function enrichListing(store, l, viewerUser = null) {
   return copy;
 }
 
-function jsonRes(data, status = 200) {
+function jsonRes(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      'X-Content-Type-Options': 'nosniff',
+      ...extraHeaders,
+    },
   });
 }
 
@@ -1792,6 +2029,58 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
     return jsonRes([]);
+  }
+
+  if (method === 'POST' && pathStr === 'upload') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    if (body.archiveEntries !== undefined) {
+      const archiveCheck = validateArchiveEntries(body.archiveEntries);
+      if (!archiveCheck.valid) {
+        return jsonRes({ error: archiveCheck.error || 'Unsafe archive entry path' }, 400);
+      }
+    }
+    const { image } = body;
+    if (!image || typeof image !== 'string') {
+      return jsonRes({ error: 'image (base64) required' }, 400);
+    }
+    if (image.length > 7.5 * 1024 * 1024) {
+      return jsonRes({ error: 'Image too large (max 5MB)' }, 413);
+    }
+    const validation = validateUploadedImage(image);
+    if (!validation.valid) {
+      return jsonRes({ error: validation.error || 'Invalid image file signature' }, 400);
+    }
+    const apiKey = process.env.IMGBB_API_KEY || process.env.IMGBB_KEY;
+    if (apiKey) {
+      try {
+        const fd = new FormData();
+        fd.append('image', validation.cleanBase64);
+        fd.append('name', crypto.randomUUID());
+        fd.append('key', apiKey);
+        const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+        const d = await r.json();
+        const uploadedUrl = d && d.data && typeof d.data.url === 'string' ? d.data.url.trim() : '';
+        if (!d || !d.success || !uploadedUrl.startsWith('https://i.ibb.co/')) {
+          return jsonRes({ error: 'Upload failed' }, 502);
+        }
+        return jsonRes({
+          url: uploadedUrl,
+          mimeType: validation.mimeType,
+          filename: validation.safeFilename,
+          size: validation.size,
+        });
+      } catch {
+        return jsonRes({ error: 'Upload failed' }, 500);
+      }
+    }
+    return jsonRes({
+      url: `https://i.ibb.co/demo/${validation.safeFilename}`,
+      mimeType: validation.mimeType,
+      filename: validation.safeFilename,
+      size: validation.size,
+      demoMode: true,
+    });
   }
 
   return jsonRes({ error: 'Route not found: ' + pathStr }, 404);
