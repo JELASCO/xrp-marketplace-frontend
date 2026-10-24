@@ -11,22 +11,35 @@ const subs = new Set();
 
 function emit() { subs.forEach(function (fn) { fn(state); }); }
 
+function applySpotPrice(p) {
+  if (isNaN(p) || p <= 0) return;
+  let dir = null;
+  if (last != null && p !== last) dir = p > last ? 'up' : 'down';
+  last = p;
+  const change = ref ? ((p - ref) / ref) * 100 : state.change;
+  state = { price: p, change: change, dir: dir };
+  emit();
+  if (dir) setTimeout(function () { state = { price: state.price, change: state.change, dir: null }; emit(); }, 1200);
+}
+
 function fetchSpot() {
   fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot')
     .then(function (r) { return r.json(); })
     .then(function (d) {
-      if (!d || !d.data || !d.data.amount) return;
-      const p = parseFloat(d.data.amount);
-      if (isNaN(p)) return;
-      let dir = null;
-      if (last != null && p !== last) dir = p > last ? 'up' : 'down';
-      last = p;
-      const change = ref ? ((p - ref) / ref) * 100 : state.change;
-      state = { price: p, change: change, dir: dir };
-      emit();
-      if (dir) setTimeout(function () { state = { price: state.price, change: state.change, dir: null }; emit(); }, 1200);
+      if (d && d.data && d.data.amount) {
+        applySpotPrice(parseFloat(d.data.amount));
+        return;
+      }
+      throw new Error('No coinbase spot');
     })
-    .catch(function () {});
+    .catch(function () {
+      fetch('https://api.binance.com/api/v3/ticker/price?symbol=XRPUSDT')
+        .then(function (r) { return r.json(); })
+        .then(function (b) {
+          if (b && b.price) applySpotPrice(parseFloat(b.price));
+        })
+        .catch(function () {});
+    });
 }
 
 function fetchRef() {
