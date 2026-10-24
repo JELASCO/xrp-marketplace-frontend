@@ -142,7 +142,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{maxWidth:980, margin:'0 auto', padding:'0 4px'}}>
-      <style dangerouslySetInnerHTML={{__html: liveCss}}/>
+      <style>{liveCss}</style>
 
       <WelcomeBanner username={user.username} wallet={walletShort}/>
 
