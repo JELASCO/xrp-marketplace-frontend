@@ -1088,7 +1088,7 @@ const CONTENT_SECURITY_POLICY =
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
   "font-src 'self' https://fonts.gstatic.com data:; " +
   "img-src 'self' data: blob: https://xumm.app https://*.xaman.app https://i.ibb.co https://images.unsplash.com https://api.dicebear.com https://challenges.cloudflare.com; " +
-  "connect-src 'self' https://api.coinbase.com https://api.binance.com https://api.coingecko.com https://xrpharbor.com https://*.xrpharbor.com https://xrp-marketplace-backend-production.up.railway.app wss://xrp-marketplace-backend-production.up.railway.app https://xumm.app wss://xumm.app https://*.xaman.app wss://*.xaman.app wss://*.xrpl.org https://*.xrpl.org wss://s1.ripple.com https://s1.ripple.com wss://s2.ripple.com https://s2.ripple.com wss://xrplcluster.com https://xrplcluster.com; " +
+  "connect-src 'self' https://api.coinbase.com wss://ws-feed.exchange.coinbase.com https://api.binance.com wss://stream.binance.com:9443 wss://stream.binance.com https://api.coingecko.com https://xrpharbor.com https://*.xrpharbor.com https://xrp-marketplace-backend-production.up.railway.app wss://xrp-marketplace-backend-production.up.railway.app https://xumm.app wss://xumm.app https://*.xaman.app wss://*.xaman.app wss://*.xrpl.org https://*.xrpl.org wss://s1.ripple.com https://s1.ripple.com wss://s2.ripple.com https://s2.ripple.com wss://xrplcluster.com https://xrplcluster.com; " +
   "frame-src 'self' https://xumm.app https://*.xaman.app https://challenges.cloudflare.com blob:; " +
   "worker-src 'self' blob:; " +
   "object-src 'none'; " +
@@ -2196,6 +2196,34 @@ async function handler(req, ctx) {
   const segments = resolvedParams && resolvedParams.path ? resolvedParams.path : [];
   const pathStr = segments.join('/');
   const search = req.nextUrl ? req.nextUrl.search : '';
+
+  if (req.method === 'GET' && pathStr === 'xrp-price') {
+    try {
+      const br = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT', { cache: 'no-store' });
+      if (br.ok) {
+        const bd = await br.json();
+        if (bd && bd.lastPrice) {
+          return withSecurityAndCorsHeaders(
+            jsonRes({ price: parseFloat(bd.lastPrice), change: bd.priceChangePercent != null ? parseFloat(bd.priceChangePercent) : null, ts: Date.now() }),
+            req
+          );
+        }
+      }
+    } catch {}
+    try {
+      const cr = await fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot', { cache: 'no-store' });
+      if (cr.ok) {
+        const cd = await cr.json();
+        if (cd && cd.data && cd.data.amount) {
+          return withSecurityAndCorsHeaders(
+            jsonRes({ price: parseFloat(cd.data.amount), change: null, ts: Date.now() }),
+            req
+          );
+        }
+      }
+    } catch {}
+    return withSecurityAndCorsHeaders(jsonRes({ error: 'Price unavailable' }, 502), req);
+  }
 
   const reqHeaders = { 'content-type': 'application/json' };
   const auth = req.headers.get('authorization');
