@@ -111,8 +111,10 @@ export default function Navbar() {
               </Link>
             ))}
           </div>
-          <div className="xrp-price" style={{fontSize:12,fontFamily:'DM Mono,monospace',color:'var(--text2)',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:6,padding:'5px 10px',whiteSpace:'nowrap'}}>
-            XRP <span style={{color: priceDir==='up' ? '#16A34A' : priceDir==='down' ? '#ef4444' : 'var(--text)', transition:'color 0.3s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(xrpPrice < 10 ? 4 : 2) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
+          <div className="xrp-price" style={{fontSize:12,fontFamily:'DM Mono,monospace',color:'var(--text2)',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:6,padding:'5px 10px',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
+            <span style={{width:6,height:6,borderRadius:'50%',background: xrpPrice ? '#22c55e' : 'var(--text3)',boxShadow: xrpPrice ? '0 0 6px #22c55e' : 'none',display:'inline-block',flexShrink:0}} title="Live XRP/USD Price" />
+            <span>XRP</span>
+            <span style={{color: priceDir==='up' ? '#16A34A' : priceDir==='down' ? '#ef4444' : 'var(--text)', fontWeight:600, transition:'color 0.25s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(4) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
           </div>
           <button onClick={toggleTheme} aria-label="Toggle theme"
             style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'transparent',border:'1px solid var(--border2)',borderRadius:'50%',cursor:'pointer',color:'var(--text2)',flexShrink:0,padding:0}}>

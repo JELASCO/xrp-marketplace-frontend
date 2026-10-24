@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-// Single shared real-time XRP/USD price source (WebSocket + HTTP fallback)
-// so the navbar and the homepage ticker always show live tick-by-tick updates.
+// Shared real-time XRP/USD price engine (Coinbase + Binance WebSockets + 3s HTTP polling)
+// Keeps the Navbar badge and Homepage ticker synchronized tick-by-tick.
 let state = { price: null, change: null, dir: null };
 let last = null;
 let ref = null;
@@ -19,13 +19,13 @@ function emit() {
 function applySpotPrice(p, explicitChange) {
   if (typeof p !== 'number' || isNaN(p) || p <= 0) return;
   let dir = state.dir;
-  if (last != null && Math.abs(p - last) >= 0.00005) {
+  if (last != null && Math.abs(p - last) >= 0.00001) {
     dir = p > last ? 'up' : 'down';
     if (dirTimer) clearTimeout(dirTimer);
     dirTimer = setTimeout(function () {
       state = { price: state.price, change: state.change, dir: null };
       emit();
-    }, 1400);
+    }, 1600);
   }
   last = p;
   let change = state.change;
@@ -39,30 +39,29 @@ function applySpotPrice(p, explicitChange) {
 }
 
 function fetchSpot() {
-  // 1. Try Binance 24hr ticker (gives both live lastPrice and exact 24h priceChangePercent)
-  fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT', { cache: 'no-store' })
+  // 1. Coinbase Exchange 24hr stats (globally available, gives live last trade + 24h open)
+  fetch('https://api.exchange.coinbase.com/products/XRP-USD/stats', { cache: 'no-store' })
     .then(function (r) {
-      if (!r.ok) throw new Error('binance http ' + r.status);
+      if (!r.ok) throw new Error('cb stats ' + r.status);
       return r.json();
     })
-    .then(function (b) {
-      if (b && b.lastPrice) {
-        const p = parseFloat(b.lastPrice);
-        const chg = b.priceChangePercent != null ? parseFloat(b.priceChangePercent) : undefined;
-        if (b.openPrice) {
-          const op = parseFloat(b.openPrice);
+    .then(function (s) {
+      if (s && s.last) {
+        const p = parseFloat(s.last);
+        if (s.open) {
+          const op = parseFloat(s.open);
           if (!isNaN(op) && op > 0) ref = op;
         }
-        applySpotPrice(p, chg);
+        applySpotPrice(p);
         return;
       }
-      throw new Error('invalid binance payload');
+      throw new Error('empty cb stats');
     })
     .catch(function () {
-      // 2. Fallback to Coinbase spot API
+      // 2. Fallback to Coinbase v2 spot price
       fetch('https://api.coinbase.com/v2/prices/XRP-USD/spot', { cache: 'no-store' })
         .then(function (r) {
-          if (!r.ok) throw new Error('coinbase http ' + r.status);
+          if (!r.ok) throw new Error('cb spot ' + r.status);
           return r.json();
         })
         .then(function (d) {
@@ -70,26 +69,28 @@ function fetchSpot() {
             applySpotPrice(parseFloat(d.data.amount));
             return;
           }
-          throw new Error('invalid coinbase payload');
+          throw new Error('empty cb spot');
         })
         .catch(function () {
           // 3. Fallback to same-origin server endpoint (/api/xrp-price)
           fetch('/api/xrp-price', { cache: 'no-store' })
             .then(function (r) { return r.json(); })
             .then(function (s) {
-              if (s && s.price) applySpotPrice(parseFloat(s.price), s.change != null ? parseFloat(s.change) : undefined);
+              if (s && s.price) {
+                applySpotPrice(parseFloat(s.price), s.change != null ? parseFloat(s.change) : undefined);
+              }
             })
             .catch(function () {});
         });
     });
 }
 
-function connectLiveWebSocket() {
+function connectLiveWebSockets() {
   if (typeof window === 'undefined' || typeof WebSocket === 'undefined') return;
-  let ws = null;
-  let reconnectTimer = null;
 
+  // Stream 1: Coinbase Exchange real-time ticker
   function openCoinbaseWs() {
+    let ws = null;
     try {
       ws = new WebSocket('wss://ws-feed.exchange.coinbase.com');
       ws.onopen = function () {
@@ -115,7 +116,7 @@ function connectLiveWebSocket() {
         } catch (e) {}
       };
       ws.onclose = function () {
-        reconnectTimer = setTimeout(openCoinbaseWs, 5000);
+        setTimeout(openCoinbaseWs, 4000);
       };
       ws.onerror = function () {
         try { ws.close(); } catch (e) {}
@@ -123,15 +124,38 @@ function connectLiveWebSocket() {
     } catch (e) {}
   }
 
+  // Stream 2: Binance real-time trade stream (high-frequency sub-second ticks where reachable)
+  function openBinanceWs() {
+    let bws = null;
+    try {
+      bws = new WebSocket('wss://stream.binance.com:9443/ws/xrpusdt@trade');
+      bws.onmessage = function (evt) {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg && msg.p) {
+            applySpotPrice(parseFloat(msg.p));
+          }
+        } catch (e) {}
+      };
+      bws.onclose = function () {
+        setTimeout(openBinanceWs, 8000);
+      };
+      bws.onerror = function () {
+        try { bws.close(); } catch (e) {}
+      };
+    } catch (e) {}
+  }
+
   openCoinbaseWs();
+  openBinanceWs();
 }
 
 function start() {
   if (started || typeof window === 'undefined') return;
   started = true;
   fetchSpot();
-  connectLiveWebSocket();
-  setInterval(fetchSpot, 4000);
+  connectLiveWebSockets();
+  setInterval(fetchSpot, 3000);
 }
 
 export function subscribeXrp(fn) {
