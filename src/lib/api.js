@@ -17,11 +17,12 @@ async function request(path, options = {}) {
   let data = null;
   try { data = await res.json(); } catch (e) { /* non-JSON response */ }
   if (!res.ok) {
-    if (res.status === 401) throw new Error('Please sign in to continue.');
-    if (res.status === 403) throw new Error((data && data.error) || 'You do not have permission to do that.');
-    if (res.status === 404) throw new Error((data && data.error) || 'Not found.');
-    if (res.status >= 500) throw new Error('Something went wrong on our end. Please try again in a moment.');
-    throw new Error((data && data.error) || 'Request failed. Please try again.');
+    const errMsg = (data && (data.error || data.message)) || null;
+    if (res.status === 401) throw new Error(errMsg || 'Please sign in to continue.');
+    if (res.status === 403) throw new Error(errMsg || 'You do not have permission to do that.');
+    if (res.status === 404) throw new Error(errMsg && !/application not found/i.test(errMsg) ? errMsg : 'Requested resource was not found.');
+    if (res.status >= 500) throw new Error(errMsg || 'Something went wrong on our end. Please try again in a moment.');
+    throw new Error(errMsg || 'Request failed. Please try again.');
   }
   return data;
 }
