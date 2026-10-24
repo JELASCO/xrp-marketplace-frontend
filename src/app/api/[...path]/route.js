@@ -97,6 +97,338 @@ function buildQrSvgDataUri(seedText = 'xrpharbor') {
 const nowIso = () => new Date().toISOString();
 const futureIso = (days) => new Date(Date.now() + days * 86400 * 1000).toISOString();
 
+function svgToDataUri(svg) {
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg.trim());
+}
+
+const LISTING_IMAGES = {
+  karambit: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <defs>
+        <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#090d1a"/>
+          <stop offset="50%" stop-color="#1e1035"/>
+          <stop offset="100%" stop-color="#3b0a45"/>
+        </linearGradient>
+        <radialGradient id="glow1" cx="55%" cy="45%" r="50%">
+          <stop offset="0%" stop-color="#ec4899" stop-opacity="0.45"/>
+          <stop offset="60%" stop-color="#8b5cf6" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="#090d1a" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="blade1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f43f5e"/>
+          <stop offset="40%" stop-color="#ec4899"/>
+          <stop offset="75%" stop-color="#a855f7"/>
+          <stop offset="100%" stop-color="#38bdf8"/>
+        </linearGradient>
+        <linearGradient id="handle1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#1e293b"/>
+          <stop offset="100%" stop-color="#0f172a"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#bg1)"/>
+      <circle cx="440" cy="280" r="260" fill="url(#glow1)"/>
+      <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+        <line x1="0" y1="150" x2="800" y2="150"/><line x1="0" y1="300" x2="800" y2="300"/><line x1="0" y1="450" x2="800" y2="450"/>
+        <line x1="200" y1="0" x2="200" y2="600"/><line x1="400" y1="0" x2="400" y2="600"/><line x1="600" y1="0" x2="600" y2="600"/>
+      </g>
+      <!-- Karambit Silhouette & Galaxy Doppler Blade -->
+      <g transform="translate(390, 290) rotate(-18)">
+        <!-- Curved Doppler Blade -->
+        <path d="M-30,-20 C40,-140 180,-165 255,-75 C175,-95 85,-45 25,25 Z" fill="url(#blade1)" stroke="#f9a8d4" stroke-width="2"/>
+        <path d="M-15,-12 C45,-110 155,-135 225,-72" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="3" stroke-linecap="round"/>
+        <!-- Ergonomic Handle -->
+        <path d="M-35,-22 L28,28 C5,75 -45,115 -105,130 C-125,110 -120,75 -95,45 C-75,20 -55,-2 -35,-22 Z" fill="url(#handle1)" stroke="#475569" stroke-width="2.5"/>
+        <!-- Handle Grips -->
+        <line x1="-25" y1="10" x2="-5" y2="30" stroke="#ec4899" stroke-width="3" stroke-linecap="round"/>
+        <line x1="-48" y1="35" x2="-26" y2="55" stroke="#a855f7" stroke-width="3" stroke-linecap="round"/>
+        <line x1="-72" y1="60" x2="-50" y2="80" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+        <!-- Finger Ring -->
+        <circle cx="-122" cy="138" r="34" fill="none" stroke="#64748b" stroke-width="12"/>
+        <circle cx="-122" cy="138" r="34" fill="none" stroke="#f472b6" stroke-width="2"/>
+      </g>
+      <!-- Bottom Info Bar -->
+      <rect x="40" y="485" width="720" height="72" rx="14" fill="rgba(15,23,42,0.78)" stroke="rgba(236,72,153,0.35)" stroke-width="1.5"/>
+      <text x="68" y="518" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="22" font-weight="700">★ Karambit | Doppler Phase 2</text>
+      <text x="68" y="542" fill="#f472b6" font-family="monospace" font-size="15" font-weight="600">FACTORY NEW • FLOAT 0.0084 • MAX PINK GALAXY</text>
+      <rect x="615" y="503" width="120" height="36" rx="8" fill="rgba(236,72,153,0.2)" stroke="#ec4899"/>
+      <text x="675" y="526" text-anchor="middle" fill="#fbcfe8" font-family="monospace" font-size="14" font-weight="700">CS2 SKIN</text>
+    </svg>
+  `),
+
+  jetbrains: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <defs>
+        <linearGradient id="jbBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0b0f19"/>
+          <stop offset="55%" stop-color="#1a1033"/>
+          <stop offset="100%" stop-color="#0f172a"/>
+        </linearGradient>
+        <linearGradient id="jbGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ff318c"/>
+          <stop offset="50%" stop-color="#ff7700"/>
+          <stop offset="100%" stop-color="#a855f7"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#jbBg)"/>
+      <circle cx="620" cy="140" r="220" fill="#ff318c" fill-opacity="0.14"/>
+      <circle cx="180" cy="420" r="220" fill="#ff7700" fill-opacity="0.12"/>
+      <!-- Code Editor Card -->
+      <rect x="90" y="75" width="620" height="370" rx="18" fill="#111827" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+      <circle cx="122" cy="105" r="7" fill="#ef4444"/>
+      <circle cx="144" cy="105" r="7" fill="#f59e0b"/>
+      <circle cx="166" cy="105" r="7" fill="#10b981"/>
+      <text x="200" y="110" fill="#94a3b8" font-family="monospace" font-size="14">jetbrains-all-products-pro.license</text>
+      <line x1="90" y1="128" x2="710" y2="128" stroke="rgba(255,255,255,0.08)"/>
+      <!-- JetBrains Brand Monogram Box -->
+      <rect x="135" y="165" width="160" height="160" rx="24" fill="url(#jbGrad)"/>
+      <rect x="150" y="180" width="130" height="130" rx="14" fill="#0b0f19"/>
+      <text x="172" y="242" fill="#ffffff" font-family="system-ui,sans-serif" font-size="44" font-weight="900">JB</text>
+      <rect x="172" y="275" width="64" height="8" rx="4" fill="url(#jbGrad)"/>
+      <!-- IDE Badges -->
+      <g font-family="monospace" font-size="15" font-weight="700">
+        <rect x="330" y="168" width="160" height="42" rx="10" fill="#1e293b" stroke="#ff318c"/>
+        <text x="410" y="194" text-anchor="middle" fill="#f8fafc">IntelliJ IDEA</text>
+        <rect x="505" y="168" width="160" height="42" rx="10" fill="#1e293b" stroke="#38bdf8"/>
+        <text x="585" y="194" text-anchor="middle" fill="#f8fafc">WebStorm</text>
+        <rect x="330" y="224" width="160" height="42" rx="10" fill="#1e293b" stroke="#10b981"/>
+        <text x="410" y="250" text-anchor="middle" fill="#f8fafc">PyCharm Pro</text>
+        <rect x="505" y="224" width="160" height="42" rx="10" fill="#1e293b" stroke="#a855f7"/>
+        <text x="585" y="250" text-anchor="middle" fill="#f8fafc">GoLand &amp; CLion</text>
+      </g>
+      <rect x="330" y="284" width="335" height="42" rx="10" fill="rgba(16,185,129,0.14)" stroke="#10b981"/>
+      <text x="497" y="310" text-anchor="middle" fill="#34d399" font-family="monospace" font-size="15" font-weight="700">✓ 10 IDEs + ReSharper • 1 YEAR PRO</text>
+      <text x="400" y="515" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="24" font-weight="700">JetBrains All Products Pack — 1 Year Pro</text>
+      <text x="400" y="545" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="15">OFFICIAL ACTIVATION KEY • MAC / WIN / LINUX</text>
+    </svg>
+  `),
+
+  valorant: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <defs>
+        <linearGradient id="valBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0f0c08"/>
+          <stop offset="50%" stop-color="#1f1710"/>
+          <stop offset="100%" stop-color="#2d1215"/>
+        </linearGradient>
+        <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fde047"/>
+          <stop offset="50%" stop-color="#eab308"/>
+          <stop offset="100%" stop-color="#ca8a04"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#valBg)"/>
+      <!-- Champions Gold Chevron Backdrop -->
+      <polygon points="400,65 570,260 400,455 230,260" fill="none" stroke="url(#goldGrad)" stroke-width="5" opacity="0.55"/>
+      <polygon points="400,105 530,260 400,415 270,260" fill="rgba(234,179,8,0.08)" stroke="#ef4444" stroke-width="2"/>
+      <!-- Valorant V Emblem + Rifle Silhouette -->
+      <path d="M335,175 L385,295 L415,295 L335,130 Z" fill="url(#goldGrad)"/>
+      <path d="M465,130 L405,250 L450,250 L465,220 Z" fill="#ef4444"/>
+      <!-- Tactical Rifle Barrel & Body -->
+      <g transform="translate(155, 295)">
+        <rect x="60" y="16" width="330" height="22" rx="4" fill="#1e293b" stroke="url(#goldGrad)" stroke-width="2.5"/>
+        <rect x="390" y="21" width="115" height="9" rx="3" fill="#eab308"/>
+        <polygon points="60,16 15,58 85,58 115,38" fill="#0f172a" stroke="url(#goldGrad)" stroke-width="2"/>
+        <polygon points="215,38 195,88 235,88 255,38" fill="#ef4444" stroke="url(#goldGrad)" stroke-width="2"/>
+        <rect x="145" y="4" width="95" height="12" rx="4" fill="url(#goldGrad)"/>
+      </g>
+      <!-- Bottom Banner -->
+      <rect x="45" y="475" width="710" height="80" rx="14" fill="rgba(15,12,8,0.85)" stroke="url(#goldGrad)" stroke-width="2"/>
+      <text x="75" y="512" fill="#fef08a" font-family="system-ui,sans-serif" font-size="22" font-weight="800">VALORANT CHAMPIONS 2021 BUNDLE</text>
+      <text x="75" y="538" fill="#fca5a5" font-family="monospace" font-size="15" font-weight="600">CHAMPIONS VANDAL + KARAMBIT + KURONAMI + 4,200 VP</text>
+      <rect x="600" y="497" width="125" height="36" rx="8" fill="url(#goldGrad)"/>
+      <text x="662" y="520" text-anchor="middle" fill="#0f0c08" font-family="monospace" font-size="14" font-weight="800">FULL ACCESS</text>
+    </svg>
+  `),
+
+  uikit: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <defs>
+        <linearGradient id="uiBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0f0728"/>
+          <stop offset="50%" stop-color="#1e1b4b"/>
+          <stop offset="100%" stop-color="#0f172a"/>
+        </linearGradient>
+        <linearGradient id="cube1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#38bdf8"/>
+          <stop offset="100%" stop-color="#6366f1"/>
+        </linearGradient>
+        <linearGradient id="cube2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f472b6"/>
+          <stop offset="100%" stop-color="#9333ea"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#uiBg)"/>
+      <circle cx="400" cy="250" r="230" fill="#6366f1" fill-opacity="0.18"/>
+      <!-- 3D Glassmorphic Floating Cards -->
+      <rect x="130" y="100" width="240" height="160" rx="24" fill="url(#cube1)" opacity="0.9" stroke="#bae6fd" stroke-width="2"/>
+      <circle cx="195" cy="165" r="32" fill="rgba(255,255,255,0.25)"/>
+      <text x="195" y="175" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif" font-size="26" font-weight="800">✕</text>
+      <rect x="245" y="145" width="95" height="14" rx="7" fill="rgba(255,255,255,0.8)"/>
+      <rect x="245" y="170" width="65" height="12" rx="6" fill="rgba(255,255,255,0.45)"/>
+
+      <rect x="420" y="115" width="250" height="165" rx="24" fill="url(#cube2)" opacity="0.9" stroke="#fbcfe8" stroke-width="2"/>
+      <polygon points="545,145 595,195 545,245 495,195" fill="rgba(255,255,255,0.28)" stroke="#fff" stroke-width="2"/>
+
+      <rect x="250" y="235" width="300" height="185" rx="26" fill="rgba(15,23,42,0.88)" stroke="#818cf8" stroke-width="2.5"/>
+      <text x="400" y="305" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="30" font-weight="800">160+ 3D ICONS</text>
+      <text x="400" y="340" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="16" font-weight="700">FIGMA + BLENDER 4.0 SOURCE</text>
+      <rect x="310" y="362" width="180" height="32" rx="16" fill="#4f46e5"/>
+      <text x="400" y="383" text-anchor="middle" fill="#ffffff" font-family="monospace" font-size="13" font-weight="700">WEB3 &amp; FINTECH KIT</text>
+
+      <text x="400" y="515" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="24" font-weight="700">Fintech &amp; Web3 3D Icon + UI Design System</text>
+      <text x="400" y="545" text-anchor="middle" fill="#a5b4fc" font-family="monospace" font-size="15">COMMERCIAL LICENSE • GLASSMORPHIC VECTOR &amp; 3D ASSETS</text>
+    </svg>
+  `),
+
+  dexbot: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <rect width="800" height="600" fill="#06101e"/>
+      <!-- Terminal Window -->
+      <rect x="65" y="55" width="670" height="400" rx="16" fill="#0b192c" stroke="#1e3a5f" stroke-width="2"/>
+      <rect x="65" y="55" width="670" height="42" rx="16" fill="#0f2440"/>
+      <circle cx="95" cy="76" r="6" fill="#ef4444"/>
+      <circle cx="115" cy="76" r="6" fill="#f59e0b"/>
+      <circle cx="135" cy="76" r="6" fill="#10b981"/>
+      <text x="165" y="81" fill="#38bdf8" font-family="monospace" font-size="14" font-weight="700">xrpl-dex-arbitrage-bot — wss://xrplcluster.com [CONNECTED]</text>
+      <!-- Candlesticks & Orderbook Depth -->
+      <g transform="translate(95, 125)">
+        <line x1="40" y1="30" x2="40" y2="140" stroke="#10b981" stroke-width="3"/>
+        <rect x="28" y="55" width="24" height="55" rx="3" fill="#10b981"/>
+        <line x1="95" y1="50" x2="95" y2="165" stroke="#ef4444" stroke-width="3"/>
+        <rect x="83" y="70" width="24" height="60" rx="3" fill="#ef4444"/>
+        <line x1="150" y1="20" x2="150" y2="135" stroke="#10b981" stroke-width="3"/>
+        <rect x="138" y="40" width="24" height="65" rx="3" fill="#10b981"/>
+        <line x1="205" y1="10" x2="205" y2="110" stroke="#10b981" stroke-width="3"/>
+        <rect x="193" y="25" width="24" height="55" rx="3" fill="#10b981"/>
+        <polyline points="20,150 85,115 150,85 220,40 295,60 360,15" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <!-- Live Telemetry Box -->
+      <rect x="470" y="125" width="235" height="175" rx="12" fill="#071324" stroke="#10b981" stroke-width="1.5"/>
+      <text x="490" y="155" fill="#10b981" font-family="monospace" font-size="14" font-weight="700">● ARB SPREAD: +2.84%</text>
+      <text x="490" y="185" fill="#cbd5e1" font-family="monospace" font-size="13">PAIR: XRP / RLUSD</text>
+      <text x="490" y="212" fill="#cbd5e1" font-family="monospace" font-size="13">LATENCY: 14ms</text>
+      <text x="490" y="239" fill="#38bdf8" font-family="monospace" font-size="13">PATHFINDING: AUTO</text>
+      <text x="490" y="268" fill="#fde047" font-family="monospace" font-size="13">ALERTS: TG + DISCORD</text>
+      <!-- Bottom Console Logs -->
+      <rect x="95" y="325" width="610" height="100" rx="10" fill="#060d18" stroke="#1e293b"/>
+      <text x="115" y="355" fill="#34d399" font-family="monospace" font-size="14">[12:04:19] Ledger #91844210 closed • Best ask 2.412 XRP • Spread +2.84%</text>
+      <text x="115" y="382" fill="#38bdf8" font-family="monospace" font-size="14">[12:04:20] Auto-path routed via XRPL OfferCreate (tesSUCCESS)</text>
+      <text x="115" y="408" fill="#94a3b8" font-family="monospace" font-size="14">Full TypeScript + Node.js Source Code Included</text>
+      <text x="400" y="512" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="24" font-weight="700">XRPL DEX Arbitrage &amp; Orderbook Monitor Bot</text>
+      <text x="400" y="542" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="15">NODE.JS + TYPESCRIPT • FULL SOURCE CODE &amp; DOCS</text>
+    </svg>
+  `),
+
+  wowgold: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <defs>
+        <radialGradient id="wowBg" cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stop-color="#451a03"/>
+          <stop offset="55%" stop-color="#1c1008"/>
+          <stop offset="100%" stop-color="#0c0a09"/>
+        </radialGradient>
+        <linearGradient id="coinGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fef08a"/>
+          <stop offset="45%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#b45309"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#wowBg)"/>
+      <!-- Glowing Ornate Crest -->
+      <circle cx="400" cy="235" r="155" fill="rgba(245,158,11,0.12)" stroke="url(#coinGrad)" stroke-width="4"/>
+      <circle cx="400" cy="235" r="132" fill="none" stroke="#fde047" stroke-width="1.5" stroke-dasharray="10 6"/>
+      <!-- Stacked Gold Coins Illustration -->
+      <g transform="translate(400, 235)">
+        <circle cx="-65" cy="30" r="54" fill="url(#coinGrad)" stroke="#fef08a" stroke-width="3"/>
+        <circle cx="65" cy="30" r="54" fill="url(#coinGrad)" stroke="#fef08a" stroke-width="3"/>
+        <circle cx="0" cy="-10" r="68" fill="url(#coinGrad)" stroke="#ffffff" stroke-width="3.5"/>
+        <text x="0" y="12" text-anchor="middle" fill="#451a03" font-family="serif" font-size="56" font-weight="900">W</text>
+      </g>
+      <!-- Banner -->
+      <rect x="75" y="435" width="650" height="115" rx="16" fill="rgba(28,16,8,0.9)" stroke="url(#coinGrad)" stroke-width="2.5"/>
+      <text x="400" y="480" text-anchor="middle" fill="#fef08a" font-family="system-ui,sans-serif" font-size="30" font-weight="800">1,000,000 WOW GOLD</text>
+      <text x="400" y="512" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="16" font-weight="700">THE WAR WITHIN • EU &amp; US ALL REALMS • 15 MIN DELIVERY</text>
+      <text x="400" y="536" text-anchor="middle" fill="#d6d3d1" font-family="sans-serif" font-size="13">Hand-farmed stock • Guild Bank or Trade Delivery</text>
+    </svg>
+  `),
+
+  stream: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <defs>
+        <linearGradient id="stBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#090514"/>
+          <stop offset="50%" stop-color="#1e0b36"/>
+          <stop offset="100%" stop-color="#081c2e"/>
+        </linearGradient>
+        <linearGradient id="neon" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#06b6d4"/>
+          <stop offset="50%" stop-color="#a855f7"/>
+          <stop offset="100%" stop-color="#ec4899"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#stBg)"/>
+      <!-- Stream Preview Monitor Frame -->
+      <rect x="85" y="65" width="630" height="370" rx="18" fill="#0f172a" stroke="url(#neon)" stroke-width="4"/>
+      <!-- Top Live Alert Pill -->
+      <rect x="295" y="88" width="210" height="36" rx="18" fill="url(#neon)"/>
+      <text x="400" y="111" text-anchor="middle" fill="#ffffff" font-family="monospace" font-size="15" font-weight="800">★ NEW SUBSCRIBER! ★</text>
+      <!-- Facecam Frame + Gameplay Area -->
+      <rect x="115" y="145" width="175" height="130" rx="12" fill="#1e1b4b" stroke="#06b6d4" stroke-width="3"/>
+      <text x="202" y="215" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="15" font-weight="700">WEBCAM 60FPS</text>
+      <!-- Chat Box -->
+      <rect x="115" y="290" width="175" height="115" rx="12" fill="#111827" stroke="#a855f7" stroke-width="2"/>
+      <text x="135" y="320" fill="#c084fc" font-family="monospace" font-size="12">CHAT OVERLAY</text>
+      <rect x="135" y="335" width="120" height="8" rx="4" fill="#334155"/>
+      <rect x="135" y="352" width="95" height="8" rx="4" fill="#334155"/>
+      <rect x="135" y="369" width="135" height="8" rx="4" fill="#334155"/>
+      <!-- Main Scene Preview -->
+      <rect x="310" y="145" width="375" height="260" rx="14" fill="#131c31" stroke="#ec4899" stroke-width="2.5"/>
+      <text x="497" y="260" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="28" font-weight="800">6 ANIMATED SCENES</text>
+      <text x="497" y="295" text-anchor="middle" fill="#f472b6" font-family="monospace" font-size="15" font-weight="700">+ STINGER TRANSITION &amp; LOGO</text>
+
+      <text x="400" y="505" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="24" font-weight="700">Custom Animated Stream Overlay &amp; Branding Pack</text>
+      <text x="400" y="538" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="15">OBS STUDIO / STREAMLABS / AFTER EFFECTS SOURCE</text>
+    </svg>
+  `),
+
+  steam: svgToDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+      <defs>
+        <linearGradient id="stmBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0a1424"/>
+          <stop offset="50%" stop-color="#172a45"/>
+          <stop offset="100%" stop-color="#0b172a"/>
+        </linearGradient>
+        <linearGradient id="stmCard" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#1b2838"/>
+          <stop offset="55%" stop-color="#2a475e"/>
+          <stop offset="100%" stop-color="#1b2838"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#stmBg)"/>
+      <circle cx="400" cy="250" r="240" fill="#38bdf8" fill-opacity="0.12"/>
+      <!-- Steam Gift Card Mockup -->
+      <rect x="135" y="80" width="530" height="330" rx="26" fill="url(#stmCard)" stroke="#66c0f4" stroke-width="3"/>
+      <rect x="135" y="135" width="530" height="55" fill="rgba(102,192,244,0.15)"/>
+      <!-- Steam Piston Emblem -->
+      <circle cx="220" cy="265" r="52" fill="#0f172a" stroke="#66c0f4" stroke-width="5"/>
+      <circle cx="220" cy="265" r="20" fill="#66c0f4"/>
+      <circle cx="275" cy="220" r="18" fill="#66c0f4"/>
+      <line x1="220" y1="265" x2="275" y2="220" stroke="#66c0f4" stroke-width="12" stroke-linecap="round"/>
+      <!-- Value & Details -->
+      <text x="175" y="170" fill="#ffffff" font-family="system-ui,sans-serif" font-size="24" font-weight="800" letter-spacing="2">STEAM WALLET CODE</text>
+      <text x="625" y="275" text-anchor="end" fill="#ffffff" font-family="system-ui,sans-serif" font-size="68" font-weight="900">$100</text>
+      <text x="625" y="310" text-anchor="end" fill="#66c0f4" font-family="monospace" font-size="18" font-weight="700">GLOBAL USD GIFT CARD</text>
+      <rect x="335" y="335" width="290" height="40" rx="10" fill="rgba(16,185,129,0.2)" stroke="#10b981"/>
+      <text x="480" y="360" text-anchor="middle" fill="#34d399" font-family="monospace" font-size="14" font-weight="700">⚡ INSTANT CODE REVEAL</text>
+
+      <text x="400" y="495" text-anchor="middle" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="24" font-weight="700">Steam Global Wallet Gift Card — $100 USD</text>
+      <text x="400" y="530" text-anchor="middle" fill="#66c0f4" font-family="monospace" font-size="15">REGION-FREE DIGITAL CODE • AUTOMATED ESCROW DELIVERY</text>
+    </svg>
+  `),
+};
+
 function getStore() {
   if (!globalThis.__xrpharborStore) {
     globalThis.__xrpharborStore = {
@@ -173,7 +505,7 @@ function getStore() {
           platform: 'PC / Steam',
           price_xrp: 420,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.karambit],
           status: 'active',
           is_featured: true,
           featured_until: futureIso(7),
@@ -197,7 +529,7 @@ function getStore() {
           platform: 'Cross-platform',
           price_xrp: 65,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.jetbrains],
           status: 'active',
           is_featured: true,
           featured_until: futureIso(7),
@@ -221,7 +553,7 @@ function getStore() {
           platform: 'PC / Riot',
           price_xrp: 195,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.valorant],
           status: 'active',
           is_featured: true,
           featured_until: futureIso(5),
@@ -245,7 +577,7 @@ function getStore() {
           platform: 'Figma / Blender',
           price_xrp: 28,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.uikit],
           status: 'active',
           is_featured: false,
           featured_until: null,
@@ -269,7 +601,7 @@ function getStore() {
           platform: 'Node.js',
           price_xrp: 85,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.dexbot],
           status: 'active',
           is_featured: false,
           featured_until: null,
@@ -293,7 +625,7 @@ function getStore() {
           platform: 'PC / Battle.net',
           price_xrp: 45,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.wowgold],
           status: 'active',
           is_featured: false,
           featured_until: null,
@@ -317,7 +649,7 @@ function getStore() {
           platform: 'OBS / After Effects',
           price_xrp: 55,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.stream],
           status: 'active',
           is_featured: false,
           featured_until: null,
@@ -341,7 +673,7 @@ function getStore() {
           platform: 'Steam',
           price_xrp: 38,
           currency: 'XRP',
-          images: [],
+          images: [LISTING_IMAGES.steam],
           status: 'active',
           is_featured: false,
           featured_until: null,
