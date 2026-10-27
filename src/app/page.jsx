@@ -401,12 +401,20 @@ export default function HomePage() {
               activeListingsCount: 1
             }
           ]).map(st => {
-            const accent = st.accentColor || '#2563eb';
-            const safeBanner = st.bannerUrl ? sanitizeImageUrl(st.bannerUrl) : '';
-            const safeLogo = st.logoUrl ? sanitizeImageUrl(st.logoUrl) : '';
-            const initial = (st.name || st.sellerUsername || st.handle || '?').slice(0, 1).toUpperCase();
-            const trades = st.sellerTotalSales != null ? st.sellerTotalSales : 0;
-            const rating = st.sellerRating ? Number(st.sellerRating).toFixed(1) : '5.0';
+            const sObj = st.store || st;
+            const selObj = st.seller || {};
+            const storeName = sObj.name || st.name || st.handle;
+            const storeTagline = sObj.tagline || sObj.about || st.tagline || st.bio || 'Official verified Pro storefront on XRPHarbor.';
+            const storeAnnouncement = sObj.announcement || st.announcement || '';
+            const accent = sObj.accentColor || st.accentColor || '#2563eb';
+            const rawBanner = sObj.bannerUrl || st.bannerUrl || '';
+            const rawLogo = sObj.logoUrl || st.logoUrl || '';
+            const safeBanner = rawBanner ? sanitizeImageUrl(rawBanner) : '';
+            const safeLogo = rawLogo ? sanitizeImageUrl(rawLogo) : '';
+            const initial = (storeName || selObj.username || st.sellerUsername || st.handle || '?').slice(0, 1).toUpperCase();
+            const trades = selObj.total_sales != null ? selObj.total_sales : (st.sellerTotalSales != null ? st.sellerTotalSales : 0);
+            const ratingVal = selObj.reputation_score || st.sellerRating;
+            const rating = ratingVal ? Number(ratingVal).toFixed(1) : '5.0';
             const itemsCount = st.activeListingsCount != null ? st.activeListingsCount : '—';
             return (
               <Link key={st.handle} href={`/store/${st.handle}`} style={{background:'var(--xh-surface)',border:'1.5px solid rgba(245,158,11,0.32)',borderRadius:16,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 12px 28px -8px rgba(10,35,66,.16)',overflow:'hidden',display:'flex',flexDirection:'column',textDecoration:'none',transition:'transform .18s,box-shadow .18s'}}>
@@ -421,24 +429,24 @@ export default function HomePage() {
                 <div style={{padding:'0 18px 18px',display:'flex',flexDirection:'column',gap:12,flex:1}}>
                   <div style={{display:'flex',alignItems:'flex-end',gap:12,marginTop:-22,position:'relative',zIndex:2}}>
                     <div style={{width:50,height:50,borderRadius:13,background:accent,color:'#fff',fontWeight:800,fontSize:20,display:'grid',placeItems:'center',flex:'none',border:'3px solid var(--xh-surface)',boxShadow:'0 6px 14px rgba(10,22,40,0.18)',overflow:'hidden'}}>
-                      {safeLogo ? <img src={safeLogo} alt={st.name} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : initial}
+                      {safeLogo ? <img src={safeLogo} alt={storeName} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : initial}
                     </div>
                     <div style={{minWidth:0,paddingBottom:2}}>
                       <div style={{display:'flex',alignItems:'center',gap:6,fontWeight:800,fontSize:15.5,color:'var(--xh-text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                        <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{st.name}</span>
+                        <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{storeName}</span>
                         <span style={{color:'#f59e0b',display:'inline-flex',flexShrink:0}} title="Verified Pro Storefront">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5.2c0 4 2.9 7.2 7 8.8 4.1-1.6 7-4.8 7-8.8V6z"/><path d="m9.3 12 1.9 1.9L15 10"/></svg>
                         </span>
                       </div>
                     </div>
                   </div>
-                  {st.announcement && (
+                  {storeAnnouncement && (
                     <div style={{fontSize:11.5,fontWeight:600,color:'#b45309',background:'rgba(245,158,11,0.10)',border:'1px solid rgba(245,158,11,0.25)',borderRadius:8,padding:'6px 10px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                      {st.announcement}
+                      {storeAnnouncement}
                     </div>
                   )}
                   <div style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.5,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',flex:1}}>
-                    {st.tagline || st.bio || 'Official verified Pro storefront on XRPHarbor.'}
+                    {storeTagline}
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',background:'var(--xh-bg2)',borderRadius:10,overflow:'hidden'}}>
                     <div style={{padding:'10px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:14.5,color:'var(--xh-text)',lineHeight:1,marginBottom:4}}>{trades}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>TRADES</div></div>
