@@ -35,7 +35,7 @@ export default function ProPage() {
     setVerifying(true); setError('');
     try {
       const r = await api.upgrades.verify(modal.paymentId);
-      if (r.ok) { setModal(null); setDone('Pro activated! Your lower fees and badge are now live.'); if (refreshUser) await refreshUser(); }
+      if (r.ok) { setModal(null); setDone('Pro activated! Your Pro badge and priority search placement are now live.'); if (refreshUser) await refreshUser(); }
       else setError(r.error || 'Not verified yet');
     } catch (e) { setError(e.message); }
     setVerifying(false);
@@ -50,8 +50,8 @@ export default function ProPage() {
     <main style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 36 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>XRPHarbor Pro</div>
-        <h1 style={{ fontSize: 30, fontWeight: 800, color: 'var(--text)', marginBottom: 10 }}>Sell more, pay less</h1>
-        <p style={{ fontSize: 15, color: 'var(--text2)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>Upgrade to Pro for lower marketplace fees, a trust badge, and priority placement — or feature a single listing to push it to the top.</p>
+        <h1 style={{ fontSize: 30, fontWeight: 800, color: 'var(--text)', marginBottom: 10 }}>Stand out and sell faster</h1>
+        <p style={{ fontSize: 15, color: 'var(--text2)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>Upgrade to Pro for a verified Pro badge, priority placement in search, and storefront perks — or feature a single listing to push it to the top.</p>
       </div>
 
       {done && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '14px 16px', color: '#34d399', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>{done}</div>}
@@ -67,7 +67,7 @@ export default function ProPage() {
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>/ {pricing ? pricing.pro.days : 30} days</span>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Lower fee: <strong style={{ color: 'var(--text)' }}>{pricing ? (pricing.proCommissionRate*100).toFixed(1) : '1.5'}%</strong> instead of {pricing ? (pricing.standardCommissionRate*100).toFixed(1) : '3'}%</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>0% sales commission</strong> — keep 100% of every sale</li>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Pro badge on your profile & listings</li>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Priority placement in search</li>
           </ul>

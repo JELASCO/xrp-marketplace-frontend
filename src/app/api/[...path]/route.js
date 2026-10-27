@@ -1448,11 +1448,12 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   }
 
   if (method === 'GET' && pathStr === 'upgrades/pricing') {
+    const commissionEnabled = process.env.ENABLE_SALES_COMMISSION === 'true';
     return jsonRes({
       pro: { days: 30, xrp: 50 },
       featured: { days: 7, xrp: 10 },
-      proCommissionRate: 0.015,
-      standardCommissionRate: 0.03,
+      proCommissionRate: commissionEnabled ? 0.015 : 0,
+      standardCommissionRate: commissionEnabled ? 0.03 : 0,
     });
   }
 
@@ -1656,9 +1657,12 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     // strictly from stored listing and seller records (never from client request body).
     const seller = store.users.find(x => x.id === l.seller_id) || {};
     const sellerIsPro = Boolean(seller.pro_until && new Date(seller.pro_until).getTime() > Date.now());
-    const commissionRate = sellerIsPro
-      ? parseFloat(process.env.COMMISSION_RATE_PRO || '0.015')
-      : parseFloat(process.env.COMMISSION_RATE || '0.03');
+    const commissionEnabled = process.env.ENABLE_SALES_COMMISSION === 'true';
+    const commissionRate = commissionEnabled
+      ? (sellerIsPro
+          ? parseFloat(process.env.COMMISSION_RATE_PRO || '0.015')
+          : parseFloat(process.env.COMMISSION_RATE || '0.03'))
+      : 0;
     const authoritativePriceXrp = Number(Number(l.price_xrp).toFixed(6));
     const commission = Number((authoritativePriceXrp * commissionRate).toFixed(6));
     const sellerReceives = Number((authoritativePriceXrp - commission).toFixed(6));
@@ -1739,10 +1743,11 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         return jsonRes({ error: 'Order is not awaiting payment' }, 400);
       }
       // Server-side price authority: compute sellerNet and commission strictly from stored order/listing
+      const commissionEnabled = process.env.ENABLE_SALES_COMMISSION === 'true';
       const authoritativeTotal = Number(Number(order.total_xrp != null ? order.total_xrp : listing.price_xrp).toFixed(6));
-      const authoritativeRate = Number(order.commission_rate != null ? order.commission_rate : 0.03);
-      const commission = Number(Number(order.commission_xrp != null ? order.commission_xrp : (authoritativeTotal * authoritativeRate)).toFixed(6));
-      const sellerNet = Number(Number(order.seller_receives_xrp != null ? order.seller_receives_xrp : (authoritativeTotal - commission)).toFixed(6));
+      const authoritativeRate = commissionEnabled ? Number(order.commission_rate != null ? order.commission_rate : 0.03) : 0;
+      const commission = commissionEnabled ? Number(Number(order.commission_xrp != null ? order.commission_xrp : (authoritativeTotal * authoritativeRate)).toFixed(6)) : 0;
+      const sellerNet = commissionEnabled ? Number(Number(order.seller_receives_xrp != null ? order.seller_receives_xrp : (authoritativeTotal - commission)).toFixed(6)) : authoritativeTotal;
       order.escrow_finish_after = Math.floor(Date.now() / 1000);
       const payload = await createXummOrDemoPayload({
         TransactionType: 'EscrowCreate',
@@ -1913,9 +1918,12 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     // Server-side price authority: compute total_xrp, commission_rate, commission_xrp, and seller_receives_xrp
     // strictly from stored offer and seller records (ignoring any client request body fields).
     const sellerIsPro = Boolean(u.pro_until && new Date(u.pro_until).getTime() > Date.now());
-    const acceptRate = sellerIsPro
-      ? parseFloat(process.env.COMMISSION_RATE_PRO || '0.015')
-      : parseFloat(process.env.COMMISSION_RATE || '0.03');
+    const commissionEnabled = process.env.ENABLE_SALES_COMMISSION === 'true';
+    const acceptRate = commissionEnabled
+      ? (sellerIsPro
+          ? parseFloat(process.env.COMMISSION_RATE_PRO || '0.015')
+          : parseFloat(process.env.COMMISSION_RATE || '0.03'))
+      : 0;
     const authoritativeOfferXrp = Number(Number(offer.amount_xrp).toFixed(6));
     const commission = Number((authoritativeOfferXrp * acceptRate).toFixed(6));
     const sellerReceives = Number((authoritativeOfferXrp - commission).toFixed(6));

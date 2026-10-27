@@ -288,7 +288,7 @@ export default function NewListingPage() {
   );
 
   const priceNum = parseFloat(form.priceXrp);
-  const sellerReceives = (priceNum > 0) ? (priceNum * 0.97).toFixed(6) : null;
+  const sellerReceives = (priceNum > 0) ? priceNum.toFixed(6) : null;
   const usdPrice = (priceNum > 0) ? (form.currency === 'RLUSD' ? priceNum.toFixed(2) : (xrpUsd ? (priceNum * xrpUsd).toFixed(2) : null)) : null;
 
   // Step progression (for the masthead step rail)
@@ -475,7 +475,7 @@ export default function NewListingPage() {
                   )}
                 </div>
                 {usdPrice && <div className="xh-usd-live"><span className="lvdot"></span>≈ ${usdPrice} · live · refreshes every 15s</div>}
-                {sellerReceives && <div className="xh-fee">You'll receive <b>{sellerReceives} {form.currency}</b> after 3% platform fee</div>}
+                {sellerReceives && <div className="xh-fee">You'll receive <b>{sellerReceives} {form.currency}</b> (100% · 0% platform fee)</div>}
               </div>
               <div className="xh-field">
                 <label>Quantity <span className="opt">stock</span></label>
