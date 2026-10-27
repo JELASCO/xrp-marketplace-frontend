@@ -6,7 +6,7 @@ import ListingCard from '../components/ListingCard';
 import { useAuthStore } from '../lib/store';
 import XummLoginModal from '../components/XummLoginModal';
 import { useXrpPrice } from '../lib/xrpPrice';
-import { sanitizeImageUrl } from '../lib/sanitize';
+import { sanitizeImageUrl } from '../lib/sanitizeUrl';
 
 const CATS = [
   {key:'games',label:'Games',emoji:'🎮',sub:'accounts · keys · currency'},
