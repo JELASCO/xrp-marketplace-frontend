@@ -69,6 +69,7 @@ export const api = {
     decline: (id) => request('/offers/' + id + '/decline', { method: 'PATCH' }),
   },
   stores: {
+    list: () => request('/stores'),
     mine: () => request('/stores/me'),
     save: (d) => request('/stores/me', { method: 'PATCH', body: d }),
     get: (handle) => request('/stores/' + handle),

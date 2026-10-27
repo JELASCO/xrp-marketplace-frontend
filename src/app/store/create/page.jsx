@@ -77,7 +77,9 @@ export default function CreateStorePage() {
   const [activeCat, setActiveCat] = useState('Games');
   const [otherText, setOtherText] = useState({});
   const [tagline, setTagline] = useState('');
+  const [announcement, setAnnouncement] = useState('');
   const [about, setAbout] = useState('');
+  const [socials, setSocials] = useState({ discord: '', twitter: '', telegram: '', website: '' });
   const [autoAccept, setAutoAccept] = useState(true);
   const [requireShot, setRequireShot] = useState(true);
   const [vacation, setVacation] = useState(false);
@@ -104,7 +106,16 @@ export default function CreateStorePage() {
         setHandle(d.handle || '');
         setCats(d.store.categories || []);
         setTagline(d.store.tagline || '');
+        setAnnouncement(d.store.announcement || '');
         setAbout(d.store.about || '');
+        if (d.store.socials && typeof d.store.socials === 'object') {
+          setSocials({
+            discord: d.store.socials.discord || '',
+            twitter: d.store.socials.twitter || '',
+            telegram: d.store.socials.telegram || '',
+            website: d.store.socials.website || '',
+          });
+        }
         setWallet(d.store.payoutAddress || '');
         setDestTag(d.store.destinationTag || '');
         setLogoUrl(d.store.logoUrl || null);
@@ -153,13 +164,20 @@ export default function CreateStorePage() {
     else setError('Set a valid store URL first to preview');
   };
 
+  const isProUser = Boolean(user && ((user.proUntil && new Date(user.proUntil) > new Date()) || user.role === 'admin'));
+
   const handlePublish = async () => {
+    if (!isProUser) {
+      setError('Custom Pro Storefronts require an active Pro membership (50 XRP / 30 days).');
+      return;
+    }
     const v = validate();
     if (v) { setError(v); return; }
     setError(''); setSaving(true);
     try {
       await api.stores.save({
-        name, handle, tagline, about, categories: cats,
+        name, handle, tagline, announcement, about, categories: cats,
+        socials,
         settings: { autoAccept, requireShot, vacation, response },
         payoutAddress: wallet, destinationTag: destTag || null,
         logoUrl, bannerUrl,
@@ -195,10 +213,27 @@ export default function CreateStorePage() {
           Back to dashboard
         </Link>
 
+        {!isProUser && (
+          <div style={{ background: 'linear-gradient(135deg, #0b1b33 0%, #173a86 100%)', border: '1px solid rgba(245,158,11,0.5)', borderRadius: 16, padding: '20px 24px', marginBottom: 28, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(245,158,11,0.2)', color: '#fbbf24', borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 6 }}>
+                ★ PRO EXCLUSIVE FEATURE
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>Unlock your Custom Pro Storefront (`xrpharbor.com/store/your-name`)</div>
+              <div style={{ fontSize: 13.5, color: '#cbd5e1', maxWidth: 680 }}>
+                Pro members get a custom storefront URL, live announcement broadcast bar, verified social links, in-store search, unlimited listings, and placement in the Homepage Verified Pro Stores showcase.
+              </div>
+            </div>
+            <Link href="/pro" style={{ background: '#f59e0b', color: '#0b1b33', padding: '11px 22px', borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              Upgrade to Pro (50 XRP) →
+            </Link>
+          </div>
+        )}
+
         <header style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.muted, marginBottom: 6 }}>Seller setup</div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.2, marginBottom: 8, margin: 0, color: C.ink }}>Create your store</h1>
-          <p style={{ fontSize: 15, color: C.muted, maxWidth: 560, marginTop: 8 }}>Set up a storefront buyers can discover and follow. Everything here is editable later — nothing is locked in until your first listing sells.</p>
+          <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.muted, marginBottom: 6 }}>Pro Seller Setup</div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.2, marginBottom: 8, margin: 0, color: C.ink }}>Create your Pro Storefront</h1>
+          <p style={{ fontSize: 15, color: C.muted, maxWidth: 560, marginTop: 8 }}>Set up a branded Pro storefront with live announcements, social links, and in-store search that buyers can discover on the homepage.</p>
         </header>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 40, alignItems: 'start' }} className="store-create-grid">
@@ -285,12 +320,27 @@ export default function CreateStorePage() {
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Tagline</label>
-                <input style={inputStyle} type="text" maxLength={80} placeholder="One sentence under your store name." value={tagline} onChange={(e) => setTagline(e.target.value)} />
-                <div style={hintStyle}>One sentence under your store name. Max 80 characters.</div>
+                <input style={inputStyle} type="text" maxLength={160} placeholder="One sentence under your store name." value={tagline} onChange={(e) => setTagline(e.target.value)} />
+                <div style={hintStyle}>One sentence under your store name. Max 160 characters.</div>
               </div>
-              <div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Live Store Announcement Bar <span style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, marginLeft: 6 }}>★ PRO</span></label>
+                <input style={inputStyle} type="text" maxLength={240} placeholder="e.g. 🟢 Online now — instant delivery within 10 minutes!" value={announcement} onChange={(e) => setAnnouncement(e.target.value)} />
+                <div style={hintStyle}>Pinned at the very top of your store page to broadcast live status or promotions.</div>
+              </div>
+              <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>About</label>
                 <textarea style={{ ...inputStyle, minHeight: 96, resize: 'vertical', lineHeight: 1.5 }} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell buyers about your store, sourcing, and turnaround." />
+              </div>
+              <div>
+                <label style={labelStyle}>Verified Social &amp; Community Links <span style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, marginLeft: 6 }}>★ PRO</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <input style={inputStyle} type="url" placeholder="Discord invite URL (https://discord.gg/...)" value={socials.discord} onChange={(e) => setSocials(s => ({ ...s, discord: e.target.value }))} />
+                  <input style={inputStyle} type="url" placeholder="X / Twitter URL (https://x.com/...)" value={socials.twitter} onChange={(e) => setSocials(s => ({ ...s, twitter: e.target.value }))} />
+                  <input style={inputStyle} type="url" placeholder="Telegram URL (https://t.me/...)" value={socials.telegram} onChange={(e) => setSocials(s => ({ ...s, telegram: e.target.value }))} />
+                  <input style={inputStyle} type="url" placeholder="Website URL (https://...)" value={socials.website} onChange={(e) => setSocials(s => ({ ...s, website: e.target.value }))} />
+                </div>
+                <div style={hintStyle}>Displayed on your storefront header so buyers can verify your reputation and community.</div>
               </div>
             </section>
 

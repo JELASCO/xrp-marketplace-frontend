@@ -67,9 +67,11 @@ export default function ProPage() {
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>/ {pricing ? pricing.pro.days : 30} days</span>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>0% sales commission</strong> — keep 100% of every sale</li>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Pro badge on your profile & listings</li>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Priority placement in search</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Custom Pro Storefront</strong> (<code style={{ fontSize: 12 }}>/store/your-name</code>) with live announcement bar, social links &amp; in-store search</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Unlimited active listings</strong> &amp; up to <strong style={{ color: 'var(--text)' }}>6 photos</strong> per listing (Standard: 5 listings / 3 photos)</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>1 FREE 7-day Featured Listing boost</strong> every 30 days (10 XRP value)</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Featured in the Homepage <strong style={{ color: 'var(--text)' }}>Verified Pro Stores</strong> showcase</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Gold <strong style={{ color: '#f59e0b' }}>★ PRO</strong> badge &amp; automatic priority placement in search</li>
           </ul>
           {proActive
             ? <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>Active until {new Date(user.proUntil).toLocaleDateString('en-US')}. Buying again extends it.</div>
@@ -88,14 +90,43 @@ export default function ProPage() {
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>/ {pricing ? pricing.featured.days : 7} days</span>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Pinned to the top of the marketplace</li>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ "Featured" badge on the card</li>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Per-listing — no subscription</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Pinned to the very top of the homepage &amp; marketplace</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Highlighted "FEATURED" badge on the listing card</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: '#10b981' }}>Pro members get 1 FREE 7-day boost every month!</strong></li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Per-listing — no subscription required</li>
           </ul>
           <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', marginBottom: 10 }}>Go to one of your listings and tap "Feature this listing".</div>
           <button onClick={() => router.push('/dashboard')} style={{ width: '100%', background: 'transparent', color: 'var(--text)', border: `1px solid var(--border2)`, borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
             Go to my listings
           </button>
+        </div>
+      </div>
+
+      {/* Standard vs Pro Comparison Table */}
+      <div style={{ marginTop: 32, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '24px 28px' }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginBottom: 16 }}>Standard vs. Pro Comparison</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 10, fontSize: 13, alignItems: 'center' }}>
+          <div style={{ fontWeight: 700, color: 'var(--text3)', paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>Feature</div>
+          <div style={{ fontWeight: 700, color: 'var(--text3)', paddingBottom: 8, borderBottom: `1px solid ${C.border}`, textAlign: 'center' }}>Standard (Free)</div>
+          <div style={{ fontWeight: 800, color: '#f59e0b', paddingBottom: 8, borderBottom: `1px solid ${C.border}`, textAlign: 'center' }}>★ Pro (50 XRP / 30d)</div>
+
+          {[
+            ['Sales Commission Fee', '0% (Keep 100%)', '0% (Keep 100%)'],
+            ['Active Listings Limit', 'Up to 5 items', 'Unlimited'],
+            ['Photos per Listing', 'Up to 3 photos', 'Up to 6 photos'],
+            ['Custom Storefront (/store/handle)', '—', '✓ Included'],
+            ['Store Live Announcement & Social Links', '—', '✓ Included'],
+            ['In-Store Search & Pinned Showcase', '—', '✓ Included'],
+            ['Homepage "Verified Pro Stores" Showcase', '—', '✓ Included'],
+            ['Monthly Free 7-Day Featured Listing Boost', '—', '✓ 1 Free Boost / mo'],
+            ['Marketplace Search Ranking', 'Standard', '★ Priority Top Tier'],
+          ].map(([feat, std, pro], i) => (
+            <div key={i} style={{ display: 'contents' }}>
+              <div style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}`, color: 'var(--text)', fontWeight: 500 }}>{feat}</div>
+              <div style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}`, color: 'var(--text2)', textAlign: 'center' }}>{std}</div>
+              <div style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}`, color: 'var(--text)', fontWeight: 700, textAlign: 'center' }}>{pro}</div>
+            </div>
+          ))}
         </div>
       </div>
 

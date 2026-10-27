@@ -462,9 +462,13 @@ function getStore() {
           store: {
             name: 'Dockmaster Digital Vault',
             tagline: 'Verified CS2, Valorant & TCG collectibles — instant XRPL escrow delivery',
+            announcement: '🟢 Online now — all CS2 & Valorant orders delivered within 10 minutes via automated escrow!',
             about: 'Trading digital collectibles and game assets since 2021. Every order is backed by on-chain XRPL escrow.',
             categories: ['games', 'accounts'],
             payoutAddress: 'rDockMaster9X2pL4nK8vJ6wZ3cT5yB1a2',
+            bannerUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80',
+            socials: { discord: 'https://discord.gg/xrpharbor', twitter: 'https://x.com/xrpharbor' },
+            settings: { autoAccept: true, requireShot: true, vacation: false, response: 'Within 4 hours (business hours)' },
           },
           created_at: new Date(Date.now() - 60 * 86400 * 1000).toISOString(),
         },
@@ -482,9 +486,13 @@ function getStore() {
           store: {
             name: 'Keyport Software Pier',
             tagline: 'Instant-delivery software licenses & developer tooling',
+            announcement: '⚡ Instant automated key delivery — official JetBrains, Adobe & Web3 dev toolkits in stock.',
             about: 'Authorized digital license distributor with automated escrow delivery.',
             categories: ['software', 'graphics'],
             payoutAddress: 'rKeyPort8M3kP9vL2nJ4wZ6cT1yB5dE7f8',
+            bannerUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1400&q=80',
+            socials: { twitter: 'https://x.com/xrpharbor', website: 'https://xrpharbor.com' },
+            settings: { autoAccept: true, requireShot: false, vacation: false, response: 'Within 4 hours (business hours)' },
           },
           created_at: new Date(Date.now() - 90 * 86400 * 1000).toISOString(),
         },
@@ -497,14 +505,18 @@ function getStore() {
           reputation_score: 4.8,
           total_sales: 76,
           is_verified: true,
-          pro_until: null,
+          pro_until: futureIso(25),
           store_handle: 'captain-lex',
           store: {
             name: 'Captain Lex Armory',
             tagline: 'Rare CS2 knives, gloves & Valorant bundles',
+            announcement: '🔥 Rare Factory New Karambits & Champions bundles available — 0% buyer fee via XRPL escrow.',
             about: 'Curated high-tier skins with fast Steam trade offer or account handover.',
             categories: ['games'],
             payoutAddress: 'rCaptLex5N7pQ3vL9nJ2wZ8cT4yB6dE1c3',
+            bannerUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1400&q=80',
+            socials: { discord: 'https://discord.gg/xrpharbor' },
+            settings: { autoAccept: true, requireShot: true, vacation: false, response: 'Within 4 hours (business hours)' },
           },
           created_at: new Date(Date.now() - 45 * 86400 * 1000).toISOString(),
         },
@@ -1449,11 +1461,26 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
   if (method === 'GET' && pathStr === 'upgrades/pricing') {
     const commissionEnabled = process.env.ENABLE_SALES_COMMISSION === 'true';
+    const u = ensureAuthUser(store, req);
+    const isPro = Boolean(u && ((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin'));
+    let freeBoostAvailable = false;
+    if (isPro && u) {
+      const cutoff = Date.now() - 30 * 86400 * 1000;
+      const used = (store.upgrade_payments || []).some(
+        p => p.user_id === u.id && p.kind === 'featured_free' && p.status === 'confirmed' && new Date(p.created_at).getTime() > cutoff
+      );
+      freeBoostAvailable = !used;
+    }
     return jsonRes({
       pro: { days: 30, xrp: 50 },
       featured: { days: 7, xrp: 10 },
       proCommissionRate: commissionEnabled ? 0.015 : 0,
       standardCommissionRate: commissionEnabled ? 0.03 : 0,
+      freeBoostAvailable,
+      limits: {
+        standard: { maxActiveListings: 5, maxImages: 3, customStore: false, monthlyFreeFeatured: 0 },
+        pro: { maxActiveListings: 'unlimited', maxImages: 6, customStore: true, monthlyFreeFeatured: 1 },
+      },
     });
   }
 
@@ -1473,6 +1500,33 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       const l = store.listings.find(x => x.id === body.listingId);
       if (!l) return jsonRes({ error: 'Listing not found' }, 404);
       if (l.seller_id !== u.id) return jsonRes({ error: 'Not your listing' }, 403);
+
+      // Pro monthly perk: 1 FREE 7-day Featured Listing boost per 30 days
+      const isPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin');
+      if (isPro) {
+        if (!store.upgrade_payments) store.upgrade_payments = [];
+        const cutoff = Date.now() - 30 * 86400 * 1000;
+        const used = store.upgrade_payments.some(
+          p => p.user_id === u.id && p.kind === 'featured_free' && p.status === 'confirmed' && new Date(p.created_at).getTime() > cutoff
+        );
+        if (!used) {
+          const days = pricing.featured.days;
+          store.upgrade_payments.unshift({
+            id: crypto.randomUUID(),
+            user_id: u.id,
+            kind: 'featured_free',
+            listing_id: l.id,
+            amount_xrp: 0,
+            days,
+            status: 'confirmed',
+            tx_hash: null,
+            created_at: nowIso(),
+          });
+          l.is_featured = true;
+          l.featured_until = futureIso(days);
+          return jsonRes({ ok: true, freeBoostApplied: true, amountXrp: 0, days });
+        }
+      }
     }
     // Server-side price authority: xrp and days strictly come from server pricing table, never body
     const { xrp, days } = pricing[kind];
@@ -1570,6 +1624,17 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (!u) return jsonRes({ error: 'Please sign in to list an item' }, 401);
     const check = validateListingPayload(body, false);
     if (!check.valid) return jsonRes({ error: check.error }, 400);
+    const isPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin');
+    if (!isPro) {
+      const activeCount = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').length;
+      if (activeCount >= 5) {
+        return jsonRes({ error: 'Standard accounts can have up to 5 active listings. Upgrade to Pro for unlimited active listings!' }, 403);
+      }
+      if (Array.isArray(body.images) && body.images.length > 3) {
+        return jsonRes({ error: 'Standard accounts can upload up to 3 images per listing. Upgrade to Pro for up to 6 images!' }, 400);
+      }
+    }
+    const maxImages = isPro ? 6 : 3;
     const { title, description, category, game, platform, priceXrp, price_xrp, images, isDigital, digitalContent, digitalLink, quantity, deliveryTime, tags } = body;
     const finalPrice = Number(priceXrp !== undefined ? priceXrp : price_xrp);
     const newListing = {
@@ -1582,7 +1647,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       platform: platform ? sanitizeString(platform, 30) : null,
       price_xrp: finalPrice,
       currency: 'XRP',
-      images: Array.isArray(images) ? images.slice(0, 10) : [],
+      images: Array.isArray(images) ? images.slice(0, maxImages) : [],
       status: 'active',
       is_featured: false,
       featured_until: null,
@@ -2049,11 +2114,37 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   }
 
   if (segments[0] === 'stores') {
+    if (segments.length === 1 && method === 'GET') {
+      const stores = store.users
+        .filter(u => u.store_handle && u.store && ((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin'))
+        .map(u => {
+          const activeListingsCount = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').length;
+          return {
+            handle: u.store_handle,
+            store: u.store,
+            activeListingsCount,
+            seller: {
+              id: u.id,
+              username: u.username,
+              avatar_url: u.avatar_url || null,
+              reputation_score: u.reputation_score ?? 5.0,
+              total_sales: Number(u.total_sales || 0),
+              is_verified: Boolean(u.is_verified ?? true),
+              seller_is_pro: true,
+            },
+          };
+        });
+      return jsonRes(stores);
+    }
     if (segments[1] === 'me') {
       const u = ensureAuthUser(store, req);
       if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
-      if (method === 'GET') return jsonRes({ store: u.store || null, handle: u.store_handle || null });
+      const isPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin');
+      if (method === 'GET') return jsonRes({ store: u.store || null, handle: u.store_handle || null, isPro });
       if (method === 'PATCH') {
+        if (!isPro) {
+          return jsonRes({ error: 'Custom Pro Storefronts require an active Pro membership (50 XRP / 30 days).' }, 403);
+        }
         if (!body.name || typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > 80) {
           return jsonRes({ error: 'Store name is required (max 80 chars)' }, 400);
         }
@@ -2063,15 +2154,37 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         if (!body.payoutAddress || typeof body.payoutAddress !== 'string' || !isValidWalletAddress(body.payoutAddress.trim())) {
           return jsonRes({ error: 'Valid XRP Ledger payout address is required' }, 400);
         }
+        if (body.announcement && (typeof body.announcement !== 'string' || body.announcement.length > 240)) {
+          return jsonRes({ error: 'Announcement must be at most 240 characters' }, 400);
+        }
         const dupe = store.users.find(x => x.store_handle === body.handle && x.id !== u.id);
         if (dupe) return jsonRes({ error: 'That store URL is already taken' }, 409);
+        const cleanSocials = {};
+        if (body.socials && typeof body.socials === 'object' && !Array.isArray(body.socials)) {
+          for (const k of ['discord', 'twitter', 'telegram', 'website']) {
+            if (typeof body.socials[k] === 'string' && body.socials[k].trim()) {
+              cleanSocials[k] = sanitizeString(body.socials[k].trim(), 200);
+            }
+          }
+        }
+        const cleanPinned = Array.isArray(body.pinnedListingIds)
+          ? body.pinnedListingIds.filter(id => isValidUuid(id)).slice(0, 3)
+          : [];
         u.store_handle = body.handle;
         u.store = {
           name: sanitizeString(body.name, 80),
           tagline: body.tagline ? sanitizeString(String(body.tagline), 200) : '',
+          announcement: body.announcement ? sanitizeString(String(body.announcement), 240) : '',
           about: body.about ? sanitizeString(String(body.about), 2000) : '',
-          categories: Array.isArray(body.categories) ? body.categories.slice(0, 4) : [],
+          categories: Array.isArray(body.categories) ? body.categories.slice(0, 8) : [],
+          settings: (body.settings && typeof body.settings === 'object' && !Array.isArray(body.settings)) ? body.settings : {},
+          socials: cleanSocials,
+          pinnedListingIds: cleanPinned,
           payoutAddress: body.payoutAddress.trim(),
+          destinationTag: body.destinationTag != null ? Number(body.destinationTag) || null : null,
+          logoUrl: body.logoUrl && typeof body.logoUrl === 'string' && /^https?:\/\//i.test(body.logoUrl) ? sanitizeString(body.logoUrl, 500) : null,
+          bannerUrl: body.bannerUrl && typeof body.bannerUrl === 'string' && /^https?:\/\//i.test(body.bannerUrl) ? sanitizeString(body.bannerUrl, 500) : null,
+          updatedAt: nowIso(),
         };
         return jsonRes({ store: u.store, handle: u.store_handle });
       }
@@ -2086,7 +2199,8 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       if (!u || !u.store) return jsonRes({ error: 'Store not found' }, 404);
       const viewer = ensureAuthUser(store, req);
       const listings = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').map(l => enrichListing(store, l, viewer));
-      return jsonRes({ seller: u, store: u.store, handle: u.store_handle, listings });
+      const sellerIsPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin');
+      return jsonRes({ seller: { ...u, seller_is_pro: sellerIsPro }, store: u.store, handle: u.store_handle, listings });
     }
   }
 

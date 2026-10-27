@@ -287,6 +287,8 @@ export default function NewListingPage() {
     </div>
   );
 
+  const isPro = Boolean(user && ((user.proUntil && new Date(user.proUntil) > new Date()) || user.role === 'admin'));
+  const maxImages = isPro ? 6 : 3;
   const priceNum = parseFloat(form.priceXrp);
   const sellerReceives = (priceNum > 0) ? priceNum.toFixed(6) : null;
   const usdPrice = (priceNum > 0) ? (form.currency === 'RLUSD' ? priceNum.toFixed(2) : (xrpUsd ? (priceNum * xrpUsd).toFixed(2) : null)) : null;
@@ -306,8 +308,8 @@ export default function NewListingPage() {
   async function handleFileChange(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const remaining = 6 - form.images.length;
-    if (remaining <= 0) { setError('You can upload up to 6 images'); return; }
+    const remaining = maxImages - form.images.length;
+    if (remaining <= 0) { setError(`You can upload up to ${maxImages} images${!isPro ? ' (Upgrade to Pro for up to 6 images)' : ''}`); return; }
     const toUpload = files.slice(0, remaining);
     for (const file of toUpload) {
       if (file.size > 5 * 1024 * 1024) { setError('Each image must be under 5MB'); continue; }
@@ -431,8 +433,8 @@ export default function NewListingPage() {
           {/* 2. Media */}
           <div className="xh-card">
             <div className="sec-head">
-              <div><div className="lbl">02 · MEDIA</div><h2 className="sec-h">Up to 6 images · first one is the cover</h2></div>
-              <div className="hint">{form.images.length} of 6</div>
+              <div><div className="lbl">02 · MEDIA</div><h2 className="sec-h">Up to {maxImages} images · first one is the cover</h2></div>
+              <div className="hint">{form.images.length} of {maxImages}</div>
             </div>
 
             <div className="xh-media-grid">
@@ -443,7 +445,7 @@ export default function NewListingPage() {
                   <button type="button" className="x" onClick={() => removeImage(i)} aria-label="Remove image">×</button>
                 </div>
               ))}
-              {form.images.length < 6 && (
+              {form.images.length < maxImages && (
                 <button type="button" className="xh-tile add" onClick={() => fileRef.current && fileRef.current.click()} disabled={uploading}>
                   <div className="col">
                     <span className="plus">{uploading ? '⏳' : '+'}</span>
@@ -453,7 +455,13 @@ export default function NewListingPage() {
               )}
             </div>
             <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
-            <div className="xh-media-note">PNG · JPG · WEBP · max 5MB each · recommend 4:3, at least 1000×750px</div>
+            <div className="xh-media-note">
+              PNG · JPG · WEBP · max 5MB each · {isPro ? (
+                <span style={{ color: '#b45309', fontWeight: 600 }}>★ Pro active: up to 6 images &amp; unlimited active listings</span>
+              ) : (
+                <span>Standard plan: up to 3 images &amp; 5 active listings · <Link href="/pro" style={{ color: 'var(--xh-accent)', fontWeight: 600 }}>Upgrade to ★ Pro for 6 images &amp; unlimited listings →</Link></span>
+              )}
+            </div>
           </div>
 
           {/* 3. Price & stock */}

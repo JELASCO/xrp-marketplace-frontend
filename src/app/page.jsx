@@ -6,6 +6,7 @@ import ListingCard from '../components/ListingCard';
 import { useAuthStore } from '../lib/store';
 import XummLoginModal from '../components/XummLoginModal';
 import { useXrpPrice } from '../lib/xrpPrice';
+import { sanitizeImageUrl } from '../lib/sanitize';
 
 const CATS = [
   {key:'games',label:'Games',emoji:'🎮',sub:'accounts · keys · currency'},
@@ -109,11 +110,13 @@ export default function HomePage() {
   const user = useAuthStore(s=>s.user);
   const [listings,setListings] = useState([]);
   const [featured,setFeatured] = useState([]);
+  const [proStores,setProStores] = useState([]);
   const [loading,setLoading] = useState(true);
 
   useEffect(()=>{
     setLoading(true);
     api.listings.list({sort:'created_at',limit:8}).then(setListings).catch(()=>setListings([])).finally(()=>setLoading(false));
+    api.stores.list().then(s => { if (Array.isArray(s) && s.length) setProStores(s.slice(0, 6)); }).catch(()=>{});
   },[]);
 
   useEffect(()=>{
@@ -346,45 +349,110 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* TRUSTED CAPTAINS */}
+      {/* VERIFIED PRO STORES & TRUSTED CAPTAINS */}
       <div style={{marginBottom:36}}>
-        <div className="xh-mono" style={{fontSize:11,letterSpacing:'0.08em',color:'var(--xh-accent)',fontWeight:600,marginBottom:8,display:'flex',alignItems:'center',gap:7}}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M3.5 12H6M18 12h2.5"/></svg>
-          TRUSTED CAPTAINS · TOP THIS MONTH
+        <div className="xh-mono" style={{fontSize:11,letterSpacing:'0.08em',color:'#f59e0b',fontWeight:700,marginBottom:8,display:'flex',alignItems:'center',gap:7}}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.3 2.6 5.4 5.9.8-4.3 4.2 1 5.9L12 17l-5.2 2.6 1-5.9L3.5 9.5l5.9-.8z"/></svg>
+          VERIFIED PRO STORES · OFFICIAL DOCKS
         </div>
         <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:16,marginBottom:20,flexWrap:'wrap'}}>
           <div>
-            <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',lineHeight:1.15}}>The harbor&rsquo;s busiest docks</h2>
-            <p style={{fontSize:14,color:'var(--xh-text2)',marginTop:6,maxWidth:520}}>Verified sellers with the highest ratings and the most completed trades.</p>
+            <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',lineHeight:1.15}}>The harbor&rsquo;s verified Pro storefronts</h2>
+            <p style={{fontSize:14,color:'var(--xh-text2)',marginTop:6,maxWidth:560}}>Custom branded docks operated by verified Pro members — featuring live announcements, pinned spotlights, and instant XRPL escrow.</p>
           </div>
-          <Link href="/listings" style={{fontSize:13.5,fontWeight:600,color:'var(--xh-accent)',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>View all sellers <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
+          <Link href="/pro" style={{fontSize:13.5,fontWeight:600,color:'var(--xh-accent)',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>Open your Pro Store <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:14}}>
-          {[
-            {av:'D',c:'#3b82f6',nm:'dockmaster',pro:true,loc:'Istanbul',bio:'Solo developer trading premium digital goods. CS2, Valorant and Pokemon TCG specialist with instant delivery on most items.',t:'32',r:'4.9',s:'38m'},
-            {av:'K',c:'#10b981',nm:'keyport',pro:true,loc:'Berlin',bio:'Licensed software key reseller. Adobe, Microsoft, Steam and Origin — every key ships with a vendor-verified receipt.',t:'128',r:'4.95',s:'2m'},
-            {av:'L',c:'#6366f1',nm:'captain_lex',pro:false,loc:'Stockholm',bio:'CS2 and Valorant skin trader, four years on the Steam Market. Now exclusive on XRPHarbor for serious collectors.',t:'76',r:'4.8',s:'3h'}
-          ].map(cap => (
-            <div key={cap.nm} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:20,display:'flex',flexDirection:'column',gap:14}}>
-              <div style={{display:'flex',alignItems:'center',gap:12}}>
-                <div style={{width:46,height:46,borderRadius:'50%',background:cap.c,color:'#fff',fontWeight:700,fontSize:19,display:'grid',placeItems:'center',flex:'none'}}>{cap.av}</div>
-                <div>
-                  <div style={{display:'flex',alignItems:'center',gap:7,fontWeight:700,fontSize:15.5,color:'var(--xh-text)'}}>
-                    {cap.nm}
-                    {cap.pro && <span className="xh-mono xh-pro" style={{fontSize:9,fontWeight:600,letterSpacing:'0.04em',background:'#f59e0b',color:'#fff',padding:'2px 6px',borderRadius:5}}>PRO</span>}
-                    <span style={{color:'var(--xh-accent)',display:'inline-flex'}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5.2c0 4 2.9 7.2 7 8.8 4.1-1.6 7-4.8 7-8.8V6z"/><path d="m9.3 12 1.9 1.9L15 10"/></svg></span>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:16}}>
+          {(proStores.length > 0 ? proStores : [
+            {
+              handle: 'dockmaster',
+              name: 'Dockmaster Digital Vault',
+              tagline: 'CS2 · Valorant · Pokemon TCG · Instant Escrow Delivery',
+              announcement: '⚡ Flash Sale: Instant auto-delivery active 24/7 on all digital vaults!',
+              accentColor: '#3b82f6',
+              bannerUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1400&q=80',
+              sellerUsername: 'dockmaster',
+              sellerRating: 4.9,
+              sellerTotalSales: 32,
+              activeListingsCount: 3
+            },
+            {
+              handle: 'keyport',
+              name: 'Keyport Software Pier',
+              tagline: 'Verified Software Licenses, Cloud Credits & Developer Tools',
+              announcement: '🔒 Every license ships with an official vendor-verified receipt.',
+              accentColor: '#10b981',
+              bannerUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1400&q=80',
+              sellerUsername: 'keyport',
+              sellerRating: 4.95,
+              sellerTotalSales: 128,
+              activeListingsCount: 1
+            },
+            {
+              handle: 'captain-lex',
+              name: 'Captain Lex Armory',
+              tagline: 'High-Tier CS2 Knives, Gloves & Rare Steam Collectibles',
+              announcement: '💎 Accepting XRP & RLUSD Escrow on all Factory New knives.',
+              accentColor: '#6366f1',
+              bannerUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80',
+              sellerUsername: 'captain_lex',
+              sellerRating: 4.8,
+              sellerTotalSales: 76,
+              activeListingsCount: 1
+            }
+          ]).map(st => {
+            const accent = st.accentColor || '#2563eb';
+            const safeBanner = st.bannerUrl ? sanitizeImageUrl(st.bannerUrl) : '';
+            const safeLogo = st.logoUrl ? sanitizeImageUrl(st.logoUrl) : '';
+            const initial = (st.name || st.sellerUsername || st.handle || '?').slice(0, 1).toUpperCase();
+            const trades = st.sellerTotalSales != null ? st.sellerTotalSales : 0;
+            const rating = st.sellerRating ? Number(st.sellerRating).toFixed(1) : '5.0';
+            const itemsCount = st.activeListingsCount != null ? st.activeListingsCount : '—';
+            return (
+              <Link key={st.handle} href={`/store/${st.handle}`} style={{background:'var(--xh-surface)',border:'1.5px solid rgba(245,158,11,0.32)',borderRadius:16,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 12px 28px -8px rgba(10,35,66,.16)',overflow:'hidden',display:'flex',flexDirection:'column',textDecoration:'none',transition:'transform .18s,box-shadow .18s'}}>
+                <div style={{height:76,background: safeBanner ? `linear-gradient(180deg, rgba(10,22,40,0.25) 0%, rgba(10,22,40,0.72) 100%), url(${safeBanner}) center/cover no-repeat` : `linear-gradient(135deg, #0A1628 0%, ${accent} 100%)`,position:'relative',display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'10px 14px'}}>
+                  <span className="xh-mono" style={{fontSize:10,fontWeight:700,letterSpacing:'0.05em',background:'rgba(10,22,40,0.72)',backdropFilter:'blur(6px)',color:'#e2e8f0',padding:'3px 8px',borderRadius:6,border:'1px solid rgba(255,255,255,0.14)'}}>
+                    @{st.handle}
+                  </span>
+                  <span className="xh-mono" style={{fontSize:9.5,fontWeight:800,letterSpacing:'0.06em',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',padding:'3px 8px',borderRadius:6,boxShadow:'0 2px 8px rgba(245,158,11,0.35)'}}>
+                    ★ PRO STORE
+                  </span>
+                </div>
+                <div style={{padding:'0 18px 18px',display:'flex',flexDirection:'column',gap:12,flex:1}}>
+                  <div style={{display:'flex',alignItems:'flex-end',gap:12,marginTop:-22,position:'relative',zIndex:2}}>
+                    <div style={{width:50,height:50,borderRadius:13,background:accent,color:'#fff',fontWeight:800,fontSize:20,display:'grid',placeItems:'center',flex:'none',border:'3px solid var(--xh-surface)',boxShadow:'0 6px 14px rgba(10,22,40,0.18)',overflow:'hidden'}}>
+                      {safeLogo ? <img src={safeLogo} alt={st.name} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : initial}
+                    </div>
+                    <div style={{minWidth:0,paddingBottom:2}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6,fontWeight:800,fontSize:15.5,color:'var(--xh-text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                        <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{st.name}</span>
+                        <span style={{color:'#f59e0b',display:'inline-flex',flexShrink:0}} title="Verified Pro Storefront">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5.2c0 4 2.9 7.2 7 8.8 4.1-1.6 7-4.8 7-8.8V6z"/><path d="m9.3 12 1.9 1.9L15 10"/></svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {st.announcement && (
+                    <div style={{fontSize:11.5,fontWeight:600,color:'#b45309',background:'rgba(245,158,11,0.10)',border:'1px solid rgba(245,158,11,0.25)',borderRadius:8,padding:'6px 10px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {st.announcement}
+                    </div>
+                  )}
+                  <div style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.5,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',flex:1}}>
+                    {st.tagline || st.bio || 'Official verified Pro storefront on XRPHarbor.'}
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',background:'var(--xh-bg2)',borderRadius:10,overflow:'hidden'}}>
+                    <div style={{padding:'10px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:14.5,color:'var(--xh-text)',lineHeight:1,marginBottom:4}}>{trades}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>TRADES</div></div>
+                    <div style={{padding:'10px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:14.5,color:'#f59e0b',lineHeight:1,marginBottom:4}}>★ {rating}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>RATING</div></div>
+                    <div style={{padding:'10px 6px',textAlign:'center'}}><div style={{fontWeight:700,fontSize:14.5,color:'#10b981',lineHeight:1,marginBottom:4}}>{itemsCount}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>ITEMS</div></div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:11,borderTop:'1px solid var(--xh-border)',fontSize:12.5,fontWeight:700,color:'var(--xh-accent)'}}>
+                    <span>Visit Pro Storefront</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                   </div>
                 </div>
-              </div>
-              <div style={{fontSize:12.5,color:'var(--xh-text2)',lineHeight:1.55,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{cap.bio}</div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',background:'var(--xh-bg2)',borderRadius:10,overflow:'hidden'}}>
-                <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'var(--xh-text)',lineHeight:1,marginBottom:4}}>{cap.t}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>TRADES</div></div>
-                <div style={{padding:'12px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:15,color:'#f59e0b',lineHeight:1,marginBottom:4}}>★ {cap.r}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>RATING</div></div>
-                <div style={{padding:'12px 6px',textAlign:'center'}}><div style={{fontWeight:700,fontSize:15,color:'#10b981',lineHeight:1,marginBottom:4}}>{cap.s}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>AVG SHIP</div></div>
-              </div>
-              <Link href="/listings" style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:13,borderTop:'1px solid var(--xh-border)',fontSize:12.5,fontWeight:600,color:'var(--xh-accent)'}}>Visit dock <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
-            </div>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
 

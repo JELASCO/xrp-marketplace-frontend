@@ -233,6 +233,10 @@ export default function EditListingPage() {
     setError('');
     try {
       const r = await api.upgrades.payload('featured', id);
+      if (r && r.freeBoostApplied) {
+        router.push('/listing/' + id);
+        return;
+      }
       if (r.uuid || r.qrUrl) setFeatureModal({ qrUrl: r.qrUrl, deepLink: r.deepLink, paymentId: r.paymentId, days: r.days });
       else setError(r.error || 'Could not start payment');
     } catch (e) { setError(e.message); }
@@ -382,9 +386,17 @@ export default function EditListingPage() {
 
             <div className="xh-boost-cta">
               <div className="info">
-                <div className="s">Feature this listing on the marketplace homepage and at the top of search results{featPricing ? <> for <b>{featPricing.featured.days} days</b> · <b>{featPricing.featured.xrp} XRP</b></> : ''}. Featured listings get 4-7× more views on average.</div>
+                <div className="s">
+                  {featPricing && featPricing.freeBoostAvailable ? (
+                    <>As a <b>★ Pro Member</b>, you have <b>1 Free 7-Day Featured Listing Boost</b> available this month! Pin this listing to the homepage and top of search results for <b>{featPricing.featured.days} days</b> at <b>0 XRP</b>.</>
+                  ) : (
+                    <>Feature this listing on the marketplace homepage and at the top of search results{featPricing ? <> for <b>{featPricing.featured.days} days</b> · <b>{featPricing.featured.xrp} XRP</b></> : ''}. Featured listings get 4-7× more views on average.</>
+                  )}
+                </div>
               </div>
-              <button onClick={startFeature} className="xh-btn xh-btn-warn">⛵ Feature this listing</button>
+              <button onClick={startFeature} className="xh-btn xh-btn-warn">
+                {featPricing && featPricing.freeBoostAvailable ? '🎁 Claim Free 7-Day Pro Boost (0 XRP)' : '⛵ Feature this listing'}
+              </button>
             </div>
           </div>
 
