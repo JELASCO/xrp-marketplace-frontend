@@ -87,12 +87,6 @@ export default function DashboardPage() {
   const [hoveredPt, setHoveredPt] = useState(null); // { idx, x, y, val, dateLabel }
   const [busy, setBusy] = useState(true);
 
-  // Importer modal state
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importUrl, setImportUrl] = useState('');
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState('');
-
   // Product update alert modal state
   const [updateModalListing, setUpdateModalListing] = useState(null);
   const [updateVersion, setUpdateVersion] = useState('v2.0');
@@ -145,9 +139,13 @@ export default function DashboardPage() {
   const wallet = user.wallet_address || '';
   const walletShort = wallet ? wallet.slice(0,5) + '…' + wallet.slice(-4) : '';
 
+  const isAdmin = Boolean(user && (user.role === 'admin' || user.is_admin || user.isAdmin));
   const toDeliver = orders.filter(o => o.role==='seller' && (o.status==='escrow_locked'||o.status==='in_escrow')).length;
   const toConfirm = orders.filter(o => o.role==='buyer' && o.status==='delivered').length;
-  const disputes = orders.filter(o => o.status==='disputed').length;
+  const disputes = Math.max(
+    orders.filter(o => o.status==='disputed').length,
+    stats && stats.openDisputes ? Number(stats.openDisputes) : 0
+  );
   const attention = toDeliver + toConfirm + disputes;
 
   // Private Pro Store & Seller Analytics computation
@@ -296,30 +294,6 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   }
 
-  async function handleImportFromUrl(e) {
-    if (e) e.preventDefault();
-    if (!importUrl.trim()) { setImportError('Please paste a Gumroad or itch.io URL'); return; }
-    setImporting(true);
-    setImportError('');
-    try {
-      const token = localStorage.getItem('xrpmarket_token');
-      const r = await fetch('/api/import-listing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url: importUrl.trim() }),
-      });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok && !data.title) throw new Error(data.error || 'Could not import from that URL');
-      try { sessionStorage.setItem('xrph_imported_listing', JSON.stringify(data)); } catch {}
-      setShowImportModal(false);
-      router.push('/listings/new?imported=1');
-    } catch (err) {
-      setImportError(err.message || 'Import failed');
-    } finally {
-      setImporting(false);
-    }
-  }
-
   async function handleSendUpdateAlert(e) {
     if (e) e.preventDefault();
     if (!updateModalListing) return;
@@ -364,18 +338,23 @@ export default function DashboardPage() {
           <span style={{fontSize:12,color:'var(--text2)',fontWeight:600}}>Needs attention</span>
           {toDeliver>0 && <Link href="/orders" style={pillLink('#9a6a07','rgba(245,158,11,0.13)')}>{toDeliver} to deliver</Link>}
           {toConfirm>0 && <Link href="/orders" style={pillLink('#185fa5','rgba(59,130,246,0.12)')}>{toConfirm} to confirm</Link>}
-          {disputes>0 && <Link href="/orders" style={pillLink('#a32d2d','rgba(220,38,38,0.10)')}>{disputes} in dispute</Link>}
+          {disputes>0 && (
+            <Link href={isAdmin ? '/admin?tab=escrows' : '/orders'} style={pillLink('#a32d2d','rgba(220,38,38,0.10)')}>
+              {disputes} in dispute{isAdmin ? ' · Arbitrate →' : ''}
+            </Link>
+          )}
           {attention===0 && <span style={{fontSize:12,color:'#15966b'}}>All clear</span>}
         </div>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          <button
-            type="button"
-            onClick={() => { setShowImportModal(true); setImportError(''); }}
-            style={{padding:'6px 12px',borderRadius:8,fontSize:12,fontWeight:700,border:'1px solid #60a5fa',background:'rgba(32,128,245,0.12)',color:'#2080F5',cursor:'pointer',fontFamily:'inherit'}}
-          >
-            ⚡ Import from Gumroad / itch.io
-          </button>
-        </div>
+        {isAdmin && (
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            <Link
+              href="/admin?tab=escrows"
+              style={{padding:'7px 14px',borderRadius:9,fontSize:12.5,fontWeight:700,border:'1px solid rgba(245,158,11,0.45)',background:'rgba(245,158,11,0.14)',color:'#d97706',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:6}}
+            >
+              🛡 Admin Panel {disputes > 0 ? `(${disputes} Dispute${disputes > 1 ? 's' : ''})` : ''}
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="xh-dash-metrics-grid" style={{marginBottom:16}}>
@@ -737,44 +716,9 @@ export default function DashboardPage() {
 
       <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
         <Link href="/listings/new" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:700,padding:'12px 14px',border:'1px solid #60a5fa',borderRadius:11,color:'#fff',textDecoration:'none',background:'#2080F5',boxShadow:'0 4px 14px rgba(32,128,245,0.3)'}}>+ List an item</Link>
-        <button
-          type="button"
-          onClick={() => { setShowImportModal(true); setImportError(''); }}
-          style={{flex:1,minWidth:160,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:700,padding:'12px 14px',border:'1px solid rgba(99,102,241,0.45)',borderRadius:11,color:'#4f46e5',background:'rgba(99,102,241,0.08)',cursor:'pointer',fontFamily:'inherit'}}
-        >
-          ⚡ Import from Gumroad / itch.io
-        </button>
         <Link href="/store/create" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:600,padding:'12px 14px',border:'1px solid rgba(245,158,11,0.45)',borderRadius:11,color:'#d97706',textDecoration:'none',background:'rgba(245,158,11,0.08)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}>★ Pro Storefront Setup</Link>
         <Link href="/listings" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:500,padding:'12px 14px',border:'1px solid var(--border2)',borderRadius:11,color:'var(--text)',textDecoration:'none',background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}>Browse market</Link>
       </div>
-
-      {/* GUMROAD / ITCH.IO IMPORTER MODAL */}
-      {showImportModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(11,27,51,0.65)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:12,backdropFilter:'blur(4px)'}} onClick={e => { if (e.target === e.currentTarget) setShowImportModal(false); }}>
-          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:'22px 18px',maxWidth:'min(460px, calc(100vw - 24px))',width:'100%',maxHeight:'calc(100vh - 32px)',overflowY:'auto',boxSizing:'border-box',boxShadow:'0 24px 60px -12px rgba(10,22,40,0.45)'}}>
-            <h3 style={{margin:'0 0 6px',fontSize:18,fontWeight:800,color:'var(--text)'}}>⚡ Import from Gumroad or itch.io</h3>
-            <p style={{margin:'0 0 14px',fontSize:13,color:'var(--text2)',lineHeight:1.5}}>
-              Paste your Gumroad or itch.io product link to import title, description, tags, price, and cover images into a new XRPHarbor listing draft.
-            </p>
-            <form onSubmit={handleImportFromUrl}>
-              <input
-                type="url"
-                value={importUrl}
-                onChange={e => setImportUrl(e.target.value)}
-                placeholder="https://username.gumroad.com/l/asset or https://creator.itch.io/pack"
-                style={{width:'100%',padding:'10px 12px',borderRadius:10,border:'1px solid var(--border2)',background:'var(--bg)',color:'var(--text)',fontSize:13.5,boxSizing:'border-box',marginBottom:10}}
-              />
-              {importError && <div style={{fontSize:12,color:'#ef4444',marginBottom:10}}>{importError}</div>}
-              <div style={{display:'flex',justifyContent:'flex-end',gap:8}}>
-                <button type="button" onClick={() => setShowImportModal(false)} style={{padding:'9px 14px',borderRadius:8,border:'1px solid var(--border2)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}>Cancel</button>
-                <button type="submit" disabled={importing} style={{padding:'9px 16px',borderRadius:8,border:'none',background:'#2080F5',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
-                  {importing ? 'Importing…' : '⚡ Import & Open Editor'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* PRODUCT UPDATE ALERT MODAL */}
       {updateModalListing && (

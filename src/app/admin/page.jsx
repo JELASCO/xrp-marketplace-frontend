@@ -7,9 +7,9 @@ import { xhConfirm } from '../../lib/confirm';
 
 const TABS = [
   {key:'dashboard',label:'Dashboard',icon:'▦'},
+  {key:'escrows',label:'Disputes & Arbitration',icon:'⚖️'},
   {key:'listings',label:'Listings',icon:'📜'},
   {key:'orders',label:'Orders',icon:'🛒'},
-  {key:'escrows',label:'Escrows',icon:'🔒'},
   {key:'users',label:'Users',icon:'👥'},
   {key:'reports',label:'Reports',icon:'⚠️'},
   {key:'settings',label:'Settings',icon:'⚙️'},
@@ -162,6 +162,95 @@ export default function AdminPage() {
   const [reports, setReports] = useState([]);
   const [listingFilter, setListingFilter] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [disputeNotes, setDisputeNotes] = useState({});
+  const [vaultInspections, setVaultInspections] = useState({});
+  const [inspectingId, setInspectingId] = useState(null);
+  const [resolvingId, setResolvingId] = useState(null);
+  const [actionToast, setActionToast] = useState('');
+
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const t = sp.get('tab');
+      if (t === 'escrows' || t === 'disputes') setTab('escrows');
+      else if (t && TABS.some(x => x.key === t)) setTab(t);
+    } catch {}
+  }, []);
+
+  async function refreshDisputes() {
+    try {
+      const d = await api.admin.disputes();
+      setDisputes(Array.isArray(d) ? d : []);
+    } catch {}
+  }
+
+  async function handleInspectVault(d) {
+    const targetId = d.order_id || d.id;
+    setInspectingId(targetId);
+    try {
+      const info = await api.admin.inspectVault(targetId);
+      setVaultInspections(prev => ({ ...prev, [targetId]: info }));
+      // Trigger download for admin inspection using presignedGetUrl or authenticated raw stream
+      const dlUrl = info.presignedGetUrl || info.streamUrl;
+      if (dlUrl) {
+        if (info.presignedGetUrl) {
+          window.open(info.presignedGetUrl, '_blank', 'noopener,noreferrer');
+        } else {
+          const token = localStorage.getItem('xrpmarket_token');
+          const res = await fetch(dlUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+          if (res.ok) {
+            const blob = await res.blob();
+            const bUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = bUrl;
+            a.download = info.fileName || `vault-inspect-${String(targetId).slice(0, 8)}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(bUrl), 5000);
+          }
+        }
+      }
+      setActionToast(`🔍 R2 Vault inspected for "${info.listingTitle || d.listing_title || 'Order'}" (Buyer download count untouched: ${info.buyerEvidence?.downloadCount ?? d.download_count ?? 0})`);
+      setTimeout(() => setActionToast(''), 6000);
+    } catch (err) {
+      setActionToast(`⚠️ Vault inspection error: ${err.message || 'Could not inspect vault'}`);
+      setTimeout(() => setActionToast(''), 5000);
+    } finally {
+      setInspectingId(null);
+    }
+  }
+
+  async function handleArbitrateDispute(d, favorBuyer) {
+    const targetId = d.id || d.order_id;
+    const noteKey = d.order_id || d.id;
+    const note = (disputeNotes[noteKey] || '').trim();
+    const label = favorBuyer ? 'Approve Dispute (Buyer Wins — Refund Escrow)' : 'Reject Dispute (Seller Wins — Release Payout)';
+    const ok = await xhConfirm(`Confirm arbitration ruling: ${label}?`, {
+      confirmText: favorBuyer ? 'Approve Dispute (Buyer Wins)' : 'Reject Dispute (Seller Wins)',
+      danger: favorBuyer,
+    });
+    if (!ok) return;
+    setResolvingId(targetId);
+    try {
+      await api.admin.resolveDispute(targetId, {
+        favorBuyer,
+        action: favorBuyer ? 'refund' : 'release',
+        resolution: note || (favorBuyer ? 'Dispute approved by admin (Buyer Wins)' : 'Dispute rejected by admin after R2 Vault verification (Seller Wins)'),
+        note: note || undefined,
+      });
+      setActionToast(favorBuyer
+        ? '✓ Dispute Approved (Buyer Wins) — Order marked refund_approved.'
+        : '✓ Dispute Rejected (Seller Wins) — Dispute lock lifted & payout approved for seller.');
+      setTimeout(() => setActionToast(''), 6000);
+      await refreshDisputes();
+    } catch (err) {
+      setActionToast(`⚠️ Could not resolve dispute: ${err.message || 'Error'}`);
+      setTimeout(() => setActionToast(''), 5000);
+    } finally {
+      setResolvingId(null);
+    }
+  }
 
   useEffect(()=>{
     if(!user) return;
@@ -192,7 +281,132 @@ export default function AdminPage() {
     );
   }
 
-  const openDisputes = disputes.filter(d=>d.status==='open'||d.status==='disputed');
+  const openDisputes = disputes.filter(d=>d.status==='open'||d.status==='disputed'||d.order_status==='disputed');
+
+  function renderDisputeCard(d) {
+    const keyId = d.order_id || d.id;
+    const isResolved = d.status === 'resolved' && d.order_status !== 'disputed';
+    const dlCount = Number(d.download_count || (Array.isArray(d.download_logs) ? d.download_logs.length : (d.buyer_downloaded_at ? 1 : 0)));
+    const buyerDownloaded = Boolean(d.buyer_downloaded || d.buyer_downloaded_at || dlCount > 0);
+    const inspected = vaultInspections[keyId];
+    const archiveSizeKb = d.digital_archive_size ? (Number(d.digital_archive_size) / 1024).toFixed(1) + ' KB' : (inspected?.fileSize ? (Number(inspected.fileSize) / 1024).toFixed(1) + ' KB' : 'Vault Package');
+
+    return (
+      <div key={keyId} style={{padding:'16px 18px',background:'var(--xh-surface2)',border:'1px solid var(--xh-border2)',borderRadius:12,fontSize:13,display:'flex',flexDirection:'column',gap:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:10}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+              <span style={{fontSize:15,fontWeight:800,color:'var(--xh-text)'}}>{d.listing_title || d.title || 'Digital Asset'}</span>
+              <Pill color={isResolved ? 'green' : 'red'}>{isResolved ? `RESOLVED (${d.decision || d.order_status})` : 'DISPUTED'}</Pill>
+              <span style={{fontSize:12,fontWeight:700,color:'var(--xh-accent)',fontFamily:'monospace'}}>{Number(d.total_xrp || 0)} XRP</span>
+            </div>
+            <div style={{fontSize:11.5,color:'var(--xh-text3)',fontFamily:'monospace',marginTop:3}}>
+              Order #{String(d.order_id || d.id || '').slice(0, 12)} · Opened {fmtDate(d.created_at)}
+              {d.escrow_sequence ? ` · Escrow Seq #${d.escrow_sequence}` : ''}
+            </div>
+          </div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            <button
+              type="button"
+              className="xh-btn-sm"
+              disabled={inspectingId === keyId}
+              onClick={() => handleInspectVault(d)}
+              style={{background:'rgba(32,128,245,0.12)',borderColor:'rgba(32,128,245,0.4)',color:'#2080F5',fontWeight:700}}
+            >
+              {inspectingId === keyId ? '🔍 Inspecting R2 Vault…' : '🔍 Inspect R2 Vault File'}
+            </button>
+          </div>
+        </div>
+
+        {/* Wallets & Dispute Reason */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:10,background:'var(--xh-surface)',padding:'10px 12px',borderRadius:9,border:'1px solid var(--xh-border)'}}>
+          <div>
+            <div style={{fontSize:10.5,fontWeight:700,color:'var(--xh-text3)',textTransform:'uppercase'}}>Buyer</div>
+            <div style={{fontSize:12.5,fontWeight:700,color:'var(--xh-text)'}}>{d.buyer_name || d.buyer_username || 'Buyer'}</div>
+            <div style={{fontSize:11,fontFamily:'monospace',color:'var(--xh-text2)',wordBreak:'break-all'}}>{d.buyer_wallet || '—'}</div>
+          </div>
+          <div>
+            <div style={{fontSize:10.5,fontWeight:700,color:'var(--xh-text3)',textTransform:'uppercase'}}>Seller (Creator)</div>
+            <div style={{fontSize:12.5,fontWeight:700,color:'var(--xh-text)'}}>{d.seller_name || d.seller_username || 'Seller'}</div>
+            <div style={{fontSize:11,fontFamily:'monospace',color:'var(--xh-text2)',wordBreak:'break-all'}}>{d.seller_wallet || '—'}</div>
+          </div>
+          <div>
+            <div style={{fontSize:10.5,fontWeight:700,color:'var(--xh-text3)',textTransform:'uppercase'}}>Buyer Download Evidence</div>
+            <div style={{fontSize:12,fontWeight:700,color:buyerDownloaded ? '#DC2626' : '#16A34A',marginTop:2}}>
+              {buyerDownloaded ? `⚠️ Downloaded ${dlCount}x by Buyer` : '✓ 0 Downloads (Not yet downloaded)'}
+            </div>
+            {d.buyer_downloaded_at && (
+              <div style={{fontSize:10.5,color:'var(--xh-text3)'}}>First download: {fmtDate(d.buyer_downloaded_at)}</div>
+            )}
+          </div>
+          <div>
+            <div style={{fontSize:10.5,fontWeight:700,color:'var(--xh-text3)',textTransform:'uppercase'}}>R2 Vault Asset &amp; SHA-256</div>
+            <div style={{fontSize:12,fontWeight:600,color:'var(--xh-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+              📦 {d.digital_archive_name || d.r2_object_key || 'Vault Archive'} ({archiveSizeKb})
+            </div>
+            <div style={{fontSize:10.5,fontFamily:'monospace',color:'var(--xh-text3)'}}>
+              {d.digital_archive_sha256 ? `SHA-256: ${String(d.digital_archive_sha256).slice(0, 16)}… ✓` : 'SHA-256: Verified on upload'}
+            </div>
+          </div>
+        </div>
+
+        {/* Dispute Reason */}
+        <div style={{padding:'10px 12px',background:'rgba(220,38,38,0.06)',border:'1px solid rgba(220,38,38,0.2)',borderRadius:8}}>
+          <div style={{fontSize:10.5,fontWeight:700,color:'#DC2626',textTransform:'uppercase',marginBottom:3}}>Dispute Claim / Reason</div>
+          <div style={{fontSize:12.5,color:'var(--xh-text)',lineHeight:1.45}}>{d.reason || 'Order flagged as disputed'}</div>
+        </div>
+
+        {/* Live R2 Vault Inspection Result */}
+        {inspected && (
+          <div style={{padding:'10px 12px',background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.35)',borderRadius:8,fontSize:12}}>
+            <div style={{fontWeight:700,color:'#16A34A',marginBottom:4}}>
+              ✓ R2 Vault Inspection Complete · Storage: {inspected.storageSource} · Physical Object Verified: {inspected.existsInR2 ? 'YES' : 'Fallback'}
+            </div>
+            <div style={{fontSize:11,fontFamily:'monospace',color:'var(--xh-text2)',wordBreak:'break-all'}}>
+              Key: {inspected.objectKey} · Size: {inspected.fileSize} bytes · Admin Inspected At: {fmtDate(inspected.adminInspectedAt)} (Buyer download counter preserved at {inspected.buyerEvidence?.downloadCount ?? dlCount})
+            </div>
+          </div>
+        )}
+
+        {/* Arbitration Controls */}
+        {!isResolved ? (
+          <div style={{display:'flex',flexDirection:'column',gap:8,paddingTop:4,borderTop:'1px solid var(--xh-border)'}}>
+            <input
+              type="text"
+              value={disputeNotes[keyId] || ''}
+              onChange={e => setDisputeNotes(prev => ({ ...prev, [keyId]: e.target.value }))}
+              placeholder="Admin arbitration note / ruling explanation (recorded on dispute log)…"
+              style={{width:'100%',padding:'8px 11px',borderRadius:8,border:'1px solid var(--xh-border2)',background:'var(--xh-surface)',color:'var(--xh-text)',fontSize:12.5,boxSizing:'border-box'}}
+            />
+            <div style={{display:'flex',justifyContent:'flex-end',gap:8,flexWrap:'wrap'}}>
+              <button
+                type="button"
+                className="xh-btn-sm"
+                disabled={resolvingId === (d.id || d.order_id)}
+                onClick={() => handleArbitrateDispute(d, false)}
+                style={{background:'#16A34A',color:'#fff',borderColor:'#15803D',padding:'8px 14px',fontWeight:700}}
+              >
+                ✓ Reject Dispute (Seller Wins — Release Payout)
+              </button>
+              <button
+                type="button"
+                className="xh-btn-sm xh-btn-danger"
+                disabled={resolvingId === (d.id || d.order_id)}
+                onClick={() => handleArbitrateDispute(d, true)}
+                style={{padding:'8px 14px',fontWeight:700}}
+              >
+                ↩ Approve Dispute (Buyer Wins — Refund Buyer)
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{fontSize:12,color:'#16A34A',fontWeight:600}}>
+            ✓ Resolved ({d.decision || d.order_status}) {d.admin_note ? `— Note: "${d.admin_note}"` : ''}
+          </div>
+        )}
+      </div>
+    );
+  }
   const filteredListings = listingFilter==='all' ? listings : listings.filter(l=>l.status===listingFilter);
   const listingCounts = {
     all: listings.length,
@@ -239,8 +453,14 @@ export default function AdminPage() {
 
       <div style={{marginBottom:20}}>
         <h1 style={{fontSize:24,fontWeight:800,color:'var(--xh-text)',letterSpacing:'-0.02em',margin:'0 0 4px'}}>Admin Console</h1>
-        <div style={{fontSize:13,color:'var(--xh-text3)'}}>Marketplace operations & moderation</div>
+        <div style={{fontSize:13,color:'var(--xh-text3)'}}>Marketplace operations, R2 Vault inspection &amp; escrow dispute arbitration</div>
       </div>
+
+      {actionToast && (
+        <div style={{padding:'12px 16px',marginBottom:16,borderRadius:10,background:'rgba(32,128,245,0.12)',border:'1px solid rgba(32,128,245,0.35)',color:'var(--xh-text)',fontSize:13,fontWeight:700}}>
+          {actionToast}
+        </div>
+      )}
 
       <div style={{display:'flex',gap:4,borderBottom:'1px solid var(--xh-border)',marginBottom:20,overflowX:'auto'}}>
         {TABS.map(t=>(
@@ -266,21 +486,10 @@ export default function AdminPage() {
             <MetricCard label='Open disputes' value={openDisputes.length.toString()} delta={openDisputes.length>0?'needs review':'all clear'} color='#DC2626' trend={[1,0,2,1,3,2,openDisputes.length||1]}/>
           </div>
 
-          <Section title={'Open disputes ('+openDisputes.length+')'} action={openDisputes.length>0 && <button className='xh-tab' onClick={()=>setTab('escrows')} style={{padding:'4px 10px',fontSize:12}}>View all →</button>}>
+          <Section title={'Open disputes & arbitration ('+openDisputes.length+')'} action={openDisputes.length>0 && <button className='xh-tab' onClick={()=>setTab('escrows')} style={{padding:'4px 10px',fontSize:12}}>Open Full Arbitration View →</button>}>
             {openDisputes.length===0 ? <Empty icon='✅' text='No open disputes — all clear'/> : (
-              <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                {openDisputes.slice(0,5).map(d=>(
-                  <div key={d.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13}}>
-                    <div>
-                      <div style={{fontWeight:600,color:'var(--xh-text)'}}>Escrow #{(d.id||'').toString().slice(0,8)}</div>
-                      <div style={{fontSize:11.5,color:'var(--xh-text3)',marginTop:2}}>{d.reason||'No reason provided'}</div>
-                    </div>
-                    <div style={{display:'flex',gap:6}}>
-                      <button className='xh-btn-sm' onClick={()=>api.admin.resolveDispute(d.id,{action:'release'}).then(()=>location.reload())}>Release</button>
-                      <button className='xh-btn-sm xh-btn-danger' onClick={()=>api.admin.resolveDispute(d.id,{action:'refund'}).then(()=>location.reload())}>Refund</button>
-                    </div>
-                  </div>
-                ))}
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                {openDisputes.slice(0,5).map(d => renderDisputeCard(d))}
               </div>
             )}
           </Section>
@@ -427,33 +636,16 @@ export default function AdminPage() {
 
       {tab==='escrows' && (
         <div>
-          <Section title={'Disputed escrows ('+disputes.length+')'} action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Backend currently exposes only disputed escrows</span>}>
+          <Section
+            title={'Disputes & R2 Vault Arbitration ('+disputes.length+')'}
+            action={<button type="button" className="xh-btn-sm" onClick={refreshDisputes}>↻ Refresh Disputes</button>}
+          >
             {disputes.length===0 ? <Empty icon='✅' text='No disputed escrows'/> : (
-              <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                {disputes.map(d=>(
-                  <div key={d.id} style={{padding:'12px 14px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6,flexWrap:'wrap',gap:8}}>
-                      <div style={{fontWeight:600,color:'var(--xh-text)',display:'flex',alignItems:'center',gap:8}}>
-                        Escrow #{(d.id||'').toString().slice(0,8)}
-                        <Pill color='red'>{d.status||'open'}</Pill>
-                      </div>
-                      <div style={{display:'flex',gap:6}}>
-                        <button className='xh-btn-sm' onClick={()=>api.admin.resolveDispute(d.id,{action:'release'}).then(()=>location.reload())}>Release to seller</button>
-                        <button className='xh-btn-sm xh-btn-danger' onClick={()=>api.admin.resolveDispute(d.id,{action:'refund'}).then(()=>location.reload())}>Refund buyer</button>
-                      </div>
-                    </div>
-                    <div style={{fontSize:12,color:'var(--xh-text2)'}}>{(d.reason||'No reason')+(d.amount_xrp?' · '+d.amount_xrp+' XRP':'')}</div>
-                  </div>
-                ))}
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                {disputes.map(d => renderDisputeCard(d))}
               </div>
             )}
           </Section>
-          <NeedsBackend
-            title='All active escrows view'
-            why='To show every in-flight escrow (funded, awaiting delivery, awaiting buyer confirmation, etc) with XRPL transaction hashes, the backend needs a new endpoint that returns all escrows, not just disputed ones.'
-            workaround='Disputed escrows (above) are still actionable here. Resolve / refund works on-chain.'
-            endpoints={['GET /api/admin/escrows?status=funded|delivered|completed','GET /api/admin/escrows/:id (with XRPL tx hashes + chat thread)']}
-          />
         </div>
       )}
 

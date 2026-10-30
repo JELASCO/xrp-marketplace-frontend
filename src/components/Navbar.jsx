@@ -77,6 +77,7 @@ export default function Navbar() {
   }
 
   const { price: xrpPrice, dir: priceDir } = useXrpPrice();
+  const isAdmin = Boolean(user && (user.role === 'admin' || user.is_admin || user.isAdmin));
 
   return (
     <>
@@ -118,10 +119,16 @@ export default function Navbar() {
             </svg>
           </form>)}
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
-            {[{href:'/listings',label:'Marketplace'},...(user?[{href:'/dashboard',label:'Dashboard'}]:[]),{href:'/listings/new',label:'+ List an item',accent:true},{href:'/orders',label:'Library / Purchases'}].map(l=>(
-              <Link key={l.href} href={l.href} style={l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)',whiteSpace:'nowrap'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent',whiteSpace:'nowrap'}}
-                onMouseEnter={e=>{ if(l.accent){ e.currentTarget.style.background='#2080F5'; e.currentTarget.style.color='#fff'; } else { e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'; } }}
-                onMouseLeave={e=>{ if(l.accent){ e.currentTarget.style.background='rgba(32,128,245,0.10)'; e.currentTarget.style.color='#2080F5'; } else { e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'; } }}>
+            {[
+              {href:'/listings',label:'Marketplace'},
+              ...(user?[{href:'/dashboard',label:'Dashboard'}]:[]),
+              ...(isAdmin?[{href:'/admin',label:'🛡 Admin',admin:true}]:[]),
+              {href:'/listings/new',label:'+ List an item',accent:true},
+              {href:'/orders',label:'Library / Purchases'}
+            ].map(l=>(
+              <Link key={l.href} href={l.href} style={l.admin ? {fontSize:13,fontWeight:700,color:'#f59e0b',padding:'7px 13px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(245,158,11,0.4)',background:'rgba(245,158,11,0.12)',whiteSpace:'nowrap'} : l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)',whiteSpace:'nowrap'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent',whiteSpace:'nowrap'}}
+                onMouseEnter={e=>{ if(l.admin){ e.currentTarget.style.background='#f59e0b'; e.currentTarget.style.color='#0b1b33'; } else if(l.accent){ e.currentTarget.style.background='#2080F5'; e.currentTarget.style.color='#fff'; } else { e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'; } }}
+                onMouseLeave={e=>{ if(l.admin){ e.currentTarget.style.background='rgba(245,158,11,0.12)'; e.currentTarget.style.color='#f59e0b'; } else if(l.accent){ e.currentTarget.style.background='rgba(32,128,245,0.10)'; e.currentTarget.style.color='#2080F5'; } else { e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'; } }}>
                 {l.label}
               </Link>
             ))}
@@ -191,7 +198,7 @@ export default function Navbar() {
                       {i.label}
                     </Link>
                   ))}
-                  {user.role==='admin' && <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--accent2)',textDecoration:'none'}}>Admin Panel</Link>}
+                  {isAdmin && <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,fontWeight:700,color:'#f59e0b',textDecoration:'none'}}>🛡 Admin Panel</Link>}
                   <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
                   <button onClick={()=>{logout();setShowMenu(false);}} style={{width:'100%',textAlign:'left',padding:'9px 16px',fontSize:13,color:'#ef4444',background:'none',border:'none',cursor:'pointer'}}>
                     Sign out
@@ -236,6 +243,7 @@ export default function Navbar() {
               { href: '/listings/new', label: '➕ List an Item' },
               { href: '/orders', label: '📦 Library / Purchases' },
               ...(user ? [{ href: '/dashboard', label: '📊 Seller Dashboard' }] : []),
+              ...(isAdmin ? [{ href: '/admin', label: '🛡 Admin Panel' }] : []),
               { href: '/pro', label: '⭐ XRPHarbor Pro' },
             ].map(l => (
               <Link

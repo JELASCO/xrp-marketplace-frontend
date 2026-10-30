@@ -1630,6 +1630,41 @@ function isValidWalletAddress(val) {
   return XRPL_CLASSIC_RE.test(trimmed) || XRPL_XADDR_RE.test(trimmed);
 }
 
+const ADMIN_ENV_KEYS = [
+  'ADMIN_WALLETS',
+  'ADMIN_WALLET',
+  'PLATFORM_WALLET',
+  'PLATFORM_FEE_WALLET',
+  'PLATFORM_WALLET_ADDRESS',
+  'NEXT_PUBLIC_ADMIN_WALLETS',
+  'NEXT_PUBLIC_ADMIN_WALLET',
+  'NEXT_PUBLIC_PLATFORM_WALLET',
+];
+
+function getConfiguredAdminWallets() {
+  const wallets = [];
+  const seen = new Set();
+  for (const key of ADMIN_ENV_KEYS) {
+    const raw = process.env[key];
+    if (!raw || typeof raw !== 'string') continue;
+    const parts = raw.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+    for (const addr of parts) {
+      if ((XRPL_CLASSIC_RE.test(addr) || XRPL_XADDR_RE.test(addr)) && !seen.has(addr)) {
+        seen.add(addr);
+        wallets.push(addr);
+      }
+    }
+  }
+  return wallets;
+}
+
+function isWalletAdmin(walletAddress) {
+  if (!walletAddress || typeof walletAddress !== 'string') return false;
+  const clean = walletAddress.trim();
+  if (!clean) return false;
+  return getConfiguredAdminWallets().includes(clean);
+}
+
 function validatePositiveAmount(val, max = 100000000) {
   if (val === null || val === undefined || typeof val === 'boolean' || typeof val === 'object') return false;
   if (typeof val === 'string' && val.trim() === '') return false;
@@ -2256,6 +2291,11 @@ function ensureAuthUser(store, req) {
     };
     store.users.push(u);
   }
+  if (u.role === 'admin' || decoded.role === 'admin' || isWalletAdmin(u.wallet_address)) {
+    u.role = 'admin';
+    u.is_admin = true;
+    u.isAdmin = true;
+  }
   return u;
 }
 
@@ -2440,22 +2480,41 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       };
       store.users.push(u);
     }
-    const token = signJwt({ id: u.id, username: u.username, walletAddress: u.wallet_address, role: u.role || 'user' });
+    if (u.role === 'admin' || isWalletAdmin(u.wallet_address)) {
+      u.role = 'admin';
+      u.is_admin = true;
+      u.isAdmin = true;
+    }
+    const isAdminUser = u.role === 'admin';
+    const token = signJwt({ id: u.id, username: u.username, walletAddress: u.wallet_address, role: u.role || 'user', is_admin: isAdminUser, isAdmin: isAdminUser });
     return jsonRes({
       token,
-      user: { id: u.id, username: u.username, walletAddress: u.wallet_address, role: u.role || 'user' },
+      user: {
+        id: u.id,
+        username: u.username,
+        walletAddress: u.wallet_address,
+        wallet_address: u.wallet_address,
+        role: u.role || 'user',
+        is_admin: isAdminUser,
+        isAdmin: isAdminUser,
+      },
     });
   }
 
   if (method === 'GET' && pathStr === 'auth/me') {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Invalid token' }, 401);
+    const isAdminUser = u.role === 'admin' || isWalletAdmin(u.wallet_address);
+    if (isAdminUser) u.role = 'admin';
     const stats = getEffectiveUserStats(store, u);
     return jsonRes({
       id: u.id,
       username: u.username,
       walletAddress: u.wallet_address,
-      role: u.role || 'user',
+      wallet_address: u.wallet_address,
+      role: isAdminUser ? 'admin' : (u.role || 'user'),
+      is_admin: isAdminUser,
+      isAdmin: isAdminUser,
       bio: u.bio || '',
       reputationScore: stats.reputationScore,
       reputation_score: stats.reputationScore,
@@ -2486,7 +2545,134 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       });
     }
     if (pathStr === 'admin/users' && method === 'GET') return jsonRes(store.users);
-    if (pathStr === 'admin/disputes' && method === 'GET') return jsonRes([]);
+    if (pathStr === 'admin/disputes' && method === 'GET') {
+      if (!Array.isArray(store.disputes)) store.disputes = [];
+      for (const ord of store.orders) {
+        if (ord.status === 'disputed' && !store.disputes.some(d => d.order_id === ord.id)) {
+          store.disputes.unshift({
+            id: crypto.randomUUID(),
+            order_id: ord.id,
+            opened_by_id: ord.buyer_id,
+            reason: ord.dispute_reason || 'Order flagged as disputed',
+            status: 'open',
+            created_at: ord.updated_at || ord.created_at || nowIso(),
+          });
+        }
+      }
+      const rows = store.orders
+        .filter(o => o.status === 'disputed' || store.disputes.some(d => d.order_id === o.id))
+        .map(o => {
+          const d = store.disputes.find(x => x.order_id === o.id) || {};
+          const l = store.listings.find(x => x.id === o.listing_id) || {};
+          const ub = store.users.find(x => x.id === o.buyer_id) || {};
+          const us = store.users.find(x => x.id === o.seller_id) || {};
+          const logs = Array.isArray(o.download_logs) ? o.download_logs : [];
+          const dlCount = logs.length > 0 ? logs.length : (o.buyer_downloaded_at ? 1 : 0);
+          return {
+            id: d.id || o.id,
+            dispute_id: d.id || o.id,
+            order_id: o.id,
+            reason: d.reason || o.dispute_reason || 'Order flagged as disputed',
+            status: o.status === 'disputed' ? 'open' : (d.status || 'resolved'),
+            decision: d.decision || null,
+            admin_note: d.admin_note || null,
+            resolved_at: d.resolved_at || null,
+            created_at: d.created_at || o.created_at,
+            total_xrp: o.total_xrp,
+            seller_receives_xrp: o.seller_receives_xrp,
+            order_status: o.status,
+            escrow_tx_hash: o.escrow_tx_hash,
+            escrow_sequence: o.escrow_sequence,
+            buyer_downloaded_at: o.buyer_downloaded_at || null,
+            download_logs: logs,
+            download_count: dlCount,
+            buyer_downloaded: Boolean(o.buyer_downloaded_at || dlCount > 0),
+            admin_inspected_at: o.admin_inspected_at || null,
+            listing_id: o.listing_id,
+            listing_title: l.title || o.listing_title || 'Digital Asset',
+            title: l.title || o.listing_title || 'Digital Asset',
+            digital_archive_name: l.digital_archive_name || null,
+            digital_archive_size: l.digital_archive_size || null,
+            digital_archive_sha256: l.digital_archive_sha256 || null,
+            r2_object_key: normalizeR2Key(l.r2_object_key || l.digital_archive_url || ''),
+            buyer_name: ub.username || 'buyer',
+            buyer_username: ub.username || 'buyer',
+            buyer_wallet: o.buyer_wallet_address || ub.wallet_address || '',
+            seller_name: us.username || 'seller',
+            seller_username: us.username || 'seller',
+            seller_wallet: o.seller_wallet_address || us.wallet_address || '',
+          };
+        });
+      return jsonRes(rows);
+    }
+    if (segments[0] === 'admin' && segments[1] === 'orders' && segments[2] && segments[3] === 'inspect-vault') {
+      const targetId = segments[2];
+      const dMatch = (store.disputes || []).find(d => d.id === targetId);
+      const ord = store.orders.find(o => o.id === targetId || (dMatch && o.id === dMatch.order_id));
+      if (!ord) return jsonRes({ error: 'Disputed order not found' }, 404);
+      const l = store.listings.find(x => x.id === ord.listing_id) || {};
+      const objectKey = normalizeR2Key(l.r2_object_key || l.digital_archive_url || `vault/order-${ord.id}.zip`);
+      const archiveName = l.digital_archive_name || `xrpharbor-order-${String(ord.id).slice(0, 8)}.zip`;
+      ord.admin_inspected_at = nowIso();
+      if (searchParams.get('raw') === '1' || searchParams.get('stream') === '1') {
+        const zipBuf = buildDeterministicZipBuffer(l.title || 'Disputed Asset', ord.id);
+        return new Response(zipBuf, {
+          status: 200,
+          headers: {
+            'content-type': 'application/octet-stream',
+            'content-disposition': `attachment; filename="${archiveName}"`,
+            'x-admin-inspection': 'true',
+            ...SECURITY_RESPONSE_HEADERS,
+          },
+        });
+      }
+      const logs = Array.isArray(ord.download_logs) ? ord.download_logs : [];
+      const dlCount = logs.length > 0 ? logs.length : (ord.buyer_downloaded_at ? 1 : 0);
+      return jsonRes({
+        ok: true,
+        orderId: ord.id,
+        listingTitle: l.title || ord.listing_title,
+        objectKey,
+        fileName: archiveName,
+        fileSize: l.digital_archive_size || 1024,
+        sha256: l.digital_archive_sha256 || null,
+        existsInR2: true,
+        storageSource: isR2Configured() ? 'cloudflare_r2' : 'memory_vault',
+        presignedGetUrl: null,
+        streamUrl: `/api/admin/orders/${ord.id}/inspect-vault?raw=1`,
+        adminInspectedAt: ord.admin_inspected_at,
+        buyerEvidence: {
+          buyerDownloaded: Boolean(ord.buyer_downloaded_at || dlCount > 0),
+          buyerDownloadedAt: ord.buyer_downloaded_at || null,
+          downloadCount: dlCount,
+        },
+      });
+    }
+    if ((segments[0] === 'disputes' && segments[2] === 'resolve') || (segments[0] === 'admin' && segments[1] === 'orders' && segments[3] === 'resolve-dispute')) {
+      const targetId = segments[0] === 'disputes' ? segments[1] : segments[2];
+      if (!Array.isArray(store.disputes)) store.disputes = [];
+      const dRow = store.disputes.find(d => d.id === targetId || d.order_id === targetId);
+      const ord = store.orders.find(o => o.id === targetId || (dRow && o.id === dRow.order_id));
+      if (!ord) return jsonRes({ error: 'Dispute or order not found' }, 404);
+      let favorBuyer = false;
+      if (typeof body.favorBuyer === 'boolean') favorBuyer = body.favorBuyer;
+      else if (typeof body.action === 'string') {
+        const act = body.action.toLowerCase();
+        favorBuyer = act === 'refund' || act === 'buyer' || act === 'approve' || act === 'approve_buyer';
+      }
+      const decision = favorBuyer ? 'refund_buyer' : 'pay_seller';
+      const orderStatus = favorBuyer ? 'refund_approved' : 'release_approved';
+      const note = body.resolution || body.note || body.admin_note || null;
+      ord.status = orderStatus;
+      ord.updated_at = nowIso();
+      if (dRow) {
+        dRow.status = 'resolved';
+        dRow.decision = decision;
+        dRow.admin_note = note;
+        dRow.resolved_at = nowIso();
+      }
+      return jsonRes({ ok: true, decision, orderStatus, orderId: ord.id, adminNote: note });
+    }
     if (pathStr === 'admin/reports' && method === 'GET') return jsonRes([]);
     return jsonRes({ ok: true });
   }
@@ -3267,7 +3453,10 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
 
     if (segments[2] === 'commission' && segments[3] === 'verify' && method === 'POST') {
       if (!isBuyer && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
-      const { txHash } = body || {};
+      const { txHash, polling } = body || {};
+      if (polling && !txHash && order.status !== 'awaiting_escrow') {
+        return jsonRes({ ok: false, feePaid: false, status: order.status, polling: true });
+      }
       const cleanFeeHash = (typeof txHash === 'string' && /^[A-Fa-f0-9]{64}$/.test(txHash.trim()))
         ? txHash.trim()
         : ('FEE' + crypto.randomBytes(30).toString('hex').toUpperCase().slice(0, 61));
@@ -3320,6 +3509,13 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
     if (segments[2] === 'escrow' && segments[3] === 'cancel' && method === 'POST') {
       if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can reclaim this escrow' }, 403);
       if (!order.escrow_sequence) return jsonRes({ error: 'No active escrow on this order' }, 400);
+      const buyerDownloaded = Boolean(order.buyer_downloaded_at || (Array.isArray(order.download_logs) && order.download_logs.length > 0));
+      if (buyerDownloaded && order.status !== 'refund_approved' && !isAdmin) {
+        return jsonRes({
+          error: 'Vault archive has already been downloaded by the buyer. Direct non-delivery reclaim is disabled; if the file is corrupted or mismatched, please open a dispute with a detailed description for admin review.',
+          code: 'VAULT_ALREADY_DOWNLOADED',
+        }, 400);
+      }
       const payload = await createXummOrDemoPayload({
         TransactionType: 'EscrowCancel',
         Account: order.buyer_wallet_address,
@@ -3442,15 +3638,43 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
     }
 
     if (segments[2] === 'dispute' && method === 'POST') {
-      if (!isBuyer && !isSeller) return jsonRes({ error: 'Forbidden' }, 403);
+      if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
       if (['completed', 'cancelled', 'refunded'].includes(order.status)) {
         return jsonRes({ error: 'This order is already ' + order.status + ' and cannot be disputed.' }, 400);
       }
       if (body.reason !== undefined && body.reason !== null && (typeof body.reason !== 'string' || body.reason.length > 2000)) {
         return jsonRes({ error: 'Dispute reason must be a string up to 2000 characters' }, 400);
       }
+      const buyerDownloaded = Boolean(order.buyer_downloaded_at || (Array.isArray(order.download_logs) && order.download_logs.length > 0));
+      const trimmedReason = typeof body.reason === 'string' ? body.reason.trim() : '';
+      if (buyerDownloaded && isBuyer) {
+        if (body.category === 'not_received' || /^(i didn't receive|not received|never delivered|seller didn't deliver|item not received)/i.test(trimmedReason)) {
+          return jsonRes({
+            error: 'On-record download evidence shows the vault archive was already downloaded. "Item not received" claims are disabled; please report a Corrupted / Mismatched File dispute with a detailed description.',
+            code: 'VAULT_ALREADY_DOWNLOADED',
+          }, 400);
+        }
+        if (trimmedReason.length < 10) {
+          return jsonRes({
+            error: 'Since the vault file has already been downloaded, you must provide a detailed description (at least 10 characters) explaining how the file is corrupted or mismatched.',
+          }, 400);
+        }
+      }
+      const cleanReason = trimmedReason ? sanitizeString(trimmedReason, 2000) : 'No reason provided';
       order.status = 'disputed';
-      return jsonRes({ status: 'disputed' });
+      order.dispute_reason = cleanReason;
+      if (!Array.isArray(store.disputes)) store.disputes = [];
+      if (!store.disputes.some(d => d.order_id === order.id && d.status === 'open')) {
+        store.disputes.unshift({
+          id: crypto.randomUUID(),
+          order_id: order.id,
+          opened_by_id: u.id,
+          reason: cleanReason,
+          status: 'open',
+          created_at: nowIso(),
+        });
+      }
+      return jsonRes({ status: 'disputed', reason: cleanReason });
     }
   }
 
@@ -4543,13 +4767,35 @@ async function handler(req, ctx) {
           );
         }
 
-        const respText = await res.text();
+        let respText = await res.text();
         // Check if upstream returned "Application not found" or unhandled route 404
         if (
           res.status === 404 &&
           (respText.includes('Application not found') || respText.includes('Cannot GET') || respText.includes('Cannot POST'))
         ) {
           continue;
+        }
+        if (res.status === 200 && (pathStr === 'auth/me' || pathStr === 'auth/verify')) {
+          try {
+            const parsed = JSON.parse(respText);
+            if (pathStr === 'auth/me' && parsed && typeof parsed === 'object') {
+              const w = parsed.walletAddress || parsed.wallet_address;
+              if (parsed.role === 'admin' || parsed.is_admin || isWalletAdmin(w)) {
+                parsed.role = 'admin';
+                parsed.is_admin = true;
+                parsed.isAdmin = true;
+                respText = JSON.stringify(parsed);
+              }
+            } else if (pathStr === 'auth/verify' && parsed && parsed.user && typeof parsed.user === 'object') {
+              const w = parsed.user.walletAddress || parsed.user.wallet_address;
+              if (parsed.user.role === 'admin' || parsed.user.is_admin || isWalletAdmin(w)) {
+                parsed.user.role = 'admin';
+                parsed.user.is_admin = true;
+                parsed.user.isAdmin = true;
+                respText = JSON.stringify(parsed);
+              }
+            }
+          } catch {}
         }
         return withSecurityAndCorsHeaders(
           new Response(respText, { status: res.status, headers: { 'content-type': ct } }),

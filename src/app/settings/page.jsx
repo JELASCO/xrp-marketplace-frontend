@@ -50,12 +50,15 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
+  const isAdmin = Boolean(
+    user && (user.role === 'admin' || user.is_admin || user.isAdmin)
+  );
   const isPro = Boolean(
     user &&
       ((user.proUntil && new Date(user.proUntil) > new Date()) ||
         (user.pro_until && new Date(user.pro_until) > new Date()) ||
         user.store_handle ||
-        user.role === 'admin')
+        isAdmin)
   );
 
   useEffect(() => {
@@ -148,13 +151,57 @@ export default function SettingsPage() {
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Profile Settings</h1>
-        {isPro && (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', padding: '5px 12px', borderRadius: 999 }}>
-            <span className="xh-pro" style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>PRO</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>Animated GIFs & Orbit Frames Unlocked</span>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'rgba(245,158,11,0.14)',
+                border: '1px solid rgba(245,158,11,0.45)',
+                color: '#f59e0b',
+                padding: '6px 13px',
+                borderRadius: 999,
+                fontSize: 12.5,
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              🛡 Admin Panel
+            </Link>
+          )}
+          {isPro && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', padding: '5px 12px', borderRadius: 999 }}>
+              <span className="xh-pro" style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>PRO</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>Animated GIFs & Orbit Frames Unlocked</span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {isAdmin && (
+        <div style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.10), rgba(32,128,245,0.08))', border: '1px solid rgba(245,158,11,0.38)', borderRadius: 16, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>🛡 Platform Administrator Access</span>
+              <span style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', background: 'rgba(245,158,11,0.2)', color: '#f59e0b', padding: '2px 7px', borderRadius: 6, fontWeight: 800 }}>ADMIN</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 3 }}>
+              Manage disputed orders, inspect R2 Vault files, verify creators, and arbitrate escrow settlements.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link href="/admin?tab=escrows" style={{ background: '#f59e0b', color: '#0b1b33', padding: '8px 14px', borderRadius: 9, fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }}>
+              ⚖️ Disputes &amp; R2 Vault Audit →
+            </Link>
+            <Link href="/admin" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 14px', borderRadius: 9, fontSize: 12.5, fontWeight: 600, textDecoration: 'none' }}>
+              Open Admin Console
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Avatar & Frame Card */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 20 }}>

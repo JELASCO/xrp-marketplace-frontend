@@ -24,6 +24,8 @@ const STEPS = ['Awaiting escrow', 'In escrow', 'Delivered', 'Completed'];
 const STEP_IDX = { pending:0, awaiting_payment:0, awaiting_escrow:0, escrow_locked:1, delivered:2, completed:3 };
 const XRPL_TX = 'https://livenet.xrpl.org/transactions/';
 const shortHash = (h) => h ? h.slice(0,8) + '…' + h.slice(-6) : '';
+const CHECKOUT_MODE = (process.env.NEXT_PUBLIC_CHECKOUT_MODE || 'v2').toLowerCase();
+const isLegacyCheckout = CHECKOUT_MODE === 'legacy';
 
 export default function OrdersPage() {
   const user = useAuthStore(s => s.user);
@@ -44,6 +46,12 @@ export default function OrdersPage() {
   const [autoReleasingId, setAutoReleasingId] = useState(null);
   const [extSigning, setExtSigning] = useState(null); // 'crossmark' | 'gemwallet' | null
   const [extError, setExtError] = useState(null); // { message, installUrl, wallet } | null
+  const [autoPollStatus, setAutoPollStatus] = useState('');
+  const [disputeModalOrder, setDisputeModalOrder] = useState(null);
+  const [disputeCategory, setDisputeCategory] = useState('corrupted_file');
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+  const [disputeError, setDisputeError] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -214,7 +222,7 @@ export default function OrdersPage() {
       const result = await api.orders.escrowCancel(order.id);
       if (result.xumm) {
         setExtError(null);
-        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'reclaim' });
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, uuid: result.xumm.uuid, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'reclaim' });
       }
     } catch(e) { alert(e.message); }
   }
@@ -224,7 +232,7 @@ export default function OrdersPage() {
       const result = await api.orders.claim(order.id);
       if (result.xumm) {
         setExtError(null);
-        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'release' });
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, uuid: result.xumm.uuid, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'release' });
       }
     } catch(e) { alert(e.message); }
   }
@@ -255,6 +263,8 @@ export default function OrdersPage() {
           escrowQr: result.qrUrl,
           escrowDeepLink: result.deepLink,
           escrowTxjson: result.txjson,
+          escrowUuid: result.uuid,
+          commissionUuid: result.commission && result.commission.uuid,
         };
         if (hasTwoSteps) {
           // Step 1/2: pay platform fee first -> auto-chains into Step 2/2: Lock XRPL Escrow
@@ -263,6 +273,7 @@ export default function OrdersPage() {
             qrUrl: result.commission.qrUrl,
             deepLink: result.commission.deepLink,
             txjson: result.commission.txjson,
+            uuid: result.commission.uuid,
             mode: 'commission',
             step: 1,
             hasFee: true,
@@ -274,6 +285,7 @@ export default function OrdersPage() {
             qrUrl: result.qrUrl,
             deepLink: result.deepLink,
             txjson: result.txjson,
+            uuid: result.uuid,
             mode: 'pay',
             step: order.status === 'awaiting_escrow' ? 2 : 1,
             hasFee: order.status === 'awaiting_escrow',
@@ -302,14 +314,138 @@ export default function OrdersPage() {
       await fetch(`/api/orders/${xummModal.orderId}/commission/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ uuid: xummModal.commissionUuid || xummModal.uuid }),
       }).catch(() => {});
       api.orders.mine(role).then(setOrders).catch(() => {});
     }
     setXummModal(m => {
       if (!m || !m.escrowQr) return null;
-      return { ...m, qrUrl: m.escrowQr, deepLink: m.escrowDeepLink, txjson: m.escrowTxjson, mode: 'pay', step: 2 };
+      return { ...m, qrUrl: m.escrowQr, deepLink: m.escrowDeepLink, txjson: m.escrowTxjson, uuid: m.escrowUuid, mode: 'pay', step: 2 };
     });
+  }
+
+  // v2 Auto-Polling Checkout Flow (when NEXT_PUBLIC_CHECKOUT_MODE !== 'legacy')
+  useEffect(() => {
+    if (isLegacyCheckout || !xummModal || !xummModal.orderId) {
+      setAutoPollStatus('');
+      return;
+    }
+    let cancelled = false;
+    let pollInFlight = false;
+
+    const checkWalletSignature = async () => {
+      if (cancelled || pollInFlight || !xummModal || !xummModal.orderId) return;
+      pollInFlight = true;
+      try {
+        if (xummModal.mode === 'commission') {
+          setAutoPollStatus('Waiting for Step 1/2 signature in wallet (auto-syncing every 2s)…');
+          const res = await api.orders.commissionVerify(xummModal.orderId, {
+            uuid: xummModal.commissionUuid || xummModal.uuid,
+            polling: true,
+          }).catch(() => null);
+          if (!cancelled && res && (res.feePaid || res.status === 'awaiting_escrow')) {
+            setAutoPollStatus('✓ Step 1/2 confirmed on XRPL! Launching Step 2/2 (EscrowCreate)…');
+            api.orders.mine(role).then(setOrders).catch(() => {});
+            setXummModal(m => {
+              if (!m || !m.escrowQr) return null;
+              return {
+                ...m,
+                qrUrl: m.escrowQr,
+                deepLink: m.escrowDeepLink,
+                txjson: m.escrowTxjson,
+                uuid: m.escrowUuid,
+                mode: 'pay',
+                step: 2,
+              };
+            });
+          }
+        } else if (xummModal.mode === 'pay') {
+          setAutoPollStatus('Waiting for EscrowCreate signature on XRPL (auto-syncing every 2s)…');
+          const res = await api.orders.escrowStatus(xummModal.orderId, xummModal.uuid || xummModal.escrowUuid).catch(() => null);
+          if (!cancelled && res && ['escrow_locked', 'delivered', 'completed'].includes(res.status)) {
+            setAutoPollStatus('✓ EscrowCreate validated on XRPL! Unlocking Digital Vault…');
+            const targetOrderId = xummModal.orderId;
+            setXummModal(null);
+            setExtError(null);
+            setExtSigning(null);
+            setOpen(targetOrderId);
+            api.orders.delivery(targetOrderId)
+              .then(r => setDelivery(d => ({ ...d, [targetOrderId]: r })))
+              .catch(() => {});
+            api.orders.mine(role).then(setOrders).catch(() => {});
+          }
+        } else if (xummModal.mode === 'release' || xummModal.mode === 'reclaim') {
+          setAutoPollStatus('Waiting for on-chain settlement confirmation (auto-syncing every 2s)…');
+          const res = await api.orders.escrowStatus(xummModal.orderId, xummModal.uuid).catch(() => null);
+          if (!cancelled && res && ['completed', 'refunded'].includes(res.status)) {
+            setXummModal(null);
+            setExtError(null);
+            setExtSigning(null);
+            api.orders.mine(role).then(setOrders).catch(() => {});
+          }
+        }
+      } finally {
+        pollInFlight = false;
+      }
+    };
+
+    const interval = setInterval(checkWalletSignature, 2000);
+    const onFocusOrVisible = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        checkWalletSignature();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', onFocusOrVisible);
+      document.addEventListener('visibilitychange', onFocusOrVisible);
+    }
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', onFocusOrVisible);
+        document.removeEventListener('visibilitychange', onFocusOrVisible);
+      }
+    };
+  }, [xummModal, role]);
+
+  function openDisputeModal(order, hasDownloaded) {
+    setDisputeModalOrder({ order, hasDownloaded });
+    setDisputeCategory(hasDownloaded ? 'corrupted_file' : 'non_delivery');
+    setDisputeReason('');
+    setDisputeError(null);
+  }
+
+  async function submitDisputeModal(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!disputeModalOrder || !disputeModalOrder.order) return;
+    const { order, hasDownloaded } = disputeModalOrder;
+    const trimmed = disputeReason.trim();
+    if (hasDownloaded && disputeCategory === 'non_delivery') {
+      setDisputeError('You have already downloaded the vault archive. "I didn\'t receive" is disabled — please select "Report Corrupted / Mismatched File" and describe the issue.');
+      return;
+    }
+    if ((hasDownloaded || disputeCategory === 'corrupted_file') && trimmed.length < 10) {
+      setDisputeError('Please provide a detailed description (at least 10 characters) explaining how the vault file is corrupted or mismatched.');
+      return;
+    }
+    setDisputeSubmitting(true);
+    setDisputeError(null);
+    try {
+      const labelPrefix = disputeCategory === 'corrupted_file'
+        ? '[Corrupted / Mismatched File] '
+        : '[Non-Delivery Claim] ';
+      await api.orders.dispute(order.id, {
+        category: disputeCategory,
+        reason: labelPrefix + (trimmed || 'Buyer reported an issue with the order'),
+      });
+      setDisputeModalOrder(null);
+      await api.orders.mine(role).then(setOrders);
+    } catch (err) {
+      setDisputeError(err.message || 'Could not submit dispute');
+    } finally {
+      setDisputeSubmitting(false);
+    }
   }
 
   async function handleConfirmSignedEscrow() {
@@ -337,7 +473,7 @@ export default function OrdersPage() {
       const result = await api.orders.confirm(order.id);
       if (result.xumm) {
         setExtError(null);
-        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'release' });
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, uuid: result.xumm.uuid, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'release' });
       } else {
         api.orders.mine(role).then(setOrders);
       }
@@ -539,6 +675,19 @@ export default function OrdersPage() {
               )}
             </div>
 
+            {!isLegacyCheckout && autoPollStatus && (
+              <div style={{marginBottom:10,padding:'8px 10px',borderRadius:8,background:'rgba(32,128,245,0.08)',border:'1px solid rgba(32,128,245,0.22)',fontSize:11,color:'var(--accent)',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                <span>🔄 {autoPollStatus}</span>
+                <button
+                  type="button"
+                  onClick={() => xummModal.mode==='commission' ? proceedToEscrow() : handleSync(xummModal.orderId)}
+                  style={{padding:'3px 8px',borderRadius:6,border:'1px solid rgba(32,128,245,0.35)',background:'var(--surface)',color:'var(--accent)',fontSize:10.5,fontWeight:700,cursor:'pointer',flexShrink:0}}
+                >
+                  Resync
+                </button>
+              </div>
+            )}
+
             {xummModal.mode==='commission' ? (
               <button onClick={proceedToEscrow}
                 style={{width:'100%',background:'var(--accent)',border:'none',color:'#fff',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>
@@ -551,6 +700,137 @@ export default function OrdersPage() {
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {disputeModalOrder && disputeModalOrder.order && (
+        <div
+          style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:210,padding:12,backdropFilter:'blur(4px)'}}
+          onClick={e => { if (e.target === e.currentTarget && !disputeSubmitting) setDisputeModalOrder(null); }}
+        >
+          <form
+            onSubmit={submitDisputeModal}
+            style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border2)',borderRadius:16,padding:'22px 18px',maxWidth:'min(440px, calc(100vw - 24px))',width:'100%',maxHeight:'calc(100vh - 32px)',overflowY:'auto',boxSizing:'border-box'}}
+          >
+            <div style={{fontSize:16,fontWeight:800,color:'var(--text)',marginBottom:4}}>
+              ⚠ Open Order Dispute &amp; Escrow Arbitration
+            </div>
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:14,lineHeight:1.45}}>
+              Order: <b style={{color:'var(--text)'}}>{disputeModalOrder.order.listing_title || 'Digital Asset'}</b> · {Number(disputeModalOrder.order.total_xrp || 0).toFixed(2)} XRP
+            </div>
+
+            {disputeModalOrder.hasDownloaded && (
+              <div style={{marginBottom:12,padding:'9px 11px',borderRadius:8,background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',fontSize:11.5,color:'#b45309',lineHeight:1.45,fontWeight:600}}>
+                🔐 <b>On-Chain &amp; Vault Protection Notice:</b> Our audit log shows you have already downloaded the encrypted vault archive for this order. Non-delivery claims (&ldquo;I didn&apos;t receive&rdquo;) are disabled. You may only report a <b>Corrupted / Mismatched File</b> with a detailed explanation for Admin R2 Vault inspection.
+              </div>
+            )}
+
+            <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:14}}>
+              <label
+                style={{
+                  display:'flex',
+                  alignItems:'flex-start',
+                  gap:9,
+                  padding:'10px 12px',
+                  borderRadius:9,
+                  border: disputeCategory === 'non_delivery' ? '1.5px solid var(--accent)' : '1px solid var(--border2)',
+                  background: disputeModalOrder.hasDownloaded ? 'var(--surface2)' : (disputeCategory === 'non_delivery' ? 'rgba(32,128,245,0.06)' : 'var(--bg)'),
+                  opacity: disputeModalOrder.hasDownloaded ? 0.55 : 1,
+                  cursor: disputeModalOrder.hasDownloaded ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="disputeCategory"
+                  value="non_delivery"
+                  disabled={Boolean(disputeModalOrder.hasDownloaded)}
+                  checked={disputeCategory === 'non_delivery'}
+                  onChange={() => setDisputeCategory('non_delivery')}
+                  style={{marginTop:2}}
+                />
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12.5,fontWeight:700,color:'var(--text)',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                    <span>I didn&apos;t receive the item / Seller didn&apos;t deliver</span>
+                    {disputeModalOrder.hasDownloaded && (
+                      <span style={{fontSize:10,padding:'2px 6px',borderRadius:999,background:'rgba(239,68,68,0.12)',color:'#dc2626',fontWeight:700}}>
+                        Disabled (Vault Downloaded)
+                      </span>
+                    )}
+                  </div>
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
+                    Available only when no vault archive has been downloaded or delivered.
+                  </div>
+                </div>
+              </label>
+
+              <label
+                style={{
+                  display:'flex',
+                  alignItems:'flex-start',
+                  gap:9,
+                  padding:'10px 12px',
+                  borderRadius:9,
+                  border: disputeCategory === 'corrupted_file' ? '1.5px solid var(--accent)' : '1px solid var(--border2)',
+                  background: disputeCategory === 'corrupted_file' ? 'rgba(32,128,245,0.06)' : 'var(--bg)',
+                  cursor:'pointer',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="disputeCategory"
+                  value="corrupted_file"
+                  checked={disputeCategory === 'corrupted_file'}
+                  onChange={() => setDisputeCategory('corrupted_file')}
+                  style={{marginTop:2}}
+                />
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12.5,fontWeight:700,color:'var(--text)'}}>
+                    Report Corrupted / Mismatched File (Admin R2 Vault Review)
+                  </div>
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
+                    An administrator will inspect the uploaded R2 vault archive directly (SHA-256, byte size, and contents) to arbitrate.
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div style={{marginBottom:12}}>
+              <label style={{display:'block',fontSize:11,fontWeight:700,color:'var(--text2)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:5}}>
+                Detailed Description {(disputeModalOrder.hasDownloaded || disputeCategory === 'corrupted_file') ? '(Required — min 10 chars)' : '(Required)'}
+              </label>
+              <textarea
+                rows={3}
+                value={disputeReason}
+                onChange={e => setDisputeReason(e.target.value)}
+                placeholder={disputeCategory === 'corrupted_file' ? 'Explain what is corrupted, missing, or mismatched inside the archive so the Admin can verify it in R2…' : 'Describe the issue with this order…'}
+                style={{width:'100%',padding:'9px 11px',borderRadius:8,border:'1px solid var(--border2)',background:'var(--bg)',color:'var(--text)',fontSize:12.5,fontFamily:'inherit',boxSizing:'border-box',resize:'vertical'}}
+              />
+            </div>
+
+            {disputeError && (
+              <div style={{marginBottom:12,padding:'8px 10px',borderRadius:8,background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.25)',fontSize:11.5,color:'#dc2626',fontWeight:600}}>
+                {disputeError}
+              </div>
+            )}
+
+            <div style={{display:'flex',gap:8}}>
+              <button
+                type="button"
+                disabled={disputeSubmitting}
+                onClick={() => setDisputeModalOrder(null)}
+                style={{flex:1,padding:'10px',borderRadius:8,border:'1px solid var(--border2)',background:'var(--surface2)',color:'var(--text2)',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={disputeSubmitting}
+                style={{flex:1.4,padding:'10px',borderRadius:8,border:'none',background:'#dc2626',color:'#fff',fontSize:12.5,fontWeight:700,cursor:disputeSubmitting?'wait':'pointer',fontFamily:'inherit'}}
+              >
+                {disputeSubmitting ? 'Submitting Dispute…' : 'Submit Dispute to Admin'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24,flexWrap:'wrap',gap:12}}>
@@ -667,6 +947,13 @@ export default function OrdersPage() {
                     const locked = secsLeft !== null && secsLeft > 0;
                     const mins = secsLeft !== null ? Math.floor(secsLeft/60) : 0;
                     const secs = secsLeft !== null ? secsLeft%60 : 0;
+                    const hasDownloadedVault = Boolean(
+                      downloadLog[order.id] ||
+                      order.downloaded_at ||
+                      order.buyer_downloaded_at ||
+                      Number(order.download_count || 0) > 0 ||
+                      (Array.isArray(order.download_logs) && order.download_logs.length > 0)
+                    );
                     return (
                     <div>
                     <div style={{display:'flex',gap:8}}>
@@ -674,14 +961,26 @@ export default function OrdersPage() {
                         style={{flex:1,background:locked?'var(--surface2)':'rgba(16,185,129,0.1)',color:locked?'var(--text3)':'#34d399',border:'1px solid '+(locked?'var(--border2)':'rgba(16,185,129,0.2)'),borderRadius:8,padding:'10px',fontSize:13,fontWeight:500,cursor:locked?'not-allowed':'pointer',fontFamily:'inherit'}}>
                         {locked ? `Release available in ${mins}:${String(secs).padStart(2,'0')}` : '✓ Received — Release Payment'}
                       </button>
-                      <button onClick={() => { xhConfirm('Open a dispute for this order?', { confirmText: 'Open dispute' }).then(ok => { if(ok) api.orders.dispute(order.id,{reason:'Issue reported by buyer'}).then(() => api.orders.mine(role).then(setOrders)).catch(e=>alert(e.message)); }); }}
-                        style={{background:'rgba(239,68,68,0.08)',color:'#f87171',border:'1px solid rgba(239,68,68,0.15)',borderRadius:8,padding:'10px 14px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>⚠</button>
+                      <button
+                        type="button"
+                        onClick={() => openDisputeModal(order, hasDownloadedVault)}
+                        title={hasDownloadedVault ? 'Report Corrupted / Mismatched File' : 'Open Order Dispute'}
+                        style={{background:'rgba(239,68,68,0.08)',color:'#f87171',border:'1px solid rgba(239,68,68,0.15)',borderRadius:8,padding:'10px 14px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}
+                      >
+                        {hasDownloadedVault ? '⚠ Report File Issue' : '⚠ Dispute'}
+                      </button>
                     </div>
                     {locked && <div style={{fontSize:11,color:'var(--text3)',marginTop:6,textAlign:'center'}}>XRPL escrow requires a short hold before release. This protects both sides.</div>}
-                    <button onClick={() => { xhConfirm('Reclaim your funds? This only works after the escrow hold period (if the seller never delivered).', { confirmText: 'Reclaim' }).then(ok => { if(ok) handleReclaim(order); }); }}
-                      style={{width:'100%',marginTop:8,background:'transparent',color:'var(--text3)',border:'none',fontSize:11,cursor:'pointer',textDecoration:'underline'}}>
-                      Seller didn't deliver? Reclaim your funds
-                    </button>
+                    {hasDownloadedVault ? (
+                      <div style={{width:'100%',marginTop:8,fontSize:11,color:'var(--text3)',textAlign:'center'}}>
+                        ✓ Vault archive downloaded — direct non-delivery reclaim is disabled. If the file is corrupted or mismatched, use <b>⚠ Report File Issue</b> above.
+                      </div>
+                    ) : (
+                      <button onClick={() => { xhConfirm('Reclaim your funds? This only works after the escrow hold period (if the seller never delivered).', { confirmText: 'Reclaim' }).then(ok => { if(ok) handleReclaim(order); }); }}
+                        style={{width:'100%',marginTop:8,background:'transparent',color:'var(--text3)',border:'none',fontSize:11,cursor:'pointer',textDecoration:'underline'}}>
+                        Seller didn&apos;t deliver? Reclaim your funds
+                      </button>
+                    )}
                     </div>
                     );
                   })()}
@@ -728,7 +1027,7 @@ export default function OrdersPage() {
                       <div style={{fontWeight:700,color:'var(--text)',marginBottom:4}}>💰 Buyer paid — funds secured in XRPL escrow</div>
                       <div style={{fontSize:12,color:'#10b981',fontWeight:600,marginBottom:8,fontFamily:'monospace'}}>
                         ⏱️ Auto-Release Protection Window (FinishAfter): Releases automatically after 24h unless disputed
-                        {order.downloaded_at && ` · ✓ Buyer downloaded vault (${new Date(order.downloaded_at).toLocaleTimeString()})`}
+                        {(order.downloaded_at || order.buyer_downloaded_at) && ` · ✓ Buyer downloaded vault (${new Date(order.downloaded_at || order.buyer_downloaded_at).toLocaleTimeString()})`}
                       </div>
                       {order.status==='delivered' ? (
                         <div style={{marginBottom:10}}>You marked this delivered. Waiting for the buyer to confirm receipt or for the FinishAfter window to auto-release {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP to your wallet.</div>
@@ -782,44 +1081,25 @@ export default function OrdersPage() {
                           alignItems:'center',
                           justifyContent:'center',
                           gap:8,
-                          marginBottom: (downloadLog[order.id] || order.downloaded_at) ? 10 : 0,
+                          marginBottom: (downloadLog[order.id] || order.downloaded_at || order.buyer_downloaded_at) ? 10 : 0,
                         }}
                       >
                         {downloadingId === order.id ? '⏳ Verifying SHA-256 & Unlocking Vault…' : '📥 Download Encrypted Asset Vault'}
                       </button>
-                      {(downloadLog[order.id] || order.downloaded_at) && (
+                      {(downloadLog[order.id] || order.downloaded_at || order.buyer_downloaded_at) && (
                         <div style={{background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.35)',borderRadius:8,padding:'8px 12px',fontSize:11.5,color:'#10b981',fontFamily:'monospace',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6}}>
                           <span>✓ Download Logged &amp; SHA-256 Verified</span>
-                          <span>{new Date((downloadLog[order.id] && downloadLog[order.id].downloadedAt) || order.downloaded_at).toLocaleString()}</span>
+                          <span>{new Date((downloadLog[order.id] && downloadLog[order.id].downloadedAt) || order.downloaded_at || order.buyer_downloaded_at).toLocaleString()}</span>
                         </div>
                       )}
-                    </div>
-                  )}
-                  {role==='buyer' && delivery[order.id] && delivery[order.id].isDigital && (
-                    <div style={{marginTop:10}}>
-                      {delivery[order.id].loading ? (
-                        <div style={{fontSize:12,color:'var(--text3)',padding:'10px'}}>Checking delivery…</div>
-                      ) : delivery[order.id].unlocked ? (
-                        <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.25)',borderRadius:10,padding:14}}>
-                          <div style={{fontSize:13,fontWeight:700,color:'var(--text)',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>📦 Your digital delivery</div>
-                          {delivery[order.id].content && (
-                            <div style={{marginBottom:delivery[order.id].link?10:0}}>
-                              <div style={{fontSize:11,color:'var(--text3)',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>Content</div>
-                              <div style={{display:'flex',gap:8,alignItems:'stretch'}}>
-                                <pre style={{flex:1,margin:0,background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:8,padding:'10px 12px',fontSize:13,color:'var(--text)',fontFamily:'monospace',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{delivery[order.id].content}</pre>
-                                <button onClick={()=>navigator.clipboard.writeText(delivery[order.id].content)} style={{background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'0 14px',fontSize:12,fontWeight:600,cursor:'pointer'}}>Copy</button>
-                              </div>
-                            </div>
-                          )}
-                          {sanitizeExternalUrl(delivery[order.id].link) && (
-                            <div>
-                              <div style={{fontSize:11,color:'var(--text3)',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>Download</div>
-                              <a href={sanitizeExternalUrl(delivery[order.id].link)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',background:'var(--accent)',color:'#fff',textDecoration:'none',borderRadius:8,padding:'9px 16px',fontSize:13,fontWeight:600}}>Open download link →</a>
-                            </div>
-                          )}
+                      {delivery[order.id] && delivery[order.id].unlocked && delivery[order.id].content && (
+                        <div style={{marginTop:10}}>
+                          <div style={{fontSize:10.5,color:'var(--text3)',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.04em',fontWeight:700}}>License / Creator Notes</div>
+                          <div style={{display:'flex',gap:8,alignItems:'stretch'}}>
+                            <pre style={{flex:1,margin:0,background:'var(--bg)',border:'1px solid var(--border2)',borderRadius:8,padding:'9px 11px',fontSize:12,color:'var(--text)',fontFamily:'monospace',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{delivery[order.id].content}</pre>
+                            <button type="button" onClick={()=>navigator.clipboard.writeText(delivery[order.id].content)} style={{background:'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'0 12px',fontSize:11.5,fontWeight:600,cursor:'pointer'}}>Copy</button>
+                          </div>
                         </div>
-                      ) : (
-                        <div style={{background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px',fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center',gap:8}}>🔒 {delivery[order.id].message || 'Delivery unlocks once payment is secured in escrow.'}</div>
                       )}
                     </div>
                   )}
