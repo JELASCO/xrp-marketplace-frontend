@@ -80,6 +80,8 @@ export default function CreateStorePage() {
   const [announcement, setAnnouncement] = useState('');
   const [about, setAbout] = useState('');
   const [socials, setSocials] = useState({ discord: '', twitter: '', telegram: '', website: '' });
+  const [pinnedListingIds, setPinnedListingIds] = useState([]);
+  const [myListings, setMyListings] = useState([]);
   const [autoAccept, setAutoAccept] = useState(true);
   const [requireShot, setRequireShot] = useState(true);
   const [vacation, setVacation] = useState(false);
@@ -116,6 +118,9 @@ export default function CreateStorePage() {
             website: d.store.socials.website || '',
           });
         }
+        if (Array.isArray(d.store.pinnedListingIds)) {
+          setPinnedListingIds(d.store.pinnedListingIds);
+        }
         setWallet(d.store.payoutAddress || '');
         setDestTag(d.store.destinationTag || '');
         setLogoUrl(d.store.logoUrl || null);
@@ -127,7 +132,19 @@ export default function CreateStorePage() {
         if (s.response) setResponse(s.response);
       }
     }).catch(() => {});
-  }, [user, router]);
+    api.users.listings(user.id).then((ls) => {
+      const arr = Array.isArray(ls) ? ls : (ls?.listings || []);
+      setMyListings(arr.filter((l) => l.status === 'active'));
+    }).catch(() => {});
+  }, [user, router, hydrated]);
+
+  const togglePinnedListing = (lid) => {
+    setPinnedListingIds((prev) => {
+      if (prev.includes(lid)) return prev.filter((id) => id !== lid);
+      if (prev.length >= 3) return prev;
+      return [...prev, lid];
+    });
+  };
 
   const toggleCat = (c) => setCats((prev) => {
     if (prev.includes(c)) {
@@ -178,6 +195,7 @@ export default function CreateStorePage() {
       await api.stores.save({
         name, handle, tagline, announcement, about, categories: cats,
         socials,
+        pinnedListingIds,
         settings: { autoAccept, requireShot, vacation, response },
         payoutAddress: wallet, destinationTag: destTag || null,
         logoUrl, bannerUrl,
@@ -342,6 +360,46 @@ export default function CreateStorePage() {
                 </div>
                 <div style={hintStyle}>Displayed on your storefront header so buyers can verify your reputation and community.</div>
               </div>
+
+              <div style={{ marginTop: 18 }}>
+                <label style={labelStyle}>Store Spotlight · Pinned Showcase (up to 3 items) <span style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, marginLeft: 6 }}>★ PRO</span></label>
+                {myListings.length === 0 ? (
+                  <div style={{ fontSize: 12.5, color: C.muted, background: C.bgSoft, border: `1px dashed ${C.lineStrong}`, borderRadius: 10, padding: '12px 14px' }}>
+                    You don&apos;t have any active listings yet. Once you publish listings, you can pin up to 3 items to the top of your storefront here.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {myListings.map((item) => {
+                      const pinned = pinnedListingIds.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => togglePinnedListing(item.id)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            border: `1.5px solid ${pinned ? '#f59e0b' : C.lineStrong}`,
+                            background: pinned ? 'rgba(245,158,11,0.10)' : C.bg,
+                            color: C.ink,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontFamily: 'inherit',
+                          }}>
+                          <span style={{ fontSize: 13.5, fontWeight: 600 }}>{item.title} <span style={{ color: C.muted, fontWeight: 500 }}>· {item.price_xrp} XRP</span></span>
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: pinned ? '#d97706' : C.muted }}>
+                            {pinned ? '📌 Pinned to Spotlight' : '+ Pin'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={hintStyle}>Selected items appear in the highlighted &ldquo;Store Spotlight&rdquo; box at the top of your store page ({pinnedListingIds.length}/3 selected).</div>
+              </div>
             </section>
 
             <section style={sectionStyle}>
@@ -402,17 +460,36 @@ export default function CreateStorePage() {
               <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><circle cx="8" cy="8" r="2.5" /><path d="M1.5 8s2.5-5 6.5-5 6.5 5 6.5 5-2.5 5-6.5 5-6.5-5-6.5-5z" /></svg>
               What buyers will see
             </div>
-            <div style={{ background: C.bg, border: `1px solid ${C.line}`, borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, var(--xh-accent) 100%)' }} aria-hidden="true" />
+            <div style={{ background: C.bg, border: `1.5px solid rgba(245,158,11,0.45)`, borderRadius: 16, overflow: 'hidden' }}>
+              {announcement.trim() && (
+                <div style={{ background: 'rgba(16,185,129,0.12)', borderBottom: '1px solid rgba(16,185,129,0.3)', padding: '8px 12px', fontSize: 12, fontWeight: 600, color: C.ink, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{announcement}</span>
+                </div>
+              )}
+              <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, var(--xh-accent) 100%)', position: 'relative' }} aria-hidden="true">
+                <span style={{ position: 'absolute', top: 10, right: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, letterSpacing: '0.05em' }}>
+                  ★ VERIFIED PRO STORE
+                </span>
+              </div>
               <div style={{ padding: '0 16px 16px', position: 'relative' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 12, background: logoUrl ? ('center/cover no-repeat url(' + logoUrl + ')') : C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, border: `3px solid ${C.bg}`, marginTop: -28 }} aria-hidden="true">{logoUrl ? '' : initials}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: C.ink }}>
+                <div style={{ width: 64, height: 64, borderRadius: 12, background: logoUrl ? ('center/cover no-repeat url(' + logoUrl + ')') : C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, border: `3px solid #f59e0b`, marginTop: -28 }} aria-hidden="true">{logoUrl ? '' : initials}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: C.ink, flexWrap: 'wrap' }}>
                   {displayName}
+                  <span style={{ fontSize: 10, fontWeight: 800, background: 'rgba(245,158,11,0.16)', color: '#d97706', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 5, padding: '2px 6px' }}>★ PRO</span>
                   <span style={{ color: C.blue, display: 'inline-flex' }} aria-label="Verified seller">
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 1l1.6 1.4 2.1-.3.5 2 1.8 1.1-.9 1.9.5 2.1-2 .8-.9 1.9-2-.5-1.7 1.3-1.7-1.3-2 .5-.9-1.9-2-.8.5-2.1L0 5.2l1.8-1.1.5-2 2.1.3z" /><polyline points="5 8 7 10 11 6" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
                 </div>
                 <div style={{ fontSize: 13, color: C.muted, marginTop: 2, lineHeight: 1.5 }}>{tagline || 'Your tagline appears here.'}</div>
+                {(socials.discord || socials.twitter || socials.telegram || socials.website) && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                    {socials.discord && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>💬 Discord</span>}
+                    {socials.twitter && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>𝕏 Twitter</span>}
+                    {socials.telegram && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>✈️ Telegram</span>}
+                    {socials.website && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>🌐 Website</span>}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 16, padding: '12px 0', marginTop: 12, borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}`, fontSize: 12, color: C.muted }}>
                   <span><strong style={{ color: C.ink, fontWeight: 700 }}>0</strong> sales</span>
                   <span><strong style={{ color: C.ink, fontWeight: 700 }}>New</strong> store</span>
