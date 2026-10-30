@@ -80,7 +80,8 @@ export default function CreateStorePage() {
   const [tagline, setTagline] = useState('');
   const [announcement, setAnnouncement] = useState('');
   const [about, setAbout] = useState('');
-  const [socials, setSocials] = useState({ discord: '', twitter: '', telegram: '', website: '' });
+  const [socials, setSocials] = useState({ discord: '', twitter: '', github: '', telegram: '', website: '' });
+  const [copiedPreviewPromo, setCopiedPreviewPromo] = useState(false);
   const [pinnedListingIds, setPinnedListingIds] = useState([]);
   const [myListings, setMyListings] = useState([]);
   const [autoAccept, setAutoAccept] = useState(true);
@@ -123,6 +124,7 @@ export default function CreateStorePage() {
           setSocials({
             discord: d.store.socials.discord || '',
             twitter: d.store.socials.twitter || '',
+            github: d.store.socials.github || '',
             telegram: d.store.socials.telegram || '',
             website: d.store.socials.website || '',
           });
@@ -452,14 +454,15 @@ export default function CreateStorePage() {
                 <textarea style={{ ...inputStyle, minHeight: 96, resize: 'vertical', lineHeight: 1.5 }} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell buyers about your store, sourcing, and turnaround." />
               </div>
               <div>
-                <label style={labelStyle}>Verified Social &amp; Community Links <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, marginLeft: 6, padding: '2px 6px', borderRadius: 5 }}>PRO</span></label>
+                <label style={labelStyle}>Verified Social &amp; Portfolio Links <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, marginLeft: 6, padding: '2px 6px', borderRadius: 5 }}>PRO</span></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <input style={inputStyle} type="url" placeholder="Discord invite URL (https://discord.gg/...)" value={socials.discord} onChange={(e) => setSocials(s => ({ ...s, discord: e.target.value }))} />
                   <input style={inputStyle} type="url" placeholder="X / Twitter URL (https://x.com/...)" value={socials.twitter} onChange={(e) => setSocials(s => ({ ...s, twitter: e.target.value }))} />
-                  <input style={inputStyle} type="url" placeholder="Telegram URL (https://t.me/...)" value={socials.telegram} onChange={(e) => setSocials(s => ({ ...s, telegram: e.target.value }))} />
-                  <input style={inputStyle} type="url" placeholder="Website URL (https://...)" value={socials.website} onChange={(e) => setSocials(s => ({ ...s, website: e.target.value }))} />
+                  <input style={inputStyle} type="url" placeholder="GitHub / ArtStation URL (https://github.com/...)" value={socials.github} onChange={(e) => setSocials(s => ({ ...s, github: e.target.value }))} />
+                  <input style={inputStyle} type="url" placeholder="Personal Website URL (https://...)" value={socials.website} onChange={(e) => setSocials(s => ({ ...s, website: e.target.value }))} />
+                  <input style={{ ...inputStyle, gridColumn: '1 / -1' }} type="url" placeholder="Telegram URL (https://t.me/...)" value={socials.telegram} onChange={(e) => setSocials(s => ({ ...s, telegram: e.target.value }))} />
                 </div>
-                <div style={hintStyle}>Displayed on your storefront header so buyers can verify your reputation and community.</div>
+                <div style={hintStyle}>Displayed as trust &amp; portfolio icons on your storefront header so buyers can verify your identity.</div>
               </div>
 
               <div style={{ marginTop: 18 }}>
@@ -674,11 +677,8 @@ export default function CreateStorePage() {
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{announcement}</span>
                 </div>
               )}
-              <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, var(--xh-accent) 100%)', position: 'relative' }} aria-hidden="true">
-                <span className="xh-pro" style={{ position: 'absolute', top: 10, right: 10, fontFamily: 'DM Mono, monospace', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, letterSpacing: '0.05em' }}>
-                  ★ VERIFIED PRO STORE
-                </span>
-              </div>
+              {/* Clean Banner (no redundant top-right badge inflation) */}
+              <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, var(--xh-accent) 100%)', position: 'relative' }} aria-hidden="true" />
               <div style={{ padding: '0 16px 16px', position: 'relative' }}>
                 <div
                   className={frameStyle !== 'none' ? `xh-pro-ring frame-${frameStyle}` : ''}
@@ -691,34 +691,170 @@ export default function CreateStorePage() {
                 <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: C.ink, flexWrap: 'wrap' }}>
                   {displayName}
                   <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, borderRadius: 5, padding: '2px 6px' }}>PRO</span>
-                  <span style={{ color: C.blue, display: 'inline-flex' }} aria-label="Verified seller">
-                    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 1l1.6 1.4 2.1-.3.5 2 1.8 1.1-.9 1.9.5 2.1-2 .8-.9 1.9-2-.5-1.7 1.3-1.7-1.3-2 .5-.9-1.9-2-.8.5-2.1L0 5.2l1.8-1.1.5-2 2.1.3z" /><polyline points="5 8 7 10 11 6" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <span style={{ color: C.blue, display: 'inline-flex' }} aria-label="Verified seller" title="Verified Seller">
+                    <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 1l1.6 1.4 2.1-.3.5 2 1.8 1.1-.9 1.9.5 2.1-2 .8-.9 1.9-2-.5-1.7 1.3-1.7-1.3-2 .5-.9-1.9-2-.8.5-2.1L0 5.2l1.8-1.1.5-2 2.1.3z" /><polyline points="5 8 7 10 11 6" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
                 </div>
-                <div style={{ fontSize: 13, color: C.muted, marginTop: 2, lineHeight: 1.5 }}>{tagline || 'Your tagline appears here.'}</div>
-                {promoCode && Number(promoDiscount) > 0 && (
-                  <div style={{ marginTop: 10, padding: '7px 10px', borderRadius: 9, background: 'rgba(245,158,11,0.12)', border: '1px dashed rgba(245,158,11,0.5)', fontSize: 11.5, fontWeight: 700, color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>🎁 Code: <strong style={{ fontFamily: 'DM Mono,monospace' }}>{promoCode}</strong> ({promoDiscount}% OFF)</span>
-                    <span style={{ fontSize: 10, color: C.muted }}>Min offer {minOfferPct}%</span>
-                  </div>
-                )}
-                {(socials.discord || socials.twitter || socials.telegram || socials.website) && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-                    {socials.discord && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>💬 Discord</span>}
-                    {socials.twitter && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>𝕏 Twitter</span>}
-                    {socials.telegram && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>✈️ Telegram</span>}
-                    {socials.website && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>🌐 Website</span>}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 16, padding: '12px 0', marginTop: 12, borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}`, fontSize: 12, color: C.muted }}>
-                  <span><strong style={{ color: C.ink, fontWeight: 700 }}>0</strong> sales</span>
-                  <span><strong style={{ color: C.ink, fontWeight: 700 }}>New</strong> store</span>
-                  <span><strong style={{ color: C.ink, fontWeight: 700 }}>{responseShort}</strong> response</span>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>{tagline || 'Your tagline appears here.'}</div>
+
+                {/* Specialty / Focus Pill Tags right under Tagline */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+                  {(cats.length > 0 ? cats.slice(0, 4) : ['3D Assets', 'Godot', 'Shaders', 'UI Kits']).map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '2.5px 9px',
+                        borderRadius: 999,
+                        background: C.bgSoft,
+                        border: `1px solid ${C.line}`,
+                        color: C.ink,
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-                <div style={{ paddingTop: 12, fontSize: 13, color: C.ink, lineHeight: 1.6 }}>{about ? (about.length > 120 ? about.slice(0, 120) + '…' : about) : 'Your store description appears here.'}</div>
+
+                {/* Interactive Click-to-Copy Dashed Promo Box (without floating Min Offer text) */}
+                {promoCode && Number(promoDiscount) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try { navigator.clipboard.writeText(promoCode); } catch {}
+                      setCopiedPreviewPromo(true);
+                      setTimeout(() => setCopiedPreviewPromo(false), 1800);
+                    }}
+                    title="Click to copy promo code"
+                    style={{
+                      width: '100%',
+                      marginTop: 11,
+                      padding: '8px 11px',
+                      borderRadius: 10,
+                      background: copiedPreviewPromo ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.10)',
+                      border: copiedPreviewPromo ? '1.5px dashed #10b981' : '1.5px dashed rgba(245,158,11,0.65)',
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      color: copiedPreviewPromo ? '#059669' : '#b45309',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span>
+                      🎁 Code: <strong style={{ fontFamily: 'DM Mono,monospace', background: 'rgba(245,158,11,0.16)', padding: '1px 6px', borderRadius: 5 }}>{promoCode}</strong> ({promoDiscount}% OFF)
+                    </span>
+                    <span style={{ fontSize: 10.5, fontFamily: 'DM Mono,monospace', fontWeight: 800, color: copiedPreviewPromo ? '#059669' : '#d97706', whiteSpace: 'nowrap' }}>
+                      {copiedPreviewPromo ? '✓ Copied!' : '📋 Click to copy'}
+                    </span>
+                  </button>
+                )}
+
+                {/* Trust Metrics Strip: Hide "0 sales" (< 5 sales shows "New store"), Rating Slot, Response Time */}
+                {(() => {
+                  const previewSales = Number(user?.total_sales || 0);
+                  const previewRating = Number(user?.reputation_score || user?.reputationScore || 0);
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, padding: '11px 0', marginTop: 12, borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}`, fontSize: 12, color: C.muted }}>
+                      {previewSales >= 5 ? (
+                        <span><strong style={{ color: C.ink, fontWeight: 700 }}>{previewSales}</strong> sales</span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(16,185,129,0.12)', color: '#059669', fontWeight: 700, padding: '2px 8px', borderRadius: 999, fontSize: 11 }}>
+                          ✨ New store
+                        </span>
+                      )}
+                      {previewSales > 0 && previewRating > 0 ? (
+                        <span style={{ color: '#f59e0b', fontWeight: 700 }}>★ {previewRating.toFixed(1)}</span>
+                      ) : (
+                        <span style={{ color: C.muted, opacity: 0.75, fontStyle: 'italic' }}>★ No ratings yet</span>
+                      )}
+                      <span>⚡ <strong style={{ color: C.ink, fontWeight: 700 }}>{responseShort}</strong> response</span>
+                    </div>
+                  );
+                })()}
+
+                <div style={{ paddingTop: 11, fontSize: 13, color: C.ink, lineHeight: 1.6 }}>{about ? (about.length > 120 ? about.slice(0, 120) + '…' : about) : 'Your store description appears here.'}</div>
+
+                {/* Social Media & Portfolio Icon Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                  {[
+                    { key: 'discord', label: 'Discord', active: Boolean(socials.discord), icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A18.8 18.8 0 0 0 15.7 3l-.6 1.2a17.3 17.3 0 0 0-6.2 0L8.3 3A18.8 18.8 0 0 0 3.7 4.4C.8 8.7 0 12.9.4 17.1a19 19 0 0 0 5.7 2.9l1.2-1.9a12.3 12.3 0 0 1-1.9-.9l.5-.4a13.5 13.5 0 0 0 12.2 0l.5.4c-.6.4-1.2.7-1.9.9l1.2 1.9a19 19 0 0 0 5.7-2.9c.5-4.8-.8-9-3.3-12.7zM8.5 14.5c-1.1 0-2-1-2-2.2s.9-2.2 2-2.2 2 1 2 2.2-.9 2.2-2 2.2zm7 0c-1.1 0-2-1-2-2.2s.9-2.2 2-2.2 2 1 2 2.2-.9 2.2-2 2.2z"/></svg> },
+                    { key: 'twitter', label: 'X / Twitter', active: Boolean(socials.twitter), icon: <span style={{ fontWeight: 800, fontSize: 12 }}>𝕏</span> },
+                    { key: 'github', label: 'GitHub / Portfolio', active: Boolean(socials.github), icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg> },
+                    { key: 'website', label: 'Website', active: Boolean(socials.website), icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg> },
+                  ].map((item) => (
+                    <span
+                      key={item.key}
+                      title={item.label}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '4px 8px',
+                        borderRadius: 7,
+                        background: item.active ? 'rgba(32,128,245,0.10)' : C.bgSoft,
+                        border: item.active ? '1px solid rgba(32,128,245,0.35)' : `1px solid ${C.line}`,
+                        color: item.active ? C.blue : C.muted,
+                        opacity: item.active ? 1 : 0.72,
+                      }}
+                    >
+                      {item.icon}
+                      <span>{item.label.split(' ')[0]}</span>
+                    </span>
+                  ))}
+                </div>
+
+                {/* Balanced Side-by-Side Primary (Follow) & Secondary (Message) Buttons */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
-                  <button type="button" style={{ background: C.ink, color: '#fff', border: `1px solid ${C.ink}`, padding: 9, borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>🔔 Follow store</button>
-                  <button type="button" style={{ background: C.bg, color: C.ink, border: `1px solid ${C.lineStrong}`, padding: 9, borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Message</button>
+                  <button
+                    type="button"
+                    style={{
+                      background: C.ink,
+                      color: '#fff',
+                      border: `1.5px solid ${C.ink}`,
+                      padding: '9px 12px',
+                      borderRadius: 10,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>🔔</span>
+                    <span>Follow</span>
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'transparent',
+                      color: C.ink,
+                      border: '1.5px solid #94a3b8',
+                      padding: '9px 12px',
+                      borderRadius: 10,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>Message</span>
+                  </button>
                 </div>
               </div>
             </div>
