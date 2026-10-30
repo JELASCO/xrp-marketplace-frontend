@@ -74,6 +74,8 @@ export default function ProfilePage() {
   const isOwn = currentUser && String(currentUser.id) === String(id);
   const initials = user.username ? user.username.slice(0, 2).toUpperCase() : '??';
   const avatar = user.avatar_url;
+  const isProProfile = Boolean(user.seller_is_pro || (user.pro_until && new Date(user.pro_until) > new Date()) || user.store_handle);
+  const frameStyle = user.avatar_frame || (user.notification_prefs && user.notification_prefs.avatar_frame) || (isProProfile ? 'gold' : 'none');
   const activeListings = listings.filter(l => l.status === 'active');
   const soldListings = listings.filter(l => l.status === 'sold');
 
@@ -81,8 +83,13 @@ export default function ProfilePage() {
     <div style={{maxWidth:800,margin:'0 auto'}}>
       {/* Header */}
       <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:28,marginBottom:24,display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
-        <div style={{width:72,height:72,borderRadius:'50%',background:'linear-gradient(135deg,var(--accent),#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:700,color:'#fff',flexShrink:0,overflow:'hidden'}}>
-          {avatar ? <img src={avatar} alt={user.username} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e => { e.target.style.display = 'none'; }}/> : initials}
+        <div
+          className={isProProfile && frameStyle !== 'none' ? `xh-pro-ring frame-${frameStyle}` : ''}
+          style={{borderRadius:'50%',flexShrink:0}}
+        >
+          <div style={{width:72,height:72,borderRadius:'50%',background:'linear-gradient(135deg,var(--accent),#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:700,color:'#fff',flexShrink:0,overflow:'hidden'}}>
+            {avatar ? <img src={avatar} alt={user.username} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e => { e.target.style.display = 'none'; }}/> : initials}
+          </div>
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>

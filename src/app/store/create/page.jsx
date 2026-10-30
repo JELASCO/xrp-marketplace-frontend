@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
+import { PRO_LIVE_AVATARS, PRO_FRAME_STYLES, uploadAvatarOrLogoFile } from '../../../lib/avatars';
 
 async function uploadImage(file) {
   if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5MB');
@@ -92,6 +93,14 @@ export default function CreateStorePage() {
   const [banner, setBanner] = useState(null);
   const [logoUrl, setLogoUrl] = useState(null);
   const [bannerUrl, setBannerUrl] = useState(null);
+  const [frameStyle, setFrameStyle] = useState('gold');
+  const [promoCode, setPromoCode] = useState('HARBOR10');
+  const [promoDiscount, setPromoDiscount] = useState(10);
+  const [minOfferPct, setMinOfferPct] = useState(85);
+  const [faqs, setFaqs] = useState([
+    { q: 'How fast are digital items delivered after escrow lock?', a: 'All digital codes and game transfers are dispatched within 5–15 minutes of on-chain XRPL escrow lock.' },
+    { q: 'How do I claim the store promo or bundle discount?', a: 'Click "Make Offer" on any listing and mention our store promo code (or bundle 2+ items) for priority discount approval.' },
+  ]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [hasStore, setHasStore] = useState(false);
@@ -121,6 +130,11 @@ export default function CreateStorePage() {
         if (Array.isArray(d.store.pinnedListingIds)) {
           setPinnedListingIds(d.store.pinnedListingIds);
         }
+        if (d.store.frameStyle) setFrameStyle(d.store.frameStyle);
+        if (d.store.promoCode !== undefined) setPromoCode(d.store.promoCode || '');
+        if (d.store.promoDiscount != null) setPromoDiscount(Number(d.store.promoDiscount));
+        if (d.store.minOfferPct != null) setMinOfferPct(Number(d.store.minOfferPct));
+        if (Array.isArray(d.store.faqs) && d.store.faqs.length > 0) setFaqs(d.store.faqs);
         setWallet(d.store.payoutAddress || '');
         setDestTag(d.store.destinationTag || '');
         setLogoUrl(d.store.logoUrl || null);
@@ -157,13 +171,13 @@ export default function CreateStorePage() {
   const handleLogoFile = async (file) => {
     if (!file) return;
     setLogo(file); setError('');
-    try { setLogoUrl(await uploadImage(file)); }
+    try { setLogoUrl(await uploadAvatarOrLogoFile(file, true)); }
     catch (e) { setError('Logo upload failed: ' + e.message); }
   };
   const handleBannerFile = async (file) => {
     if (!file) return;
     setBanner(file); setError('');
-    try { setBannerUrl(await uploadImage(file)); }
+    try { setBannerUrl(await uploadAvatarOrLogoFile(file, true)); }
     catch (e) { setError('Banner upload failed: ' + e.message); }
   };
 
@@ -181,7 +195,7 @@ export default function CreateStorePage() {
     else setError('Set a valid store URL first to preview');
   };
 
-  const isProUser = Boolean(user && ((user.proUntil && new Date(user.proUntil) > new Date()) || user.role === 'admin'));
+  const isProUser = Boolean(user && ((user.proUntil && new Date(user.proUntil) > new Date()) || (user.pro_until && new Date(user.pro_until) > new Date()) || user.store_handle || user.role === 'admin'));
 
   const handlePublish = async () => {
     if (!isProUser) {
@@ -196,6 +210,11 @@ export default function CreateStorePage() {
         name, handle, tagline, announcement, about, categories: cats,
         socials,
         pinnedListingIds,
+        frameStyle,
+        promoCode,
+        promoDiscount: Number(promoDiscount) || 0,
+        minOfferPct: Number(minOfferPct) || 85,
+        faqs: faqs.filter((f) => f && f.q && f.q.trim() && f.a && f.a.trim()),
         settings: { autoAccept, requireShot, vacation, response },
         payoutAddress: wallet, destinationTag: destTag || null,
         logoUrl, bannerUrl,
@@ -312,19 +331,101 @@ export default function CreateStorePage() {
             <section style={sectionStyle}>
               <div style={{ marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 2, margin: 0, color: C.ink }}>Storefront branding</h2>
-                <p style={{ fontSize: 13, color: C.muted }}>Logo, banner, and tagline appear at the top of your store.</p>
+                <p style={{ fontSize: 13, color: C.muted }}>Logo (animated .GIF or Live Crest), 360° glowing frame, banner, and tagline appear at the top of your store.</p>
               </div>
-              <div style={{ marginBottom: 16 }}>
-                <label style={labelStyle}>Logo</label>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ width: 72, height: 72, borderRadius: 12, background: C.bgSoft, border: `1.5px dashed ${C.lineStrong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, flexShrink: 0, overflow: 'hidden' }} aria-hidden="true">
-                    {logoUrl ? <img src={logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><polyline points="21 15 16 10 5 21" /></svg>}
+              <div style={{ marginBottom: 18 }}>
+                <label style={labelStyle}>Store Logo &amp; Animated .GIF <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, marginLeft: 6, padding: '2px 6px', borderRadius: 5 }}>PRO</span></label>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
+                  <div
+                    className={frameStyle !== 'none' ? `xh-pro-ring frame-${frameStyle}` : ''}
+                    style={{ borderRadius: 16, flexShrink: 0, ...(frameStyle === 'none' ? { padding: 3, border: '3px solid #f59e0b' } : {}) }}
+                  >
+                    <div style={{ width: 72, height: 72, borderRadius: 12, background: logoUrl ? C.bgSoft : 'linear-gradient(135deg, var(--xh-accent), #f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 22, fontWeight: 800, overflow: 'hidden' }} aria-hidden="true">
+                      {logoUrl ? <img src={logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+                    </div>
                   </div>
-                  <div>
-                    <input type="file" id="logo-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleLogoFile(e.target.files?.[0])} />
-                    <button type="button" onClick={() => document.getElementById('logo-upload').click()} style={{ minHeight: 36, padding: '8px 14px', fontSize: 13, background: C.bg, border: `1px solid ${C.lineStrong}`, borderRadius: 8, color: C.ink, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Upload logo</button>
-                    <div style={{ ...hintStyle }}>{logo ? logo.name : 'Square, 256×256 or larger. PNG, JPG, or SVG.'}</div>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <input type="file" id="logo-upload" accept="image/gif,image/png,image/jpeg,image/webp" style={{ display: 'none' }} onChange={(e) => handleLogoFile(e.target.files?.[0])} />
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => document.getElementById('logo-upload').click()} style={{ minHeight: 36, padding: '8px 14px', fontSize: 13, background: C.blue, border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        📤 Upload Animated .GIF / Logo
+                      </button>
+                      {logoUrl && (
+                        <button type="button" onClick={() => setLogoUrl(null)} style={{ minHeight: 36, padding: '8px 12px', fontSize: 12.5, background: C.bg, border: `1px solid ${C.lineStrong}`, borderRadius: 8, color: C.muted, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Use Initials ({initials})
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ ...hintStyle }}>{logo ? logo.name : 'Supports animated .GIF, PNG, JPG, WEBP or built-in Live Crests below.'}</div>
                   </div>
+                </div>
+
+                {/* Built-in Animated Live Store Logos */}
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 8 }}>Or pick a built-in Animated Live Store Crest:</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))', gap: 8, marginBottom: 14 }}>
+                  {PRO_LIVE_AVATARS.map((item) => {
+                    const active = logoUrl === item.url;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setLogoUrl(item.url)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '8px 10px',
+                          borderRadius: 10,
+                          border: active ? '2px solid #f59e0b' : `1px solid ${C.lineStrong}`,
+                          background: active ? 'rgba(245,158,11,0.12)' : C.bgSoft,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        <img src={item.url} alt={item.label} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 9, fontFamily: 'DM Mono,monospace', fontWeight: 800, color: '#d97706' }}>● {item.tag}</div>
+                          <div style={{ fontSize: 11.5, fontWeight: 700, color: C.ink, lineHeight: 1.2 }}>{item.label}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Animated Frame Style Selector */}
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 8 }}>
+                  Store Logo 360° Animated Border Frame <span className="xh-pro" style={{ fontSize: 9, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '1px 6px', borderRadius: 4, marginLeft: 4 }}>PRO</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(145px, 1fr))', gap: 8 }}>
+                  {PRO_FRAME_STYLES.map((fr) => {
+                    const active = frameStyle === fr.id;
+                    return (
+                      <button
+                        key={fr.id}
+                        type="button"
+                        onClick={() => setFrameStyle(fr.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '8px 10px',
+                          borderRadius: 10,
+                          border: active ? '2px solid #f59e0b' : `1px solid ${C.lineStrong}`,
+                          background: active ? 'rgba(245,158,11,0.12)' : C.bg,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        <span style={{ width: 20, height: 20, borderRadius: 6, background: fr.previewGrad, flexShrink: 0, border: '1.5px solid rgba(255,255,255,0.7)' }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 11.5, fontWeight: 700, color: C.ink }}>{fr.name}</div>
+                          <div style={{ fontSize: 10, color: C.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fr.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
@@ -402,6 +503,112 @@ export default function CreateStorePage() {
               </div>
             </section>
 
+            {/* NEW SECTION: Store Promo Code, Bundle Discount & Offer Rules */}
+            <section style={sectionStyle}>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: C.ink }}>🎁 Store Promo Code &amp; Bundle Privilege</h2>
+                  <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, padding: '2px 6px', borderRadius: 5 }}>PRO</span>
+                </div>
+                <p style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>Highlight a 1-click copyable promo code &amp; minimum offer rule on your storefront to boost buyer conversions.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Promo Code</label>
+                  <input
+                    style={{ ...inputStyle, fontFamily: 'DM Mono, monospace', fontWeight: 700, textTransform: 'uppercase' }}
+                    type="text"
+                    maxLength={20}
+                    placeholder="e.g. HARBOR10"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Bundle / Promo Discount (%)</label>
+                  <input
+                    style={inputStyle}
+                    type="number"
+                    min={0}
+                    max={90}
+                    value={promoDiscount}
+                    onChange={(e) => setPromoDiscount(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Min. Offer Accepted (%)</label>
+                  <input
+                    style={inputStyle}
+                    type="number"
+                    min={50}
+                    max={100}
+                    value={minOfferPct}
+                    onChange={(e) => setMinOfferPct(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div style={hintStyle}>Leave Promo Code blank if you don&apos;t want to display a promo banner on your storefront.</div>
+            </section>
+
+            {/* NEW SECTION: Store FAQ Accordion Builder */}
+            <section style={sectionStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: C.ink }}>❓ Store FAQ Accordion</h2>
+                    <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, padding: '2px 6px', borderRadius: 5 }}>PRO</span>
+                  </div>
+                  <p style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>Answer common buyer questions upfront (delivery speed, warranty, bundle deals) on your storefront.</p>
+                </div>
+                {faqs.length < 4 && (
+                  <button
+                    type="button"
+                    onClick={() => setFaqs((prev) => [...prev, { q: '', a: '' }])}
+                    style={{ background: C.bgSoft, border: `1px solid ${C.lineStrong}`, color: C.ink, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    + Add FAQ ({faqs.length}/4)
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {faqs.map((f, idx) => (
+                  <div key={idx} style={{ background: C.bgSoft, border: `1px solid ${C.line}`, borderRadius: 12, padding: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: C.muted }}>Question #{idx + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => setFaqs((prev) => prev.filter((_, i) => i !== idx))}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <input
+                      style={{ ...inputStyle, marginBottom: 8, minHeight: 38, fontSize: 13 }}
+                      type="text"
+                      maxLength={160}
+                      placeholder="e.g. How fast do you deliver after escrow lock?"
+                      value={f.q}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFaqs((prev) => prev.map((item, i) => (i === idx ? { ...item, q: val } : item)));
+                      }}
+                    />
+                    <textarea
+                      style={{ ...inputStyle, minHeight: 62, fontSize: 13, resize: 'vertical' }}
+                      maxLength={600}
+                      placeholder="e.g. Digital keys are delivered automatically within 5–10 minutes."
+                      value={f.a}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFaqs((prev) => prev.map((item, i) => (i === idx ? { ...item, a: val } : item)));
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+
             <section style={sectionStyle}>
               <div style={{ marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 2, margin: 0, color: C.ink }}>Policies &amp; commitments</h2>
@@ -473,7 +680,14 @@ export default function CreateStorePage() {
                 </span>
               </div>
               <div style={{ padding: '0 16px 16px', position: 'relative' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 12, background: logoUrl ? ('center/cover no-repeat url(' + logoUrl + ')') : C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, border: `3px solid #f59e0b`, marginTop: -28 }} aria-hidden="true">{logoUrl ? '' : initials}</div>
+                <div
+                  className={frameStyle !== 'none' ? `xh-pro-ring frame-${frameStyle}` : ''}
+                  style={{ borderRadius: 16, marginTop: -28, ...(frameStyle === 'none' ? { padding: 3, border: '3px solid #f59e0b', display: 'inline-flex' } : {}) }}
+                >
+                  <div style={{ width: 64, height: 64, borderRadius: 12, background: logoUrl ? C.bgSoft : 'linear-gradient(135deg, var(--xh-accent), #f59e0b)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, overflow: 'hidden' }} aria-hidden="true">
+                    {logoUrl ? <img src={logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+                  </div>
+                </div>
                 <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: C.ink, flexWrap: 'wrap' }}>
                   {displayName}
                   <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, borderRadius: 5, padding: '2px 6px' }}>PRO</span>
@@ -482,6 +696,12 @@ export default function CreateStorePage() {
                   </span>
                 </div>
                 <div style={{ fontSize: 13, color: C.muted, marginTop: 2, lineHeight: 1.5 }}>{tagline || 'Your tagline appears here.'}</div>
+                {promoCode && Number(promoDiscount) > 0 && (
+                  <div style={{ marginTop: 10, padding: '7px 10px', borderRadius: 9, background: 'rgba(245,158,11,0.12)', border: '1px dashed rgba(245,158,11,0.5)', fontSize: 11.5, fontWeight: 700, color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>🎁 Code: <strong style={{ fontFamily: 'DM Mono,monospace' }}>{promoCode}</strong> ({promoDiscount}% OFF)</span>
+                    <span style={{ fontSize: 10, color: C.muted }}>Min offer {minOfferPct}%</span>
+                  </div>
+                )}
                 {(socials.discord || socials.twitter || socials.telegram || socials.website) && (
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
                     {socials.discord && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: C.bgSoft, border: `1px solid ${C.line}` }}>💬 Discord</span>}
@@ -497,7 +717,7 @@ export default function CreateStorePage() {
                 </div>
                 <div style={{ paddingTop: 12, fontSize: 13, color: C.ink, lineHeight: 1.6 }}>{about ? (about.length > 120 ? about.slice(0, 120) + '…' : about) : 'Your store description appears here.'}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
-                  <button type="button" style={{ background: C.ink, color: '#fff', border: `1px solid ${C.ink}`, padding: 9, borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Follow store</button>
+                  <button type="button" style={{ background: C.ink, color: '#fff', border: `1px solid ${C.ink}`, padding: 9, borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>🔔 Follow store</button>
                   <button type="button" style={{ background: C.bg, color: C.ink, border: `1px solid ${C.lineStrong}`, padding: 9, borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Message</button>
                 </div>
               </div>

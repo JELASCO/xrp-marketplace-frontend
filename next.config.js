@@ -4,7 +4,7 @@ const CONTENT_SECURITY_POLICY =
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://challenges.cloudflare.com; " +
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
   "font-src 'self' https://fonts.gstatic.com data:; " +
-  "img-src 'self' data: blob: https://xumm.app https://*.xaman.app https://i.ibb.co https://images.unsplash.com https://api.dicebear.com https://challenges.cloudflare.com; " +
+  "img-src 'self' data: blob: https://xumm.app https://*.xaman.app https://i.ibb.co https://images.unsplash.com https://api.dicebear.com https://media.giphy.com https://*.giphy.com https://media.tenor.com https://i.imgur.com https://challenges.cloudflare.com; " +
   "connect-src 'self' https://api.coinbase.com https://api.exchange.coinbase.com wss://ws-feed.exchange.coinbase.com https://api.binance.com wss://stream.binance.com:9443 wss://stream.binance.com https://api.kraken.com https://api.coingecko.com https://xrpharbor.com https://*.xrpharbor.com https://xrp-marketplace-backend-production.up.railway.app wss://xrp-marketplace-backend-production.up.railway.app https://xumm.app wss://xumm.app https://*.xaman.app wss://*.xaman.app wss://*.xrpl.org https://*.xrpl.org wss://s1.ripple.com https://s1.ripple.com wss://s2.ripple.com https://s2.ripple.com wss://xrplcluster.com https://xrplcluster.com; " +
   "frame-src 'self' https://xumm.app https://*.xaman.app https://challenges.cloudflare.com blob:; " +
   "worker-src 'self' blob:; " +

@@ -428,8 +428,10 @@ export default function HomePage() {
                 </div>
                 <div style={{padding:'0 18px 18px',display:'flex',flexDirection:'column',gap:12,flex:1}}>
                   <div style={{display:'flex',alignItems:'flex-end',gap:12,marginTop:-22,position:'relative',zIndex:2}}>
-                    <div style={{width:50,height:50,borderRadius:13,background:accent,color:'#fff',fontWeight:800,fontSize:20,display:'grid',placeItems:'center',flex:'none',border:'3px solid var(--xh-surface)',boxShadow:'0 6px 14px rgba(10,22,40,0.18)',overflow:'hidden'}}>
-                      {safeLogo ? <img src={safeLogo} alt={storeName} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : initial}
+                    <div className={sObj.frameStyle !== 'none' ? `xh-pro-ring frame-${sObj.frameStyle || 'gold'}` : ''} style={{borderRadius:15,padding:3,flex:'none'}}>
+                      <div style={{width:46,height:46,borderRadius:12,background:'linear-gradient(135deg, #2080F5, #f59e0b)',color:'#fff',fontWeight:800,fontSize:18,display:'grid',placeItems:'center',overflow:'hidden'}}>
+                        {safeLogo ? <img src={safeLogo} alt={storeName} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : (storeName || st.handle || 'ST').slice(0, 2).toUpperCase()}
+                      </div>
                     </div>
                     <div style={{minWidth:0,paddingBottom:2}}>
                       <div style={{display:'flex',alignItems:'center',gap:6,fontWeight:800,fontSize:15.5,color:'var(--xh-text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>

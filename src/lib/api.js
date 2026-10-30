@@ -73,6 +73,7 @@ export const api = {
     mine: () => request('/stores/me'),
     save: (d) => request('/stores/me', { method: 'PATCH', body: d }),
     get: (handle) => request('/stores/' + handle),
+    follow: (handle) => request('/stores/' + handle + '/follow', { method: 'POST' }),
     remove: () => request('/stores/me', { method: 'DELETE' }),
   },
   reports: { create: (data) => request('/reports', { method: 'POST', body: data }) },

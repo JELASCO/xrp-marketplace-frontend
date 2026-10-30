@@ -467,6 +467,17 @@ function getStore() {
             categories: ['games', 'accounts'],
             payoutAddress: 'rDockMaster9X2pL4nK8vJ6wZ3cT5yB1a2',
             bannerUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80',
+            frameStyle: 'gold',
+            promoCode: 'HARBOR10',
+            promoDiscount: 10,
+            minOfferPct: 85,
+            followersCount: 48,
+            followers: [],
+            faqs: [
+              { q: 'How fast are CS2 skins & accounts delivered?', a: 'All digital codes and Steam trade offers are dispatched within 5–10 minutes after XRPL escrow lock.' },
+              { q: 'How do I use the HARBOR10 promo or bundle discount?', a: 'Click "Make Offer" on any listing and mention HARBOR10 (or bundle 2+ items) for an automatic 10% discount approval.' },
+              { q: 'Are my funds protected until I verify the item?', a: 'Yes — 100% of orders use native XRPL conditional escrow. Funds stay locked on-ledger until you confirm delivery.' },
+            ],
             socials: { discord: 'https://discord.gg/xrpharbor', twitter: 'https://x.com/xrpharbor' },
             settings: { autoAccept: true, requireShot: true, vacation: false, response: 'Within 4 hours (business hours)' },
           },
@@ -491,6 +502,17 @@ function getStore() {
             categories: ['software', 'graphics'],
             payoutAddress: 'rKeyPort8M3kP9vL2nJ4wZ6cT1yB5dE7f8',
             bannerUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1400&q=80',
+            frameStyle: 'cyber',
+            promoCode: 'DEVPRO15',
+            promoDiscount: 15,
+            minOfferPct: 80,
+            followersCount: 112,
+            followers: [],
+            faqs: [
+              { q: 'Are software licenses official and global?', a: 'Yes, every license key is region-free and activates directly on the official vendor portal (JetBrains, Steam, Figma).' },
+              { q: 'When do I receive my activation key?', a: 'Digital keys are revealed automatically the moment your XRPL escrow is locked on-chain.' },
+              { q: 'Do you offer team or multi-seat discounts?', a: 'Yes! Use promo code DEVPRO15 via Make Offer for 15% off multi-key or bundle orders.' },
+            ],
             socials: { twitter: 'https://x.com/xrpharbor', website: 'https://xrpharbor.com' },
             settings: { autoAccept: true, requireShot: false, vacation: false, response: 'Within 4 hours (business hours)' },
           },
@@ -515,6 +537,16 @@ function getStore() {
             categories: ['games'],
             payoutAddress: 'rCaptLex5N7pQ3vL9nJ2wZ8cT4yB6dE1c3',
             bannerUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1400&q=80',
+            frameStyle: 'plasma',
+            promoCode: 'ARMORY5',
+            promoDiscount: 5,
+            minOfferPct: 90,
+            followersCount: 64,
+            followers: [],
+            faqs: [
+              { q: 'Are all CS2 knives trade-ready without cooldown?', a: 'Yes, every listed skin in Captain Lex Armory is trade-ready immediately with 0-day Steam hold.' },
+              { q: 'Can I inspect the float and pattern in-game first?', a: 'Absolutely — message us on any listing for the direct Steam inspect link before locking escrow.' },
+            ],
             socials: { discord: 'https://discord.gg/xrpharbor' },
             settings: { autoAccept: true, requireShot: true, vacation: false, response: 'Within 4 hours (business hours)' },
           },
@@ -2170,6 +2202,29 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         const cleanPinned = Array.isArray(body.pinnedListingIds)
           ? body.pinnedListingIds.filter(id => isValidUuid(id)).slice(0, 3)
           : [];
+        const cleanFrame = ['gold', 'cyber', 'plasma', 'diamond', 'none'].includes(body.frameStyle) ? body.frameStyle : 'gold';
+        const cleanPromoCode = body.promoCode && typeof body.promoCode === 'string'
+          ? body.promoCode.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 20)
+          : '';
+        const cleanPromoDiscount = body.promoDiscount != null && Number.isFinite(Number(body.promoDiscount))
+          ? Math.max(0, Math.min(90, Math.round(Number(body.promoDiscount))))
+          : 0;
+        const cleanMinOfferPct = body.minOfferPct != null && Number.isFinite(Number(body.minOfferPct))
+          ? Math.max(50, Math.min(100, Math.round(Number(body.minOfferPct))))
+          : 85;
+        const cleanFaqs = Array.isArray(body.faqs)
+          ? body.faqs
+              .filter(f => f && typeof f.q === 'string' && f.q.trim() && typeof f.a === 'string' && f.a.trim())
+              .slice(0, 6)
+              .map(f => ({ q: sanitizeString(f.q.trim(), 160), a: sanitizeString(f.a.trim(), 600) }))
+          : [];
+        let cleanLogo = null;
+        if (body.logoUrl && typeof body.logoUrl === 'string') {
+          const trimLogo = body.logoUrl.trim();
+          if (/^https?:\/\//i.test(trimLogo)) cleanLogo = sanitizeString(trimLogo, 1000);
+          else if (/^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml)/i.test(trimLogo) && trimLogo.length <= 900000 && !/<\s*script|javascript:|onload=|onerror=/i.test(trimLogo)) cleanLogo = trimLogo;
+        }
+        const prevStore = (u.store && typeof u.store === 'object') ? u.store : {};
         u.store_handle = body.handle;
         u.store = {
           name: sanitizeString(body.name, 80),
@@ -2180,9 +2235,16 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
           settings: (body.settings && typeof body.settings === 'object' && !Array.isArray(body.settings)) ? body.settings : {},
           socials: cleanSocials,
           pinnedListingIds: cleanPinned,
+          frameStyle: cleanFrame,
+          promoCode: cleanPromoCode,
+          promoDiscount: cleanPromoDiscount,
+          minOfferPct: cleanMinOfferPct,
+          faqs: cleanFaqs,
+          followers: Array.isArray(prevStore.followers) ? prevStore.followers : [],
+          followersCount: typeof prevStore.followersCount === 'number' ? prevStore.followersCount : 12,
           payoutAddress: body.payoutAddress.trim(),
           destinationTag: body.destinationTag != null ? Number(body.destinationTag) || null : null,
-          logoUrl: body.logoUrl && typeof body.logoUrl === 'string' && /^https?:\/\//i.test(body.logoUrl) ? sanitizeString(body.logoUrl, 500) : null,
+          logoUrl: cleanLogo,
           bannerUrl: body.bannerUrl && typeof body.bannerUrl === 'string' && /^https?:\/\//i.test(body.bannerUrl) ? sanitizeString(body.bannerUrl, 500) : null,
           updatedAt: nowIso(),
         };
@@ -2193,6 +2255,25 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         u.store_handle = null;
         return jsonRes({ ok: true });
       }
+    } else if (segments[1] && segments[2] === 'follow' && method === 'POST') {
+      const viewer = ensureAuthUser(store, req);
+      if (!viewer) return jsonRes({ error: 'Unauthorized' }, 401);
+      if (!/^[a-z0-9-]{2,40}$/i.test(segments[1])) return jsonRes({ error: 'Invalid store handle' }, 400);
+      const u = store.users.find(x => x.store_handle === segments[1]);
+      if (!u || !u.store) return jsonRes({ error: 'Store not found' }, 404);
+      const followers = Array.isArray(u.store.followers) ? [...u.store.followers] : [];
+      const baseCount = typeof u.store.followersCount === 'number' ? Math.max(0, u.store.followersCount - followers.length) : 24;
+      const idx = followers.indexOf(viewer.id);
+      let following = false;
+      if (idx >= 0) {
+        followers.splice(idx, 1);
+      } else {
+        followers.push(viewer.id);
+        following = true;
+      }
+      u.store.followers = followers;
+      u.store.followersCount = baseCount + followers.length;
+      return jsonRes({ following, followersCount: u.store.followersCount });
     } else if (segments[1] && method === 'GET') {
       if (!/^[a-z0-9-]{2,40}$/i.test(segments[1])) return jsonRes({ error: 'Invalid store handle' }, 400);
       const u = store.users.find(x => x.store_handle === segments[1]);
@@ -2200,7 +2281,9 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       const viewer = ensureAuthUser(store, req);
       const listings = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').map(l => enrichListing(store, l, viewer));
       const sellerIsPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin');
-      return jsonRes({ seller: { ...u, seller_is_pro: sellerIsPro }, store: u.store, handle: u.store_handle, listings });
+      const followers = Array.isArray(u.store.followers) ? u.store.followers : [];
+      const viewerFollowing = Boolean(viewer && followers.includes(viewer.id));
+      return jsonRes({ seller: { ...u, seller_is_pro: sellerIsPro }, store: { ...u.store, viewerFollowing }, handle: u.store_handle, listings });
     }
   }
 
@@ -2208,6 +2291,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (segments[1] === 'me' && method === 'PATCH') {
       const u = ensureAuthUser(store, req);
       if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+      const isPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.store_handle || u.role === 'admin');
       if (body.username !== undefined && body.username !== null) {
         if (typeof body.username !== 'string' || !/^[a-zA-Z0-9_-]{2,40}$/.test(body.username.trim())) {
           return jsonRes({ error: 'Username must be 2-40 characters (letters, numbers, underscores, hyphens)' }, 400);
@@ -2220,6 +2304,27 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         }
         u.bio = sanitizeString(body.bio, 1000);
       }
+      if (body.avatar_url !== undefined && body.avatar_url !== null && body.avatar_url !== '') {
+        if (typeof body.avatar_url !== 'string') return jsonRes({ error: 'Invalid avatar_url' }, 400);
+        const trimAv = body.avatar_url.trim();
+        const isAnim = /\.gif(\?|#|$)/i.test(trimAv) || /^data:image\/(gif|svg\+xml)/i.test(trimAv);
+        if (isAnim && !isPro) {
+          return jsonRes({ error: 'Animated GIF & Live Avatars require a Pro membership (50 XRP / 30 days).' }, 403);
+        }
+        if (/^https?:\/\//i.test(trimAv) && trimAv.length <= 1000) {
+          u.avatar_url = sanitizeString(trimAv, 1000);
+        } else if (/^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml)/i.test(trimAv) && trimAv.length <= 900000 && !/<\s*script|javascript:|onload=|onerror=/i.test(trimAv)) {
+          u.avatar_url = trimAv;
+        } else {
+          return jsonRes({ error: 'avatar_url must be a valid http(s) URL or safe image data URI' }, 400);
+        }
+      }
+      if (body.notification_prefs && typeof body.notification_prefs === 'object' && !Array.isArray(body.notification_prefs)) {
+        u.notification_prefs = { ...(u.notification_prefs || {}), ...body.notification_prefs };
+      }
+      if (body.avatar_frame && ['gold', 'cyber', 'plasma', 'diamond', 'none'].includes(body.avatar_frame)) {
+        u.notification_prefs = { ...(u.notification_prefs || {}), avatar_frame: isPro ? body.avatar_frame : 'none' };
+      }
       return jsonRes(u);
     }
     if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid user ID' }, 400);
@@ -2231,7 +2336,14 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (segments[2] === 'reviews') {
       return jsonRes([]);
     }
-    if (target) return jsonRes(target);
+    if (target) {
+      const isPro = Boolean((target.pro_until && new Date(target.pro_until).getTime() > Date.now()) || target.store_handle);
+      return jsonRes({
+        ...target,
+        seller_is_pro: isPro,
+        avatar_frame: (target.notification_prefs && target.notification_prefs.avatar_frame) || (isPro ? 'gold' : 'none'),
+      });
+    }
     return jsonRes({ error: 'User not found' }, 404);
   }
 

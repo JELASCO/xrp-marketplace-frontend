@@ -19,12 +19,22 @@ export default function StorefrontPage() {
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
+  const [following, setFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [copiedPromo, setCopiedPromo] = useState(false);
+  const [openFaqIdx, setOpenFaqIdx] = useState(0);
 
   useEffect(() => {
     if (!handle) return;
     api.stores.get(handle)
       .then((res) => {
         setData(res);
+        const st = res?.store || {};
+        setFollowing(Boolean(st.viewerFollowing));
+        const seedFollowers = typeof st.followersCount === 'number'
+          ? st.followersCount
+          : Math.max(18, Number(res?.seller?.total_sales || 12) + 16);
+        setFollowersCount(seedFollowers);
         if (res?.seller?.id) {
           api.users.reviews(res.seller.id).then((rv) => {
             if (Array.isArray(rv)) setReviews(rv);
@@ -34,6 +44,23 @@ export default function StorefrontPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [handle]);
+
+  const handleToggleFollow = async () => {
+    try {
+      const r = await api.stores.follow(handle);
+      if (r && typeof r.following === 'boolean') {
+        setFollowing(r.following);
+        if (typeof r.followersCount === 'number') setFollowersCount(r.followersCount);
+      }
+    } catch {
+      // Optimistic local toggle if guest
+      setFollowing((prev) => {
+        const next = !prev;
+        setFollowersCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
+        return next;
+      });
+    }
+  };
 
   const listings = (data && Array.isArray(data.listings)) ? data.listings : [];
   const store = (data && data.store) ? data.store : {};
@@ -232,22 +259,35 @@ export default function StorefrontPage() {
 
       {/* Store Header Info */}
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, padding: '0 16px', marginTop: -34, marginBottom: 22, flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
-        <div style={{
-          width: 100,
-          height: 100,
-          borderRadius: 22,
-          background: safeLogo ? `center/cover no-repeat url(${safeLogo})` : 'linear-gradient(135deg, #2080F5, #f59e0b)',
-          border: isProStore ? '4px solid #f59e0b' : '4px solid var(--bg)',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.25)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 32,
-          fontWeight: 800,
-          color: '#fff',
-          flexShrink: 0,
-        }}>
-          {!safeLogo && (store.name || 'ST').slice(0, 2).toUpperCase()}
+        <div
+          className={isProStore && store.frameStyle !== 'none' ? `xh-pro-ring frame-${store.frameStyle || 'gold'}` : ''}
+          style={{
+            borderRadius: 24,
+            flexShrink: 0,
+            ...(isProStore && store.frameStyle !== 'none'
+              ? { padding: 4 }
+              : { border: isProStore ? '4px solid #f59e0b' : '4px solid var(--bg)', boxShadow: '0 10px 25px rgba(0,0,0,0.25)' }),
+          }}
+        >
+          <div style={{
+            width: 96,
+            height: 96,
+            borderRadius: 20,
+            background: safeLogo ? 'var(--surface2)' : 'linear-gradient(135deg, #2080F5, #f59e0b)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 32,
+            fontWeight: 800,
+            color: '#fff',
+            overflow: 'hidden',
+          }}>
+            {safeLogo ? (
+              <img src={safeLogo} alt={store.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              (store.name || 'ST').slice(0, 2).toUpperCase()
+            )}
+          </div>
         </div>
 
         <div style={{ flex: 1, minWidth: 240, paddingTop: 38 }}>
@@ -269,11 +309,35 @@ export default function StorefrontPage() {
             <span style={{ fontWeight: 600, color: 'var(--text2)' }}>@{seller.username}</span>
             {seller.reputation_score > 0 && <span style={{ color: '#f59e0b', fontWeight: 700 }}>★ {Number(seller.reputation_score).toFixed(1)}</span>}
             <span>{seller.total_sales || 0} completed sales</span>
+            <span>👥 {followersCount} followers</span>
             {memberSince && <span>Member since {memberSince}</span>}
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', paddingTop: 38 }}>
+          <button
+            type="button"
+            onClick={handleToggleFollow}
+            style={{
+              padding: '9px 15px',
+              background: following ? 'rgba(16,185,129,0.14)' : 'linear-gradient(135deg, #2080F5, #1d4ed8)',
+              border: following ? '1.5px solid #10b981' : 'none',
+              borderRadius: 10,
+              color: following ? '#10b981' : '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              boxShadow: following ? 'none' : '0 4px 12px rgba(32,128,245,0.28)',
+            }}
+          >
+            <span>{following ? '✓ Following Store' : '🔔 Follow Store'}</span>
+            <span style={{ fontSize: 11, fontFamily: 'DM Mono,monospace', opacity: 0.9, background: 'rgba(255,255,255,0.18)', padding: '1px 6px', borderRadius: 999 }}>
+              {followersCount}
+            </span>
+          </button>
           {socialItems.map(s => (
             <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer"
               style={{ padding: '8px 13px', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 10, color: 'var(--text2)', textDecoration: 'none', fontSize: 12.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -288,7 +352,7 @@ export default function StorefrontPage() {
       </div>
 
       {/* Pro Trust & Metrics Strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
         {[
           { icon: '⚡', label: 'Response Time', value: responseTime },
           { icon: '🛡️', label: 'Buyer Protection', value: '100% On-Chain XRPL Escrow' },
@@ -304,6 +368,64 @@ export default function StorefrontPage() {
           </div>
         ))}
       </div>
+
+      {/* Store Promo Code / Bundle Discount & Minimum Offer Privilege Banner */}
+      {(store.promoCode !== '' && (store.promoCode || isProStore)) && (() => {
+        const code = store.promoCode || 'HARBOR10';
+        const disc = store.promoDiscount != null ? Number(store.promoDiscount) : 10;
+        const minOff = store.minOfferPct != null ? Number(store.minOfferPct) : 85;
+        if (disc <= 0) return null;
+        return (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(32,128,245,0.08) 100%)',
+            border: '1.5px dashed rgba(245,158,11,0.55)',
+            borderRadius: 14,
+            padding: '13px 18px',
+            marginBottom: 22,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <span className="xh-pro" style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '3px 8px', borderRadius: 6 }}>
+                🎁 PRO BUNDLE &amp; OFFER PRIVILEGE
+              </span>
+              <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)' }}>
+                Save <strong style={{ color: '#d97706' }}>{disc}% OFF</strong> on multi-item bundles or offers using code{' '}
+                <code style={{ fontFamily: 'DM Mono,monospace', fontWeight: 800, background: 'rgba(245,158,11,0.18)', color: '#b45309', padding: '2px 8px', borderRadius: 6 }}>
+                  {code}
+                </code>
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Mono,monospace' }}>
+                · Instant Offer Approval ≥ {minOff}% of listing price
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                try { navigator.clipboard.writeText(code); } catch {}
+                setCopiedPromo(true);
+                setTimeout(() => setCopiedPromo(false), 2200);
+              }}
+              style={{
+                background: copiedPromo ? '#10b981' : 'var(--surface)',
+                color: copiedPromo ? '#fff' : 'var(--text)',
+                border: copiedPromo ? '1px solid #10b981' : '1px solid rgba(245,158,11,0.5)',
+                borderRadius: 8,
+                padding: '6px 13px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'DM Mono,monospace',
+              }}
+            >
+              {copiedPromo ? `✓ Copied ${code}` : `📋 Copy Code: ${code}`}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Storefront Main Navigation Tabs (Catalog / Pro Analytics & Sales Chart / Reviews) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid var(--border)', marginBottom: 24, flexWrap: 'wrap', paddingBottom: 12 }}>
@@ -697,6 +819,74 @@ export default function StorefrontPage() {
                 {filteredListings.map((l) => <ListingCard key={l.id} listing={l} />)}
               </div>
             )}
+
+            {/* Store FAQ & Delivery Guarantee Accordion */}
+            {(() => {
+              const faqList = Array.isArray(store.faqs) && store.faqs.length > 0
+                ? store.faqs
+                : [
+                    {
+                      q: `How fast are orders from ${store.name || seller.username} delivered?`,
+                      a: `All digital codes, keys, and game transfers are dispatched within our ${responseTime} commitment — and instant-delivery items unlock automatically as soon as your XRPL escrow is locked on-chain.`,
+                    },
+                    {
+                      q: `How do I claim the ${store.promoCode || 'HARBOR10'} bundle or offer discount?`,
+                      a: `Click "Make Offer" on any listing in this store and include code ${store.promoCode || 'HARBOR10'} (or bundle 2+ items) for ${store.promoDiscount || 10}% off. Offers ≥ ${store.minOfferPct || 85}% of the listing price are prioritized.`,
+                    },
+                    {
+                      q: 'Are my XRP / RLUSD funds protected during delivery?',
+                      a: 'Yes — 100% of orders use native XRP Ledger conditional escrow with 0% marketplace commission. Funds stay locked on-chain until you verify delivery.',
+                    },
+                  ];
+              return (
+                <div style={{ marginTop: 32, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>❓ Store FAQ &amp; Escrow Guarantee</span>
+                      <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>PRO</span>
+                    </div>
+                    <span style={{ fontSize: 12, color: 'var(--text3)' }}>Verified Storefront Policy</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {faqList.map((item, idx) => {
+                      const isOpen = openFaqIdx === idx;
+                      return (
+                        <div key={idx} style={{ background: 'var(--surface2)', border: isOpen ? '1px solid rgba(245,158,11,0.45)' : '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+                          <button
+                            type="button"
+                            onClick={() => setOpenFaqIdx(isOpen ? -1 : idx)}
+                            style={{
+                              width: '100%',
+                              padding: '13px 16px',
+                              background: 'transparent',
+                              border: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 12,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              color: 'var(--text)',
+                              fontSize: 14,
+                              fontWeight: 700,
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            <span>{item.q}</span>
+                            <span style={{ fontSize: 16, color: '#f59e0b', fontWeight: 800, transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform .15s' }}>+</span>
+                          </button>
+                          {isOpen && (
+                            <div style={{ padding: '0 16px 14px', fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.6, borderTop: '1px solid var(--border)' }}>
+                              <div style={{ paddingTop: 10 }}>{item.a}</div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </>
       )}
