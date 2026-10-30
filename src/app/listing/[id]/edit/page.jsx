@@ -211,6 +211,7 @@ export default function EditListingPage() {
   const [digitalArchiveUrl, setDigitalArchiveUrl] = useState('');
   const [digitalArchiveName, setDigitalArchiveName] = useState('');
   const [digitalArchiveSha256, setDigitalArchiveSha256] = useState('');
+  const [r2ObjectKey, setR2ObjectKey] = useState('');
   const [uploadingArchive, setUploadingArchive] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -277,6 +278,7 @@ export default function EditListingPage() {
       setDigitalArchiveUrl(l.digital_archive_url || '');
       setDigitalArchiveName(l.digital_archive_name || '');
       setDigitalArchiveSha256(l.digital_archive_sha256 || '');
+      setR2ObjectKey(l.r2_object_key || '');
     }).catch(() => router.push('/listing/' + id));
   }, [id, user, hydrated]);
 
@@ -294,7 +296,7 @@ export default function EditListingPage() {
         fr.readAsDataURL(file);
       });
       const token = localStorage.getItem('xrpmarket_token');
-      const r = await fetch('/api/upload-archive', {
+      const r = await fetch('/api/vault/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
@@ -309,16 +311,13 @@ export default function EditListingPage() {
         }),
       });
       const d = await r.json().catch(() => ({}));
-      if (d.presignedPutUrl) {
-        await fetch(d.presignedPutUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': file.type || 'application/octet-stream' },
-          body: file,
-        }).catch(() => {});
+      if (!r.ok || !d.ok || !d.url) {
+        throw new Error((d && d.error) || 'Archive upload failed — file could not be verified in R2 Vault');
       }
-      setDigitalArchiveUrl(d.url || `vault://${encodeURIComponent(file.name)}`);
-      setDigitalArchiveName(file.name);
+      setDigitalArchiveUrl(d.url);
+      setDigitalArchiveName(d.filename || file.name);
       setDigitalArchiveSha256(d.sha256 || localSha || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+      setR2ObjectKey(d.r2ObjectKey || '');
       setIsDigital(true);
     } catch (err) {
       setError(err.message || 'Archive upload failed');
@@ -374,6 +373,7 @@ export default function EditListingPage() {
         digitalArchiveUrl: digitalArchiveUrl || null,
         digitalArchiveName: digitalArchiveName || null,
         digitalArchiveSha256: digitalArchiveSha256 || null,
+        r2ObjectKey: r2ObjectKey || undefined,
       });
       router.push('/listing/' + id);
     } catch (e) {
@@ -659,8 +659,8 @@ export default function EditListingPage() {
             <div className="left">EDIT MODE · <span className="ok">{title.trim() && priceNum > 0 ? 'ready to save' : 'fill in basics first'}</span></div>
             <div className="btn-group">
               <Link href={'/listing/' + id} className="xh-btn xh-btn-ghost">Cancel</Link>
-              <button onClick={handleSave} disabled={saving} className="xh-btn xh-btn-primary">
-                {saving ? 'Saving…' : '✓ Save changes'}
+              <button onClick={handleSave} disabled={saving || uploadingArchive} className="xh-btn xh-btn-primary">
+                {saving ? 'Saving…' : uploadingArchive ? 'Uploading Vault Archive…' : '✓ Save changes'}
               </button>
             </div>
           </div>

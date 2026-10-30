@@ -237,13 +237,13 @@ export default function ListingDetailPage({ params }) {
   useEffect(() => {
     if (!user) return;
     api.orders.mine('buyer').then(orders => {
-      const priority = { completed: 4, delivered: 3, escrow_locked: 2, in_escrow: 2, pending: 1 };
-      const existing = (orders || []).filter(o => o.listing_id === id && o.status !== 'cancelled' && o.status !== 'disputed').sort((a, b) => (priority[b.status] || 0) - (priority[a.status] || 0))[0];
+      const priority = { completed: 4, delivered: 3, escrow_locked: 2, awaiting_escrow: 1.5, awaiting_payment: 1, pending: 1 };
+      const existing = (orders || []).filter(o => o.listing_id === id && o.status !== 'cancelled' && o.status !== 'disputed' && o.status !== 'refunded').sort((a, b) => (priority[b.status] || 0) - (priority[a.status] || 0))[0];
       if (existing) {
         setOrder(existing);
         const st = existing.status;
-        if (st === 'pending') setEscrowStep(1);
-        else if (st === 'escrow_locked' || st === 'in_escrow') setEscrowStep(2);
+        if (st === 'pending' || st === 'awaiting_payment' || st === 'awaiting_escrow') setEscrowStep(1);
+        else if (st === 'escrow_locked') setEscrowStep(2);
         else if (st === 'delivered') setEscrowStep(3);
         else if (st === 'completed') setEscrowStep(4);
       }
@@ -576,11 +576,25 @@ export default function ListingDetailPage({ params }) {
                 <Link href={`/listing/${id}/edit`}>✏️ Edit listing →</Link>
               </div>
             ) : order ? (
-              <div className="xh-order-pane">
-                <div className="t">You have an order for this item</div>
-                <div className="s">Track payment, release the escrow, confirm receipt, get your delivery and leave a review — all from your Library / Purchases page.</div>
-                <Link href="/orders">Manage in Library / Purchases →</Link>
-              </div>
+              order.status === 'awaiting_escrow' ? (
+                <div className="xh-order-pane">
+                  <div className="t">Step 1/2 Confirmed — Lock XRPL Escrow to Unlock Vault</div>
+                  <div className="s">Your platform fee transaction is confirmed. Complete Step 2/2 (on-chain EscrowCreate) to lock the seller payout and unlock your digital download.</div>
+                  <Link href={`/orders?pay=${order.id}&step=2`}>🔒 Complete Escrow Lock (Step 2/2) →</Link>
+                </div>
+              ) : (order.status === 'pending' || order.status === 'awaiting_payment') ? (
+                <div className="xh-order-pane">
+                  <div className="t">Order Created — Awaiting XRPL Escrow Lock</div>
+                  <div className="s">Your order is reserved. Sign the XRPL EscrowCreate transaction to lock your XRP on-chain and unlock the Digital Vault.</div>
+                  <Link href={`/orders?pay=${order.id}`}>⚡ Complete Escrow Lock →</Link>
+                </div>
+              ) : (
+                <div className="xh-order-pane">
+                  <div className="t">Escrow Active — Digital Vault Unlocked</div>
+                  <div className="s">Your payment is verified in XRPL Escrow. Access your Digital Vault download, confirm receipt, or release escrow in Library / Purchases.</div>
+                  <Link href={`/orders?order=${order.id}`}>📦 Open Digital Vault &amp; Manage Order →</Link>
+                </div>
+              )
             ) : soldOut ? (
               <div className="xh-buy-btns single">
                 <button className="xh-btn xh-btn-ghost" disabled>🔴 This item has been sold</button>

@@ -301,10 +301,10 @@ export async function uploadAvatarOrLogoFile(file, isPro = false) {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ image: dataUrl }),
+      body: JSON.stringify({ image: dataUrl, filename: file.name }),
     });
     const data = await res.json().catch(() => null);
-    if (res.ok && data && data.url && !data.demoMode && !String(data.url).includes('/demo/')) {
+    if (res.ok && data && data.url && (String(data.url).startsWith('/api/media/') || (!data.demoMode && !String(data.url).includes('/demo/')))) {
       return data.url;
     }
   } catch {

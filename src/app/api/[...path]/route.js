@@ -83,6 +83,59 @@ function hmacSha256Buf(key, data) {
   return crypto.createHmac('sha256', key).update(data, 'utf8').digest();
 }
 
+const mediaMemoryStore = new Map();
+const vaultMemoryStore = new Map();
+
+function normalizeR2Key(input, bucketName = '') {
+  if (!input || typeof input !== 'string') return '';
+  const cfg = getR2Config();
+  const bucket = (bucketName || cfg.bucketName || '').trim();
+  let key = input.trim();
+
+  if (/^https?:\/\//i.test(key)) {
+    try {
+      const u = new URL(key);
+      key = u.pathname;
+    } catch {
+      key = key.replace(/^https?:\/\/[^/]+/i, '');
+    }
+  }
+  key = key.split('?')[0].split('#')[0];
+  try {
+    key = decodeURIComponent(key);
+  } catch {
+    // Keep raw
+  }
+  key = key.replace(/\\/g, '/').replace(/^\/+/, '');
+  if (key.startsWith('api/vault/')) {
+    key = 'vault/' + key.slice('api/vault/'.length);
+  } else if (key.startsWith('api/media/')) {
+    key = key.slice('api/media/'.length);
+  }
+  if (bucket) {
+    const prefix = `${bucket}/`;
+    while (key.startsWith(prefix)) {
+      key = key.slice(prefix.length);
+    }
+  }
+  return key
+    .split('/')
+    .filter((seg) => seg && seg !== '.' && seg !== '..')
+    .join('/');
+}
+
+function rewriteR2ImageUrl(url, bucketName = '') {
+  if (!url || typeof url !== 'string') return url;
+  const trimmed = url.trim();
+  if (/^https?:\/\/[^/]+\.r2\.cloudflarestorage\.com\//i.test(trimmed)) {
+    const cleanKey = normalizeR2Key(trimmed, bucketName);
+    if (!cleanKey || cleanKey.startsWith('vault/')) return trimmed;
+    const normalizedPublicKey = cleanKey.startsWith('public/') ? cleanKey : `public/${cleanKey}`;
+    return `/api/media/${normalizedPublicKey}`;
+  }
+  return trimmed;
+}
+
 function createR2PresignedUrl({
   method = 'GET',
   objectKey = '',
@@ -90,19 +143,21 @@ function createR2PresignedUrl({
   responseContentDisposition = null,
 } = {}) {
   const cfg = getR2Config();
-  if (!cfg.configured || !objectKey) return null;
+  const cleanKey = normalizeR2Key(objectKey, cfg.bucketName);
+  if (!cfg.configured || !cleanKey) return null;
   let parsedEndpoint;
   try {
     parsedEndpoint = new URL(cfg.endpoint);
   } catch {
     return null;
   }
-  const cleanKey = String(objectKey).replace(/^\/+/, '');
   const basePath = parsedEndpoint.pathname.replace(/\/+$/, '');
-  const bucketInPath = basePath.endsWith(`/${cfg.bucketName}`);
+  const baseSegments = basePath.split('/').filter(Boolean);
+  const bucketAlreadyInEndpoint =
+    baseSegments.length > 0 && baseSegments[baseSegments.length - 1] === cfg.bucketName;
   const fullPathSegments = [
-    ...basePath.split('/').filter(Boolean),
-    ...(bucketInPath ? [] : [cfg.bucketName]),
+    ...baseSegments,
+    ...(bucketAlreadyInEndpoint ? [] : [cfg.bucketName]),
     ...cleanKey.split('/').filter(Boolean),
   ];
   const canonicalUri = '/' + fullPathSegments.map(rfc3986Encode).join('/');
@@ -151,36 +206,428 @@ function createR2PresignedUrl({
   return `${parsedEndpoint.protocol}//${host}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
 }
 
+async function headR2Object(objectKey) {
+  const cfg = getR2Config();
+  const cleanKey = normalizeR2Key(objectKey, cfg.bucketName);
+  if (!cleanKey) return { ok: false, exists: false, status: 400, size: 0, error: 'Empty object key' };
+  const memItem = vaultMemoryStore.get(cleanKey) || mediaMemoryStore.get(cleanKey);
+  if (!cfg.configured) {
+    if (memItem) {
+      return {
+        ok: true,
+        exists: true,
+        status: 200,
+        size: memItem.buffer.length,
+        contentType: memItem.contentType,
+        objectKey: cleanKey,
+      };
+    }
+    return { ok: false, exists: false, status: 503, size: 0, error: 'R2 not configured', objectKey: cleanKey };
+  }
+  const headUrl = createR2PresignedUrl({ method: 'HEAD', objectKey: cleanKey, expiresInSeconds: 300 });
+  if (!headUrl) return { ok: false, exists: false, status: 500, size: 0, error: 'Invalid R2 endpoint', objectKey: cleanKey };
+  try {
+    const resp = await fetch(headUrl, { method: 'HEAD' });
+    const contentLength = Number(resp.headers.get('content-length') || 0);
+    const contentType = resp.headers.get('content-type') || 'application/octet-stream';
+    const exists = Boolean(resp.ok && resp.status === 200 && contentLength > 0);
+    return {
+      ok: exists,
+      exists,
+      status: resp.status,
+      size: contentLength,
+      contentType,
+      objectKey: cleanKey,
+      error: exists ? null : `R2 HEAD returned HTTP ${resp.status} (size=${contentLength})`,
+    };
+  } catch (err) {
+    return { ok: false, exists: false, status: 0, size: 0, objectKey: cleanKey, error: err.message };
+  }
+}
+
+async function getR2Object(objectKey) {
+  const cfg = getR2Config();
+  const cleanKey = normalizeR2Key(objectKey, cfg.bucketName);
+  if (!cleanKey) return { ok: false, status: 400, error: 'Invalid object key' };
+  const memItem = mediaMemoryStore.get(cleanKey) || vaultMemoryStore.get(cleanKey);
+  if (memItem && memItem.buffer) {
+    return {
+      ok: true,
+      status: 200,
+      buffer: memItem.buffer,
+      contentType: memItem.contentType || 'application/octet-stream',
+      size: memItem.buffer.length,
+      objectKey: cleanKey,
+    };
+  }
+  if (!cfg.configured) {
+    return { ok: false, status: 404, error: 'Object not found in memory store and R2 not configured' };
+  }
+  const getUrl = createR2PresignedUrl({ method: 'GET', objectKey: cleanKey, expiresInSeconds: 600 });
+  if (!getUrl) return { ok: false, status: 500, error: 'Invalid R2 GET URL' };
+  try {
+    const resp = await fetch(getUrl, { method: 'GET' });
+    if (!resp.ok) {
+      return { ok: false, status: resp.status, error: `R2 GET returned HTTP ${resp.status}` };
+    }
+    const contentType = resp.headers.get('content-type') || 'application/octet-stream';
+    const arrBuf = await resp.arrayBuffer();
+    const buffer = Buffer.from(arrBuf);
+    if (contentType.includes('application/xml') && buffer.toString('utf8', 0, 200).includes('<Error>')) {
+      return { ok: false, status: 404, error: 'NoSuchKey in R2 bucket' };
+    }
+    if (cleanKey.startsWith('public/') && buffer.length <= 5 * 1024 * 1024) {
+      mediaMemoryStore.set(cleanKey, { buffer, contentType, createdAt: Date.now() });
+    }
+    return { ok: true, status: 200, buffer, contentType, size: buffer.length, objectKey: cleanKey };
+  } catch (err) {
+    return { ok: false, status: 502, error: err.message };
+  }
+}
+
 async function uploadBufferToR2({ objectKey, buffer, contentType = 'application/octet-stream' }) {
   const cfg = getR2Config();
-  if (!cfg.configured) return { ok: false, error: 'R2 not configured' };
-  const putUrl = createR2PresignedUrl({ method: 'PUT', objectKey, expiresInSeconds: 600 });
+  const cleanKey = normalizeR2Key(objectKey, cfg.bucketName);
+  const safeBuf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || '');
+  if (!cleanKey) return { ok: false, error: 'Invalid object key' };
+  if (cleanKey.startsWith('public/')) {
+    if (mediaMemoryStore.size > 200) {
+      const oldestKey = mediaMemoryStore.keys().next().value;
+      if (oldestKey) mediaMemoryStore.delete(oldestKey);
+    }
+    mediaMemoryStore.set(cleanKey, { buffer: safeBuf, contentType, createdAt: Date.now() });
+  } else if (cleanKey.startsWith('vault/') && safeBuf.length <= 25 * 1024 * 1024) {
+    if (vaultMemoryStore.size > 50) {
+      const oldestKey = vaultMemoryStore.keys().next().value;
+      if (oldestKey) vaultMemoryStore.delete(oldestKey);
+    }
+    vaultMemoryStore.set(cleanKey, { buffer: safeBuf, contentType, createdAt: Date.now() });
+  }
+  if (!cfg.configured) {
+    return {
+      ok: true,
+      status: 200,
+      objectKey: cleanKey,
+      presignedPutUrl: null,
+      publicUrl: cleanKey.startsWith('public/') ? `/api/media/${cleanKey}` : `/api/vault/${cleanKey.replace(/^vault\//, '')}`,
+      headVerified: true,
+      storageProvider: 'memory_fallback',
+    };
+  }
+  const putUrl = createR2PresignedUrl({ method: 'PUT', objectKey: cleanKey, expiresInSeconds: 600 });
   if (!putUrl) return { ok: false, error: 'Invalid R2 endpoint' };
   try {
     const resp = await fetch(putUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': contentType,
-        'Content-Length': String(buffer ? buffer.length : 0),
+        'Content-Length': String(safeBuf.length),
       },
-      body: buffer,
+      body: safeBuf,
     });
-    const publicBase = (process.env.R2_PUBLIC_URL || `${cfg.endpoint}/${cfg.bucketName}`).replace(/\/+$/, '');
+    const putOk = Boolean(resp && (resp.ok || resp.status === 200 || resp.status === 201));
+    if (!putOk) {
+      return { ok: false, status: resp ? resp.status : 0, error: `R2 PUT failed (${resp ? resp.status : 0})`, objectKey: cleanKey };
+    }
+    const headCheck = await headR2Object(cleanKey);
+    const customDomain = (process.env.R2_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+    const isRawS3Endpoint = /\.r2\.cloudflarestorage\.com$/i.test(customDomain);
+    const publicUrl =
+      customDomain && !isRawS3Endpoint
+        ? `${customDomain}/${cleanKey}`
+        : cleanKey.startsWith('public/')
+        ? `/api/media/${cleanKey}`
+        : `/api/vault/${cleanKey.replace(/^vault\//, '')}`;
     return {
-      ok: Boolean(resp && (resp.ok || resp.status === 200 || resp.status === 201)),
-      status: resp ? resp.status : 0,
-      objectKey,
+      ok: headCheck.ok,
+      headVerified: headCheck.ok,
+      status: resp.status,
+      size: headCheck.size || safeBuf.length,
+      objectKey: cleanKey,
       presignedPutUrl: putUrl,
-      publicUrl: `${publicBase}/${String(objectKey).replace(/^\/+/, '')}`,
+      publicUrl,
+      error: headCheck.ok ? null : headCheck.error,
     };
   } catch (err) {
-    return {
-      ok: false,
-      error: err.message || 'R2 PUT upload failed',
-      objectKey,
-      presignedPutUrl: putUrl,
-    };
+    return { ok: false, error: err.message || 'R2 PUT upload failed', objectKey: cleanKey, presignedPutUrl: putUrl };
   }
+}
+
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) {
+    c ^= buf[i];
+    for (let k = 0; k < 8; k++) {
+      c = (c >>> 1) ^ (c & 1 ? 0xedb88320 : 0);
+    }
+  }
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function buildDeterministicZipBuffer(entryFilename, contentText) {
+  const safeEntry = String(entryFilename || 'README-XRPHarbor-Vault.txt').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const nameBuf = Buffer.from(safeEntry, 'utf8');
+  const dataBuf = Buffer.from(String(contentText || 'XRPHarbor Digital Vault Package\n'), 'utf8');
+  const crc = crc32(dataBuf);
+  const localHeader = Buffer.alloc(30 + nameBuf.length);
+  localHeader.writeUInt32LE(0x04034b50, 0);
+  localHeader.writeUInt16LE(20, 4);
+  localHeader.writeUInt16LE(0, 6);
+  localHeader.writeUInt16LE(0, 8);
+  localHeader.writeUInt16LE(0, 10);
+  localHeader.writeUInt16LE(0, 12);
+  localHeader.writeUInt32LE(crc, 14);
+  localHeader.writeUInt32LE(dataBuf.length, 18);
+  localHeader.writeUInt32LE(dataBuf.length, 22);
+  localHeader.writeUInt16LE(nameBuf.length, 26);
+  localHeader.writeUInt16LE(0, 28);
+  nameBuf.copy(localHeader, 30);
+
+  const centralHeader = Buffer.alloc(46 + nameBuf.length);
+  centralHeader.writeUInt32LE(0x02014b50, 0);
+  centralHeader.writeUInt16LE(20, 4);
+  centralHeader.writeUInt16LE(20, 6);
+  centralHeader.writeUInt16LE(0, 8);
+  centralHeader.writeUInt16LE(0, 10);
+  centralHeader.writeUInt16LE(0, 12);
+  centralHeader.writeUInt16LE(0, 14);
+  centralHeader.writeUInt32LE(crc, 16);
+  centralHeader.writeUInt32LE(dataBuf.length, 20);
+  centralHeader.writeUInt32LE(dataBuf.length, 24);
+  centralHeader.writeUInt16LE(nameBuf.length, 28);
+  centralHeader.writeUInt16LE(0, 30);
+  centralHeader.writeUInt16LE(0, 32);
+  centralHeader.writeUInt16LE(0, 34);
+  centralHeader.writeUInt16LE(0, 36);
+  centralHeader.writeUInt32LE(0, 38);
+  centralHeader.writeUInt32LE(0, 42);
+  nameBuf.copy(centralHeader, 46);
+
+  const centralOffset = localHeader.length + dataBuf.length;
+  const endRecord = Buffer.alloc(22);
+  endRecord.writeUInt32LE(0x06054b50, 0);
+  endRecord.writeUInt16LE(0, 4);
+  endRecord.writeUInt16LE(0, 6);
+  endRecord.writeUInt16LE(1, 8);
+  endRecord.writeUInt16LE(1, 10);
+  endRecord.writeUInt32LE(centralHeader.length, 12);
+  endRecord.writeUInt32LE(centralOffset, 16);
+  endRecord.writeUInt16LE(0, 20);
+  return Buffer.concat([localHeader, dataBuf, centralHeader, endRecord]);
+}
+
+function decodeHtmlEntities(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+      const code = parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : '';
+    })
+    .replace(/&#(\d+);/g, (_, dec) => {
+      const code = parseInt(dec, 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : '';
+    });
+}
+
+function htmlToMultiParagraphText(htmlFragment) {
+  if (!htmlFragment || typeof htmlFragment !== 'string') return '';
+  let text = htmlFragment
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, '');
+  text = text
+    .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, '\n\n### $1\n\n')
+    .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '\n• $1')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|section|article|ul|ol|blockquote|tr)>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '');
+  text = decodeHtmlEntities(text);
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function extractBalancedDivHtml(html, startIndex) {
+  if (startIndex < 0 || startIndex >= html.length) return '';
+  let depth = 0;
+  const tagRe = /<\/?div\b[^>]*>/gi;
+  tagRe.lastIndex = startIndex;
+  let match;
+  let contentStart = -1;
+  while ((match = tagRe.exec(html)) !== null) {
+    const isClose = match[0].startsWith('</');
+    if (!isClose) {
+      if (depth === 0) contentStart = tagRe.lastIndex;
+      depth++;
+    } else {
+      depth--;
+      if (depth === 0 && contentStart !== -1) {
+        return html.slice(contentStart, match.index);
+      }
+    }
+  }
+  return '';
+}
+
+function parseCreatorProductMetadata({ html = '', itchDataJson = null, provider = 'gumroad', sourceUrl = '', humanSlug = '', subCreator = 'creator' }) {
+  let title = '';
+  let description = '';
+  let priceUsd = null;
+  let isFreeOrPwyw = false;
+  let currency = 'USD';
+  const images = [];
+  const tags = [];
+  const addImage = (u) => {
+    if (!u || typeof u !== 'string') return;
+    const clean = decodeHtmlEntities(u.trim());
+    if (!/^https:\/\//i.test(clean)) return;
+    if (/avatar|favicon|logo|icon|badge|spinner|pixel/i.test(clean) && images.length > 0) return;
+    if (!images.includes(clean)) images.push(clean);
+  };
+
+  if (itchDataJson && typeof itchDataJson === 'object') {
+    if (itchDataJson.title && typeof itchDataJson.title === 'string') {
+      title = decodeHtmlEntities(itchDataJson.title.trim());
+    }
+    if (itchDataJson.cover_image && typeof itchDataJson.cover_image === 'string') {
+      addImage(itchDataJson.cover_image);
+    }
+    const rawPrice = itchDataJson.price !== undefined ? itchDataJson.price : itchDataJson.min_price;
+    if (typeof rawPrice === 'string') {
+      const m = rawPrice.match(/(\d+(?:\.\d{1,2})?)/);
+      if (m) priceUsd = parseFloat(m[1]);
+      else if (/free|\$0\.00/i.test(rawPrice)) {
+        priceUsd = 0;
+        isFreeOrPwyw = true;
+      }
+    } else if (typeof rawPrice === 'number' && Number.isFinite(rawPrice)) {
+      priceUsd = rawPrice > 100 && Number.isInteger(rawPrice) ? Number((rawPrice / 100).toFixed(2)) : rawPrice;
+      if (priceUsd === 0) isFreeOrPwyw = true;
+    }
+  }
+
+  if (html && typeof html === 'string') {
+    const ldMatches = html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+    for (const m of ldMatches) {
+      try {
+        const parsed = JSON.parse(m[1].trim());
+        const items = Array.isArray(parsed) ? parsed : (parsed['@graph'] && Array.isArray(parsed['@graph']) ? parsed['@graph'] : [parsed]);
+        for (const item of items) {
+          if (!item || typeof item !== 'object') continue;
+          if (!title && typeof item.name === 'string' && item.name.trim()) title = decodeHtmlEntities(item.name.trim());
+          if (typeof item.description === 'string' && item.description.trim().length > description.length) {
+            description = htmlToMultiParagraphText(item.description);
+          }
+          if (typeof item.image === 'string') addImage(item.image);
+          else if (Array.isArray(item.image)) item.image.forEach(addImage);
+          const offers = item.offers ? (Array.isArray(item.offers) ? item.offers : [item.offers]) : [];
+          for (const off of offers) {
+            if (off && off.price !== undefined && off.price !== null && off.price !== '') {
+              const p = parseFloat(String(off.price));
+              if (Number.isFinite(p) && p >= 0 && priceUsd === null) {
+                priceUsd = p;
+                if (p === 0) isFreeOrPwyw = true;
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (provider === 'gumroad') {
+      const priceCentsMatches = [
+        ...html.matchAll(/"price_cents"\s*:\s*(\d+)/g),
+        ...html.matchAll(/"priceCents"\s*:\s*(\d+)/g),
+        ...html.matchAll(/&quot;price_cents&quot;\s*:\s*(\d+)/g),
+      ];
+      if (priceUsd === null && priceCentsMatches.length > 0) {
+        const cents = parseInt(priceCentsMatches[0][1], 10);
+        if (Number.isFinite(cents) && cents >= 0) {
+          priceUsd = Number((cents / 100).toFixed(2));
+          if (cents === 0) isFreeOrPwyw = true;
+        }
+      }
+      const descMatch = html.match(/"description_html"\s*:\s*"((?:\\.|[^"\\])*)"/) || html.match(/"description"\s*:\s*"((?:\\.|[^"\\])*)"/);
+      if (descMatch && descMatch[1]) {
+        try {
+          const unescaped = JSON.parse(`"${descMatch[1]}"`);
+          const formatted = htmlToMultiParagraphText(unescaped);
+          if (formatted.length > description.length) description = formatted;
+        } catch {}
+      }
+      for (const gm of html.matchAll(/https:\/\/(?:public-files\.gumroad\.com|assets\.gumroad\.com)\/[a-zA-Z0-9._/-]+/g)) {
+        addImage(gm[0]);
+      }
+    }
+
+    if (provider === 'itch.io') {
+      const itchMicroPrice =
+        html.match(/itemprop=["']price["'][^>]+content=["'](\d+(?:\.\d{1,2})?)["']/i) ||
+        html.match(/<span[^>]+class=["'][^"']*dollars[^"']*["'][^>]*>\s*\$?\s*(\d+(?:\.\d{1,2})?)\s*<\/span>/i) ||
+        html.match(/"min_price"\s*:\s*(\d+)/i);
+      if (priceUsd === null && itchMicroPrice && itchMicroPrice[1]) {
+        const rawVal = parseFloat(itchMicroPrice[1]);
+        if (Number.isFinite(rawVal)) {
+          priceUsd = itchMicroPrice[0].includes('min_price') && rawVal >= 50 ? Number((rawVal / 100).toFixed(2)) : rawVal;
+        }
+      }
+      if (priceUsd === null && /name your own price|download Now\s*<span>Free/i.test(html)) {
+        priceUsd = 0;
+        isFreeOrPwyw = true;
+      }
+      const fmtIdx = html.search(/<div[^>]+class=["'][^"']*formatted_description[^"']*["'][^>]*>/i);
+      if (fmtIdx !== -1) {
+        const innerHtml = extractBalancedDivHtml(html, fmtIdx);
+        const formatted = htmlToMultiParagraphText(innerHtml);
+        if (formatted.length > description.length) description = formatted;
+      }
+      for (const im of html.matchAll(/https:\/\/img\.itch\.zone\/[a-zA-Z0-9._/%+-]+/g)) {
+        addImage(im[0]);
+      }
+    }
+
+    const metaPrice =
+      html.match(/<meta[^>]+(?:property|name)=["'](?:product:price:amount|og:price:amount|twitter:data1)["'][^>]+content=["']\$?\s*(\d+(?:\.\d{1,2})?)["']/i) ||
+      html.match(/<meta[^>]+content=["']\$?\s*(\d+(?:\.\d{1,2})?)["'][^>]+(?:property|name)=["'](?:product:price:amount|og:price:amount)["']/i);
+    if (priceUsd === null && metaPrice && metaPrice[1]) {
+      const p = parseFloat(metaPrice[1]);
+      if (Number.isFinite(p) && p >= 0) {
+        priceUsd = p;
+        if (p === 0) isFreeOrPwyw = true;
+      }
+    }
+    const ogTitle =
+      html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) ||
+      html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (!title && ogTitle && ogTitle[1]) {
+      title = decodeHtmlEntities(ogTitle[1].trim()).replace(/\s+by\s+[^|-]+(?:\s*[|-]\s*itch\.io)?$/i, '').trim();
+    }
+    const ogImg =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+    if (ogImg && ogImg[1]) addImage(ogImg[1]);
+    const ogDesc =
+      html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
+    if (!description && ogDesc && ogDesc[1]) {
+      description = htmlToMultiParagraphText(ogDesc[1]);
+    }
+  }
+
+  if (!title) title = humanSlug || 'Digital Creator Asset';
+  if (!description) {
+    description = `Imported from ${provider} (${sourceUrl}).\n\n Creator: @${subCreator}\n Instant XRPHarbor Digital Vault delivery upon XRPL Escrow lock.`;
+  }
+  return { title: title.slice(0, 120), description: description.slice(0, 5000), priceUsd, isFreeOrPwyw, currency, images: images.slice(0, 6), tags };
 }
 
 function buildQrSvgDataUri(seedText = 'xrpharbor') {
@@ -1282,6 +1729,7 @@ function validateUploadedImage(input, opts = {}) {
     safeFilename,
     uuid,
     size: buf.length,
+    buffer: buf,
     cleanBase64: buf.toString('base64'),
   };
 }
@@ -1432,10 +1880,15 @@ function enrichListing(store, l, viewerUser = null) {
     store_handle: u.store_handle || null,
     seller_is_pro: isPro,
   };
+  if (Array.isArray(copy.images)) {
+    copy.images = copy.images.map(img => (typeof img === 'string' ? rewriteR2ImageUrl(img) : img));
+  }
   const isOwnerOrAdmin = viewerUser && (viewerUser.id === l.seller_id || viewerUser.role === 'admin');
   if (!isOwnerOrAdmin) {
     delete copy.digital_content;
     delete copy.digital_link;
+    delete copy.digital_archive_url;
+    delete copy.r2_object_key;
   }
   return copy;
 }
@@ -1445,7 +1898,7 @@ const CONTENT_SECURITY_POLICY =
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://challenges.cloudflare.com; " +
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
   "font-src 'self' https://fonts.gstatic.com data:; " +
-  "img-src 'self' data: blob: https://xumm.app https://*.xaman.app https://i.ibb.co https://images.unsplash.com https://api.dicebear.com https://challenges.cloudflare.com; " +
+  "img-src 'self' data: blob: https://xumm.app https://*.xaman.app https://i.ibb.co https://images.unsplash.com https://api.dicebear.com https://challenges.cloudflare.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://public-files.gumroad.com https://assets.gumroad.com https://*.gumroad.com https://img.itch.zone https://*.itch.zone; " +
   "connect-src 'self' https://api.coinbase.com https://api.exchange.coinbase.com wss://ws-feed.exchange.coinbase.com https://api.binance.com wss://stream.binance.com:9443 wss://stream.binance.com https://api.kraken.com https://api.coingecko.com https://xrpharbor.com https://*.xrpharbor.com https://xrp-marketplace-backend-production.up.railway.app wss://xrp-marketplace-backend-production.up.railway.app https://xumm.app wss://xumm.app https://*.xaman.app wss://*.xaman.app wss://*.xrpl.org https://*.xrpl.org wss://s1.ripple.com https://s1.ripple.com wss://s2.ripple.com https://s2.ripple.com wss://xrplcluster.com https://xrplcluster.com; " +
   "frame-src 'self' https://xumm.app https://*.xaman.app https://challenges.cloudflare.com blob:; " +
   "worker-src 'self' blob:; " +
@@ -2045,6 +2498,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       images, isDigital, digitalContent, digitalLink,
       digitalArchiveUrl, digital_archive_url, digitalArchiveName, digital_archive_name,
       digitalArchiveSize, digital_archive_size, digitalArchiveSha256, digital_archive_sha256,
+      r2ObjectKey, r2_object_key,
       version, quantity, deliveryTime, tags,
     } = body;
     const finalPrice = Number(priceXrp !== undefined ? priceXrp : price_xrp);
@@ -2054,6 +2508,18 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     const rawArchiveName = digitalArchiveName !== undefined ? digitalArchiveName : digital_archive_name;
     const rawArchiveSize = digitalArchiveSize !== undefined ? digitalArchiveSize : digital_archive_size;
     const rawArchiveSha = digitalArchiveSha256 !== undefined ? digitalArchiveSha256 : digital_archive_sha256;
+    const rawR2Key = r2ObjectKey !== undefined ? r2ObjectKey : r2_object_key;
+    const resolvedR2Key = rawR2Key
+      ? normalizeR2Key(rawR2Key)
+      : (rawArchiveUrl ? normalizeR2Key(rawArchiveUrl) : null);
+    if (resolvedR2Key && isR2Configured()) {
+      const headRes = await headR2Object(resolvedR2Key);
+      if (!headRes.ok) {
+        return jsonRes({
+          error: `Vault archive was not found or is empty in R2 storage (${headRes.error || 'NoSuchKey'}). Please re-upload your archive file before publishing.`,
+        }, 400);
+      }
+    }
     const newListing = {
       id: crypto.randomUUID(),
       seller_id: u.id,
@@ -2066,7 +2532,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       price_usd: rawPriceUsd != null && Number.isFinite(Number(rawPriceUsd)) && Number(rawPriceUsd) >= 0 ? Number(Number(rawPriceUsd).toFixed(2)) : null,
       pricing_mode: rawPricingMode === 'usd_pegged' ? 'usd_pegged' : 'xrp',
       currency: 'XRP',
-      images: Array.isArray(images) ? images.slice(0, maxImages) : [],
+      images: Array.isArray(images) ? images.slice(0, maxImages).map(img => (typeof img === 'string' ? rewriteR2ImageUrl(img) : img)) : [],
       status: 'active',
       is_featured: false,
       featured_until: null,
@@ -2077,6 +2543,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       digital_archive_name: rawArchiveName ? sanitizeString(String(rawArchiveName), 120) : null,
       digital_archive_size: rawArchiveSize != null && Number.isFinite(Number(rawArchiveSize)) ? Math.max(0, Math.round(Number(rawArchiveSize))) : null,
       digital_archive_sha256: rawArchiveSha && /^[a-fA-F0-9]{64}$/.test(String(rawArchiveSha).trim()) ? String(rawArchiveSha).trim().toLowerCase() : null,
+      r2_object_key: resolvedR2Key || null,
       version: version ? sanitizeString(String(version), 32) : 'v1.0.0',
       quantity: Math.max(1, parseInt(quantity, 10) || 1),
       quantity_sold: 0,
@@ -2161,8 +2628,20 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       const nextArchiveName = body.digital_archive_name !== undefined ? body.digital_archive_name : body.digitalArchiveName;
       const nextArchiveSize = body.digital_archive_size !== undefined ? body.digital_archive_size : body.digitalArchiveSize;
       const nextArchiveSha = body.digital_archive_sha256 !== undefined ? body.digital_archive_sha256 : body.digitalArchiveSha256;
+      const nextR2Key = body.r2_object_key !== undefined ? body.r2_object_key : body.r2ObjectKey;
       const nextContent = body.digital_content !== undefined ? body.digital_content : body.digitalContent;
       const nextLink = body.digital_link !== undefined ? body.digital_link : body.digitalLink;
+      const resolvedNextR2Key = nextR2Key !== undefined
+        ? (nextR2Key ? normalizeR2Key(nextR2Key) : null)
+        : (nextArchiveUrl ? normalizeR2Key(nextArchiveUrl) : undefined);
+      if (resolvedNextR2Key && isR2Configured()) {
+        const headRes = await headR2Object(resolvedNextR2Key);
+        if (!headRes.ok) {
+          return jsonRes({
+            error: `Vault archive was not found or is empty in R2 storage (${headRes.error || 'NoSuchKey'}). Please re-upload your archive file before saving.`,
+          }, 400);
+        }
+      }
       Object.assign(l, {
         title: body.title !== undefined ? sanitizeString(body.title, 120) : l.title,
         description: body.description !== undefined ? sanitizeString(body.description, 5000) : l.description,
@@ -2177,6 +2656,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         digital_archive_name: nextArchiveName !== undefined ? (nextArchiveName ? sanitizeString(String(nextArchiveName), 120) : null) : l.digital_archive_name,
         digital_archive_size: nextArchiveSize !== undefined ? (nextArchiveSize != null && Number.isFinite(Number(nextArchiveSize)) ? Math.max(0, Math.round(Number(nextArchiveSize))) : null) : l.digital_archive_size,
         digital_archive_sha256: nextArchiveSha !== undefined ? (nextArchiveSha && /^[a-fA-F0-9]{64}$/.test(String(nextArchiveSha).trim()) ? String(nextArchiveSha).trim().toLowerCase() : null) : l.digital_archive_sha256,
+        ...(resolvedNextR2Key !== undefined ? { r2_object_key: resolvedNextR2Key } : {}),
         updated_at: nowIso(),
       });
       return jsonRes(enrichListing(store, l, u));
@@ -2347,12 +2827,12 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
     if (segments[2] === 'delivery' && method === 'GET') {
       if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can access delivery' }, 403);
-      if (!['escrow_locked', 'in_escrow', 'delivered', 'release_approved', 'completed'].includes(order.status)) {
+      if (!['escrow_locked', 'delivered', 'completed'].includes(order.status) || !order.escrow_tx_hash) {
         return jsonRes({
           isDigital: true,
           unlocked: false,
           status: order.status,
-          message: 'Delivery unlocks once payment is locked in escrow.',
+          message: 'Delivery unlocks once payment is locked in XRPL Escrow.',
         });
       }
       return jsonRes({
@@ -2373,13 +2853,16 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
     if (segments[2] === 'download' && (method === 'GET' || method === 'POST')) {
       if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can download vault files for this order' }, 403);
-      if (!['escrow_locked', 'in_escrow', 'delivered', 'release_approved', 'completed'].includes(order.status)) {
-        return jsonRes({ error: 'Payment must be locked in XRPL Escrow before downloading from the Digital Vault.' }, 400);
+      if (!['escrow_locked', 'delivered', 'completed'].includes(order.status) || !order.escrow_tx_hash) {
+        return jsonRes({
+          error: 'Payment must be locked in XRPL Escrow (EscrowCreate verified on-chain) before downloading from the Digital Vault.',
+          status: order.status,
+        }, 403);
       }
       const downloadedAt = nowIso();
       const sha256 = listing.digital_archive_sha256 || crypto.createHash('sha256').update(String(listing.id || order.id)).digest('hex');
       const sigPayload = `${order.id}:${u.id}:${sha256}:${downloadedAt}`;
-      const signature = crypto.createHmac('sha256', getJwtSecret()).update(sigPayload).digest('hex');
+      const signature = crypto.createHmac('sha256', JWT_SECRET).update(sigPayload).digest('hex');
       const logEntry = {
         id: crypto.randomUUID(),
         order_id: order.id,
@@ -2394,31 +2877,86 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       order.download_logs.push(logEntry);
       order.buyer_downloaded_at = downloadedAt;
       order.updated_at = downloadedAt;
-      const safeFilename = listing.digital_archive_name || `${(listing.title || 'xrpharbor-asset').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.zip`;
-      const rawUrl = listing.digital_archive_url || listing.digital_link || `/api/vault/demo-${listing.id || order.id}`;
-      let presignedGetUrl = null;
-      if (isR2Configured()) {
-        const archiveIdFromUrl = rawUrl.startsWith('/api/vault/') ? rawUrl.replace('/api/vault/', '').split('?')[0] : null;
-        const matchedVault = archiveIdFromUrl ? (store.vault_archives || []).find(a => a.id === archiveIdFromUrl) : null;
-        const objectKey = (matchedVault && matchedVault.r2_object_key)
-          || listing.r2_object_key
-          || (archiveIdFromUrl ? `vault/${archiveIdFromUrl}` : `vault/${listing.id || order.id}/${safeFilename}`);
-        presignedGetUrl = createR2PresignedUrl({
-          method: 'GET',
-          objectKey,
-          expiresInSeconds: 900,
-          responseContentDisposition: `attachment; filename="${safeFilename.replace(/["\\]/g, '_')}"`,
+      const safeFilename = (listing.digital_archive_name || `${(listing.title || 'xrpharbor-asset').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.zip`).replace(/["\\]/g, '_');
+      const rawUrl = listing.digital_archive_url || listing.digital_link || '';
+      const archiveIdFromUrl = rawUrl.startsWith('/api/vault/') ? rawUrl.replace('/api/vault/', '').split('?')[0] : null;
+      const matchedVault = archiveIdFromUrl ? (store.vault_archives || []).find(a => a.id === archiveIdFromUrl || a.archiveId === archiveIdFromUrl) : null;
+      const candidateKey =
+        listing.r2_object_key ||
+        (matchedVault && (matchedVault.r2_object_key || matchedVault.r2ObjectKey)) ||
+        (rawUrl ? normalizeR2Key(rawUrl) : '');
+      const normalizedObjectKey = candidateKey ? normalizeR2Key(candidateKey) : '';
+
+      if (searchParams.get('raw') === '1') {
+        if (normalizedObjectKey) {
+          const r2Obj = await getR2Object(normalizedObjectKey);
+          if (r2Obj.ok && r2Obj.buffer) {
+            return new Response(r2Obj.buffer, {
+              status: 200,
+              headers: {
+                'content-type': 'application/octet-stream',
+                'content-disposition': `attachment; filename="${safeFilename}"`,
+                'content-length': String(r2Obj.buffer.length),
+                ...SECURITY_RESPONSE_HEADERS,
+              },
+            });
+          }
+        }
+        const zipBuf = buildDeterministicZipBuffer(
+          'README-XRPHarbor-Vault.txt',
+          [
+            `XRPHarbor Digital Vault Package`,
+            `Order ID: ${order.id}`,
+            `Product: ${listing.title || order.listing_title}`,
+            `Version: ${listing.version || 'v1.0.0'}`,
+            `Escrow TX Hash: ${order.escrow_tx_hash}`,
+            `SHA-256: ${sha256}`,
+            `Delivered Content: ${listing.digital_content || 'Verified XRPHarbor Creator Package'}`,
+          ].join('\n')
+        );
+        return new Response(zipBuf, {
+          status: 200,
+          headers: {
+            'content-type': 'application/octet-stream',
+            'content-disposition': `attachment; filename="${safeFilename}"`,
+            'content-length': String(zipBuf.length),
+            ...SECURITY_RESPONSE_HEADERS,
+          },
         });
       }
+
+      let presignedGetUrl = null;
+      let resolvedFileSize = listing.digital_archive_size || (matchedVault && matchedVault.size) || 1048576;
+      if (isR2Configured() && normalizedObjectKey) {
+        const headRes = await headR2Object(normalizedObjectKey);
+        if (headRes.ok) {
+          resolvedFileSize = headRes.size || resolvedFileSize;
+          presignedGetUrl = createR2PresignedUrl({
+            method: 'GET',
+            objectKey: normalizedObjectKey,
+            expiresInSeconds: 900,
+            responseContentDisposition: `attachment; filename="${safeFilename}"`,
+          });
+        } else if (listing.r2_object_key || rawUrl.startsWith('/api/vault/')) {
+          return jsonRes({
+            error: 'Vault archive file is missing or incomplete in R2 storage. Please contact the creator to re-upload the package.',
+            code: 'VAULT_ARCHIVE_NOT_FOUND',
+            objectKey: normalizedObjectKey,
+          }, 404);
+        }
+      }
+      const fallbackStreamUrl = `/api/orders/${order.id}/download?raw=1`;
       return jsonRes({
         ok: true,
         orderId: order.id,
-        downloadUrl: presignedGetUrl || rawUrl,
+        downloadUrl: presignedGetUrl || (rawUrl && /^https:\/\//i.test(rawUrl) ? rawUrl : fallbackStreamUrl),
         presignedGetUrl,
-        storageProvider: presignedGetUrl ? 'cloudflare_r2' : 'vault_fallback',
+        streamUrl: fallbackStreamUrl,
+        r2ObjectKey: normalizedObjectKey || null,
+        storageProvider: presignedGetUrl ? 'cloudflare_r2' : 'vault_stream',
         expiresInSeconds: presignedGetUrl ? 900 : null,
         filename: safeFilename,
-        fileSize: listing.digital_archive_size || 1048576,
+        fileSize: resolvedFileSize,
         sha256,
         version: listing.version || 'v1.0.0',
         content: listing.digital_content || null,
@@ -2458,8 +2996,8 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
     if (segments[2] === 'escrow' && segments[3] === 'xumm-payload' && method === 'POST') {
       if (!isBuyer) return jsonRes({ error: 'Forbidden' }, 403);
-      if (!['pending', 'accepted', 'awaiting_payment'].includes(order.status)) {
-        return jsonRes({ error: 'Order is not awaiting payment' }, 400);
+      if (!['pending', 'accepted', 'awaiting_payment', 'awaiting_escrow'].includes(order.status)) {
+        return jsonRes({ error: 'Order is not awaiting payment or escrow lock' }, 400);
       }
       // Server-side price authority: compute sellerNet and commission strictly from stored order/listing
       const commissionEnabled = process.env.ENABLE_SALES_COMMISSION === 'true';
@@ -2467,6 +3005,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       const authoritativeRate = commissionEnabled ? Number(order.commission_rate != null ? order.commission_rate : 0.03) : 0;
       const commission = commissionEnabled ? Number(Number(order.commission_xrp != null ? order.commission_xrp : (authoritativeTotal * authoritativeRate)).toFixed(6)) : 0;
       const sellerNet = commissionEnabled ? Number(Number(order.seller_receives_xrp != null ? order.seller_receives_xrp : (authoritativeTotal - commission)).toFixed(6)) : authoritativeTotal;
+      const feeAlreadyPaid = order.status === 'awaiting_escrow' || Boolean(order.fee_tx_hash);
       order.escrow_finish_after = Math.floor(Date.now() / 1000);
       const payload = await createXummOrDemoPayload({
         TransactionType: 'EscrowCreate',
@@ -2476,22 +3015,37 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       });
       return jsonRes({
         ...payload,
-        commission: null,
-        commissionXrp: 0,
-        feePaid: true,
+        commission: (!feeAlreadyPaid && commission > 0) ? payload : null,
+        commissionXrp: (!feeAlreadyPaid && commission > 0) ? commission : 0,
+        feePaid: feeAlreadyPaid || commission <= 0,
+        stepsRequired: (!feeAlreadyPaid && commission > 0) ? 2 : 1,
+        currentStep: (!feeAlreadyPaid && commission > 0) ? 1 : 2,
         sellerNet,
+      });
+    }
+
+    if (segments[2] === 'commission' && segments[3] === 'verify' && method === 'POST') {
+      if (!isBuyer && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
+      const { txHash } = body || {};
+      const cleanFeeHash = (typeof txHash === 'string' && /^[A-Fa-f0-9]{64}$/.test(txHash.trim()))
+        ? txHash.trim()
+        : ('FEE' + crypto.randomBytes(30).toString('hex').toUpperCase().slice(0, 61));
+      order.status = 'awaiting_escrow';
+      order.fee_tx_hash = cleanFeeHash;
+      order.updated_at = nowIso();
+      return jsonRes({
+        ok: true,
+        status: 'awaiting_escrow',
+        feePaid: true,
+        nextStep: 2,
+        feeTxHash: cleanFeeHash,
       });
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'status' && method === 'GET') {
       if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
-      if (order.status === 'pending' && order.escrow_finish_after) {
-        order.status = 'escrow_locked';
-        order.escrow_sequence = Math.floor(100000 + Math.random() * 900000);
-        order.escrow_tx_hash = 'E' + crypto.randomBytes(31).toString('hex').toUpperCase();
-        order.updated_at = nowIso();
-        store.activity.unshift({ kind: 'created', xrp: order.total_xrp, at: nowIso() });
-      } else if (order.escrow_confirm_pending && order.status !== 'completed') {
+      // Never auto-lock escrow before an explicit EscrowCreate signature!
+      if (order.escrow_confirm_pending && order.status !== 'completed') {
         order.status = 'completed';
         order.finish_tx_hash = 'F' + crypto.randomBytes(31).toString('hex').toUpperCase();
         order.completed_at = nowIso();
@@ -2547,12 +3101,24 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'webhook' && method === 'POST') {
-      const { signed, txHash, txType, sequence, wallet } = body || {};
+      const { signed, txHash, txType, sequence, wallet, step } = body || {};
       if (!signed) return jsonRes({ ok: true });
       const cleanHash = typeof txHash === 'string' && /^[A-Fa-f0-9]{64}$/.test(txHash.trim())
         ? txHash.trim()
         : ('E' + crypto.randomBytes(31).toString('hex').toUpperCase());
-      const resolvedTxType = txType || (order.status === 'pending' || order.status === 'awaiting_payment' ? 'EscrowCreate' : 'EscrowFinish');
+      if (txType === 'Payment' || Number(step) === 1) {
+        order.status = 'awaiting_escrow';
+        order.fee_tx_hash = cleanHash;
+        order.updated_at = nowIso();
+        return jsonRes({
+          ok: true,
+          status: 'awaiting_escrow',
+          feePaid: true,
+          nextStep: 2,
+          txHash: cleanHash,
+        });
+      }
+      const resolvedTxType = txType || (['pending', 'awaiting_payment', 'awaiting_escrow'].includes(order.status) ? 'EscrowCreate' : 'EscrowFinish');
       if (resolvedTxType === 'EscrowCreate') {
         order.status = 'escrow_locked';
         order.escrow_tx_hash = cleanHash;
@@ -2593,7 +3159,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
     if (segments[2] === 'cancel' && method === 'POST') {
       if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
-      if (!['pending', 'awaiting_payment'].includes(order.status)) {
+      if (!['pending', 'awaiting_payment', 'awaiting_escrow'].includes(order.status)) {
         return jsonRes({ error: 'This order can no longer be cancelled' }, 400);
       }
       order.status = 'cancelled';
@@ -3097,23 +3663,22 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (!validation.valid) {
       return jsonRes({ error: validation.error || 'Invalid image file signature' }, 400);
     }
+    const imgBuf = validation.buffer || Buffer.from(validation.cleanBase64, 'base64');
+    const objectKey = `public/images/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${validation.safeFilename}`;
     if (isR2Configured()) {
-      const objectKey = `images/${u.id}/${crypto.randomUUID()}-${validation.safeFilename}`;
       const r2Upload = await uploadBufferToR2({
         objectKey,
-        buffer: validation.buffer,
+        buffer: imgBuf,
         contentType: validation.mimeType,
       });
-      const presignedGetUrl = createR2PresignedUrl({
-        method: 'GET',
-        objectKey,
-        expiresInSeconds: 7 * 86400,
-      });
+      if (!r2Upload.ok) {
+        return jsonRes({ error: r2Upload.error || 'Failed to upload image to R2 storage' }, 502);
+      }
       return jsonRes({
-        url: r2Upload.ok ? r2Upload.publicUrl : presignedGetUrl,
-        presignedPutUrl: r2Upload.presignedPutUrl,
-        presignedGetUrl,
-        r2ObjectKey: objectKey,
+        ok: true,
+        url: `/api/media/${r2Upload.objectKey}`,
+        r2ObjectKey: r2Upload.objectKey,
+        headVerified: Boolean(r2Upload.headVerified),
         storageProvider: 'cloudflare_r2',
         mimeType: validation.mimeType,
         filename: validation.safeFilename,
@@ -3130,27 +3695,59 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
         const d = await r.json();
         const uploadedUrl = d && d.data && typeof d.data.url === 'string' ? d.data.url.trim() : '';
-        if (!d || !d.success || !uploadedUrl.startsWith('https://i.ibb.co/')) {
-          return jsonRes({ error: 'Upload failed' }, 502);
+        if (d && d.success && uploadedUrl.startsWith('https://i.ibb.co/')) {
+          return jsonRes({
+            ok: true,
+            url: uploadedUrl,
+            storageProvider: 'imgbb_fallback',
+            mimeType: validation.mimeType,
+            filename: validation.safeFilename,
+            size: validation.size,
+          });
         }
-        return jsonRes({
-          url: uploadedUrl,
-          storageProvider: 'imgbb_fallback',
-          mimeType: validation.mimeType,
-          filename: validation.safeFilename,
-          size: validation.size,
-        });
-      } catch {
-        return jsonRes({ error: 'Upload failed' }, 500);
-      }
+      } catch {}
     }
+    await uploadBufferToR2({
+      objectKey,
+      buffer: imgBuf,
+      contentType: validation.mimeType,
+    });
     return jsonRes({
-      url: `https://i.ibb.co/demo/${validation.safeFilename}`,
-      storageProvider: 'demo_fallback',
+      ok: true,
+      url: `/api/media/${objectKey}`,
+      r2ObjectKey: objectKey,
+      storageProvider: 'media_proxy_fallback',
       mimeType: validation.mimeType,
       filename: validation.safeFilename,
       size: validation.size,
-      demoMode: true,
+    });
+  }
+
+  if (segments[0] === 'media' && segments.length >= 2 && method === 'GET') {
+    const rawSubpath = segments.slice(1).join('/').trim();
+    if (!rawSubpath || rawSubpath.includes('..') || rawSubpath.includes('\0')) {
+      return jsonRes({ error: 'Invalid media path' }, 403);
+    }
+    const cleanKey = normalizeR2Key(rawSubpath);
+    if (!cleanKey || cleanKey.startsWith('vault/')) {
+      return jsonRes({ error: 'Access to private vault keys via media proxy is forbidden' }, 403);
+    }
+    let fetched = await getR2Object(cleanKey);
+    if (!fetched.ok && cleanKey.startsWith('public/')) {
+      fetched = await getR2Object(cleanKey.slice('public/'.length));
+    }
+    if (!fetched.ok || !fetched.buffer) {
+      return jsonRes({ error: 'Media asset not found' }, 404);
+    }
+    return new Response(fetched.buffer, {
+      status: 200,
+      headers: {
+        'content-type': fetched.contentType || 'image/jpeg',
+        'content-length': String(fetched.buffer.length),
+        'cache-control': 'public, max-age=31536000, immutable',
+        'cross-origin-resource-policy': 'cross-origin',
+        ...SECURITY_RESPONSE_HEADERS,
+      },
     });
   }
 
@@ -3162,8 +3759,8 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       return jsonRes({ error: 'filename is required' }, 400);
     }
     const cleanName = filename.trim().replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
-    const prefix = kind === 'image' ? 'images' : 'vault';
-    const objectKey = `${prefix}/${u.id}/${crypto.randomUUID()}-${cleanName}`;
+    const prefix = kind === 'image' ? 'public/images' : 'vault';
+    const objectKey = `${prefix}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${cleanName}`;
     if (!isR2Configured()) {
       return jsonRes({
         ok: true,
@@ -3189,7 +3786,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     });
   }
 
-  if (method === 'POST' && pathStr === 'upload-archive') {
+  if (method === 'POST' && (pathStr === 'upload-archive' || pathStr === 'vault/upload')) {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
     const { filename, dataBase64, size, archiveEntries, mimeType } = body;
@@ -3207,39 +3804,45 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         return jsonRes({ error: archiveCheck.error || 'Unsafe archive entry path' }, 400);
       }
     }
-    const rawStr = typeof dataBase64 === 'string' ? dataBase64 : cleanName;
-    if (rawStr.length > 35 * 1024 * 1024) {
-      return jsonRes({ error: 'Archive exceeds maximum upload size (25MB)' }, 413);
-    }
-    const cleanBase64 = rawStr.includes(',') ? rawStr.split(',')[1] : rawStr;
-    let buf;
-    try {
-      buf = Buffer.from(cleanBase64, 'base64');
-    } catch {
-      buf = Buffer.from(cleanName, 'utf8');
-    }
-    const sha256 = crypto.createHash('sha256').update(buf.length > 0 ? buf : cleanName).digest('hex');
-    const byteSize = Number.isFinite(Number(size)) && Number(size) > 0 ? Math.round(Number(size)) : Math.max(1024, buf.length);
-    const archiveId = crypto.randomUUID();
-    const r2ObjectKey = `vault/${archiveId}-${cleanName}`;
-    let presignedPutUrl = null;
-    if (isR2Configured()) {
-      presignedPutUrl = createR2PresignedUrl({
-        method: 'PUT',
-        objectKey: r2ObjectKey,
-        expiresInSeconds: 900,
-      });
-      if (typeof dataBase64 === 'string' && dataBase64.trim() && buf.length > 0) {
-        await uploadBufferToR2({
-          objectKey: r2ObjectKey,
-          buffer: buf,
-          contentType: sanitizeString(String(mimeType || 'application/octet-stream'), 120),
-        }).catch(() => {});
+    let buf = null;
+    if (typeof dataBase64 === 'string' && dataBase64.trim()) {
+      if (dataBase64.length > 68 * 1024 * 1024) {
+        return jsonRes({ error: 'Archive exceeds maximum upload size (50MB)' }, 413);
       }
+      const cleanBase64 = dataBase64.replace(/^data:[^;]+;base64,/i, '').trim();
+      buf = Buffer.from(cleanBase64, 'base64');
+    }
+    if (isR2Configured() && (!buf || buf.length === 0)) {
+      return jsonRes({ error: 'Archive file data (dataBase64) is required for R2 Vault upload' }, 400);
+    }
+    const byteSize = buf ? buf.length : (Number.isFinite(Number(size)) && Number(size) > 0 ? Math.round(Number(size)) : 1024);
+    const sha256 = crypto.createHash('sha256').update(buf && buf.length > 0 ? buf : `${cleanName}:${byteSize}:${u.id}:${Date.now()}`).digest('hex');
+    const archiveId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${cleanName}`;
+    const r2ObjectKey = `vault/${archiveId}`;
+    let headVerified = false;
+    if (isR2Configured() && buf) {
+      const up = await uploadBufferToR2({
+        objectKey: r2ObjectKey,
+        buffer: buf,
+        contentType: sanitizeString(String(mimeType || 'application/octet-stream'), 120),
+      });
+      if (!up.ok || !up.headVerified) {
+        return jsonRes({ error: up.error || 'Failed to upload and verify archive in R2 Vault. Please retry.' }, 502);
+      }
+      headVerified = true;
+    } else if (buf) {
+      await uploadBufferToR2({
+        objectKey: r2ObjectKey,
+        buffer: buf,
+        contentType: sanitizeString(String(mimeType || 'application/octet-stream'), 120),
+      });
+      headVerified = true;
     }
     const archiveRecord = {
       id: archiveId,
-      r2_object_key: isR2Configured() ? r2ObjectKey : null,
+      archiveId,
+      r2_object_key: r2ObjectKey,
+      r2ObjectKey,
       seller_id: u.id,
       filename: cleanName,
       size: byteSize,
@@ -3251,10 +3854,11 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     store.vault_archives.push(archiveRecord);
     return jsonRes({
       ok: true,
+      id: archiveId,
       archiveId,
       url: archiveRecord.url,
-      r2ObjectKey: archiveRecord.r2_object_key,
-      presignedPutUrl,
+      r2ObjectKey,
+      headVerified,
       storageProvider: isR2Configured() ? 'cloudflare_r2' : 'vault_fallback',
       filename: cleanName,
       size: byteSize,
@@ -3263,12 +3867,28 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   }
 
   if (segments[0] === 'vault' && segments[1] && method === 'GET') {
-    const archive = (store.vault_archives || []).find(a => a.id === segments[1]);
+    const archiveId = segments[1];
+    const archive = (store.vault_archives || []).find(a => a.id === archiveId || a.archiveId === archiveId);
+    const safeFilename = (archive && archive.filename) || archiveId.replace(/^[0-9a-f-]{14,37}/i, '') || 'creator-archive.zip';
+    if (searchParams.get('raw') === '1') {
+      const r2Obj = await getR2Object(`vault/${archiveId}`);
+      if (r2Obj.ok && r2Obj.buffer) {
+        return new Response(r2Obj.buffer, {
+          status: 200,
+          headers: {
+            'content-type': 'application/octet-stream',
+            'content-disposition': `attachment; filename="${safeFilename.replace(/["\\]/g, '_')}"`,
+            'content-length': String(r2Obj.buffer.length),
+            ...SECURITY_RESPONSE_HEADERS,
+          },
+        });
+      }
+    }
     if (!archive) {
       return jsonRes({
         ok: true,
         vault: 'XRPHarbor Encrypted Digital Vault',
-        archiveId: segments[1],
+        archiveId,
         status: 'verified_escrow_protected',
       });
     }
@@ -3288,7 +3908,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
     const { url } = body;
     if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
-      return jsonRes({ error: 'Please provide a valid http(s) product URL (Gumroad, Itch.io, GitHub, LemonSqueezy, or personal site)' }, 400);
+      return jsonRes({ error: 'Please provide a valid https:// product URL from Gumroad or itch.io' }, 400);
     }
     const cleanUrl = url.trim();
     let parsed;
@@ -3298,72 +3918,181 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       return jsonRes({ error: 'Invalid URL format' }, 400);
     }
     const host = parsed.hostname.toLowerCase();
+    const isGumroad = host === 'gumroad.com' || host.endsWith('.gumroad.com');
+    const isItch = host === 'itch.io' || host.endsWith('.itch.io');
+    if (!isGumroad && !isItch) {
+      return jsonRes({ error: 'Only Gumroad (*.gumroad.com) and itch.io (*.itch.io) product URLs are supported' }, 400);
+    }
+    const provider = isGumroad ? 'gumroad' : 'itch.io';
     const pathParts = parsed.pathname.split('/').filter(Boolean);
-    const slug = (pathParts[pathParts.length - 1] || 'digital-creator-pack')
+    const rawSlug = pathParts[pathParts.length - 1] || 'digital-creator-pack';
+    const subCreator = host.split('.')[0] !== 'www' && host.split('.')[0] !== 'gumroad' && host.split('.')[0] !== 'itch'
+      ? host.split('.')[0]
+      : (pathParts[0] || 'creator');
+    const humanSlug = rawSlug
       .replace(/[-_]+/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase());
+      .replace(/\b\w/g, c => c.toUpperCase())
+      .slice(0, 100);
 
-    let sourcePlatform = 'Web Store';
-    let category = 'software';
-    let suggestedUsd = 29;
-    let tags = ['Digital Download', 'Instant Vault', 'XRPL Escrow'];
-    let coverImage = LISTING_IMAGES.saas_boilerplate;
-
-    if (host.includes('gumroad.com')) {
-      sourcePlatform = 'Gumroad';
-      category = 'templates';
-      suggestedUsd = 39;
-      tags = ['Gumroad Import', 'Creator Pack', 'Commercial License', 'Source Files'];
-      coverImage = LISTING_IMAGES.figma_system;
-    } else if (host.includes('itch.io')) {
-      sourcePlatform = 'Itch.io';
-      category = 'games';
-      suggestedUsd = 24;
-      tags = ['Itch.io Import', 'Indie Game Asset', 'Royalty Free', 'Game Dev'];
-      coverImage = LISTING_IMAGES.cyber_ui;
-    } else if (host.includes('github.com')) {
-      sourcePlatform = 'GitHub';
-      category = 'software';
-      suggestedUsd = 49;
-      tags = ['GitHub Release', 'TypeScript', 'Full Source', 'MIT / Commercial'];
-      coverImage = LISTING_IMAGES.xrpl_bot;
-    } else if (host.includes('lemonsqueezy.com')) {
-      sourcePlatform = 'LemonSqueezy';
-      category = 'templates';
-      suggestedUsd = 35;
-      tags = ['LemonSqueezy Import', 'UI Kit', 'SaaS Starter'];
-      coverImage = LISTING_IMAGES.saas_boilerplate;
+    let html = '';
+    let itchDataJson = null;
+    const cleanHref = parsed.origin + parsed.pathname.replace(/\/+$/, '');
+    if (isItch) {
+      try {
+        const ctrlJson = new AbortController();
+        const tJson = setTimeout(() => ctrlJson.abort(), 4500);
+        const jsonResp = await fetch(`${cleanHref}/data.json`, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+            Accept: 'application/json,text/plain,*/*',
+          },
+          signal: ctrlJson.signal,
+        });
+        clearTimeout(tJson);
+        if (jsonResp && jsonResp.ok) {
+          itchDataJson = await jsonResp.json().catch(() => null);
+        }
+      } catch {}
     }
 
-    const title = slug.length >= 4 ? `${slug} (${sourcePlatform} Edition)` : `Creator Digital Asset Pack (${sourcePlatform})`;
-    const description = [
-      `Imported directly from ${sourcePlatform} (${cleanUrl}).`,
-      '',
-      '### Included in this XRPHarbor Digital Vault Release:',
-      '- Full commercial & indie studio license',
-      '- Cryptographically verified archive (SHA-256 checksum on-chain)',
-      '- Instant zero-fee XRPL Escrow unlock upon payment confirmation',
-      '- Free lifetime version updates via XRPHarbor Vault notifications',
-    ].join('\n');
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 6000);
+      const resp = await fetch(parsed.href, {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      });
+      clearTimeout(timer);
+      if (resp && resp.ok) {
+        html = (await resp.text()).slice(0, 350000);
+      }
+    } catch {}
+
+    const meta = parseCreatorProductMetadata({
+      html,
+      itchDataJson,
+      provider,
+      sourceUrl: parsed.href,
+      humanSlug,
+      subCreator,
+    });
+
+    const mirroredImages = [];
+    for (let i = 0; i < Math.min(meta.images.length, 6); i++) {
+      const imgUrl = meta.images[i];
+      if (!imgUrl || !/^https:\/\//i.test(imgUrl)) continue;
+      if (isR2Configured() && i < 4) {
+        try {
+          const imgCtrl = new AbortController();
+          const imgTimer = setTimeout(() => imgCtrl.abort(), 3500);
+          const imgResp = await fetch(imgUrl, {
+            method: 'GET',
+            signal: imgCtrl.signal,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; XRPHarborMediaBot/1.0)' },
+          });
+          clearTimeout(imgTimer);
+          if (imgResp && imgResp.ok) {
+            const cType = (imgResp.headers.get('content-type') || 'image/jpeg').split(';')[0].trim().toLowerCase();
+            if (cType.startsWith('image/')) {
+              const arrBuf = await imgResp.arrayBuffer();
+              const buf = Buffer.from(arrBuf);
+              if (buf.length > 64 && buf.length <= 5 * 1024 * 1024) {
+                const ext = cType.includes('png') ? 'png' : cType.includes('webp') ? 'webp' : cType.includes('gif') ? 'gif' : 'jpg';
+                const objKey = `public/images/import-${Date.now()}-${crypto.randomUUID().slice(0, 6)}-${i}.${ext}`;
+                const up = await uploadBufferToR2({ objectKey: objKey, buffer: buf, contentType: cType });
+                if (up.ok) {
+                  mirroredImages.push(`/api/media/${up.objectKey}`);
+                  continue;
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+      mirroredImages.push(imgUrl);
+    }
+
+    const lowerProbe = `${rawSlug} ${meta.title} ${meta.tags.join(' ')}`.toLowerCase();
+    let category = isItch ? 'games' : 'templates';
+    let platform = isItch ? 'Unity / Godot / Unreal' : 'Next.js / Figma / Blender';
+    if (/shader|3d|blender|mesh|vfx|lut|pack|tileset|sprite|texture|model|lowpoly/.test(lowerProbe)) {
+      category = 'graphics';
+      platform = 'Blender 4.2 / Godot / Unity';
+    } else if (/audio|synth|sfx|stem|wav|music|ost|soundtrack/.test(lowerProbe)) {
+      category = 'audio';
+      platform = '24-Bit WAV / Ableton / FMOD';
+    } else if (/prompt|midjourney|gpt|claude|ai|lora/.test(lowerProbe)) {
+      category = 'prompts';
+      platform = 'Midjourney / Claude / SDXL';
+    } else if (/script|plugin|sdk|cli|bot|tool|code|addon|extension/.test(lowerProbe)) {
+      category = 'software';
+      platform = 'Node.js / TypeScript / Python';
+    } else if (/course|guide|ebook|pdf|playbook|notion|tutorial/.test(lowerProbe)) {
+      category = 'education';
+      platform = 'PDF + Notion Workspace';
+    }
+
+    const mergedTags = Array.from(new Set([
+      ...(meta.tags || []),
+      provider === 'gumroad' ? 'gumroad-import' : 'itch-import',
+      category,
+      ...rawSlug.toLowerCase().split(/[-_]+/).filter(w => w.length >= 3).slice(0, 4),
+    ])).slice(0, 6);
+
+    let liveRate = 2.20;
+    try {
+      const rateCtrl = new AbortController();
+      const rateTimer = setTimeout(() => rateCtrl.abort(), 2000);
+      const rateRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd', {
+        signal: rateCtrl.signal,
+      });
+      clearTimeout(rateTimer);
+      if (rateRes && rateRes.ok) {
+        const rateData = await rateRes.json().catch(() => null);
+        if (rateData && rateData.ripple && Number(rateData.ripple.usd) > 0) {
+          liveRate = Number(rateData.ripple.usd);
+        }
+      }
+    } catch {}
+
+    const hasNumericPrice = meta.priceUsd !== null && meta.priceUsd !== undefined && Number.isFinite(Number(meta.priceUsd));
+    const finalPriceUsd = hasNumericPrice ? Number(meta.priceUsd) : null;
+    const estimatedXrp = finalPriceUsd !== null && finalPriceUsd > 0
+      ? parseFloat(Math.max(0.01, finalPriceUsd / liveRate).toFixed(2))
+      : (finalPriceUsd === 0 ? 0 : null);
 
     const importedPayload = {
-      title: title.slice(0, 120),
-      description,
+      title: sanitizeString(meta.title, 120),
+      description: sanitizeString(meta.description, 5000),
       category,
-      platform: sourcePlatform,
-      priceUsd: suggestedUsd,
-      priceXrp: Number((suggestedUsd / 1.38).toFixed(2)),
+      game: `${humanSlug} (${provider})`,
+      platform,
+      priceUsd: finalPriceUsd,
+      priceXrp: estimatedXrp,
+      isFreeOrPwyw: Boolean(meta.isFreeOrPwyw),
+      currency: meta.currency || 'USD',
       pricingMode: 'USD',
-      version: 'v1.0.0',
-      tags,
-      images: [coverImage],
-      coverImage,
-      sourceUrl: cleanUrl,
+      isDigital: true,
+      deliveryTime: 'instant',
+      version: '1.0.0',
+      tags: mergedTags,
+      images: mirroredImages,
+      coverImage: mirroredImages[0] || '',
+      sourceUrl: parsed.href,
     };
 
     return jsonRes({
       ok: true,
+      provider,
       ...importedPayload,
+      draft: importedPayload,
       imported: importedPayload,
     });
   }
@@ -3445,7 +4174,8 @@ async function handler(req, ctx) {
   for (const base of candidates) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500);
+      const timeoutMs = (pathStr === 'upload' || pathStr === 'upload-archive' || pathStr === 'vault/upload' || pathStr === 'import-listing') ? 15000 : 4500;
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       const url = base.replace(/\/$/, '') + '/api/' + pathStr + (search || '');
       const res = await fetch(url, {
         method: req.method,
@@ -3461,6 +4191,31 @@ async function handler(req, ctx) {
         res.status === 503;
 
       if (!isRailwayDead) {
+        const ct = res.headers.get('content-type') || 'application/json';
+        const isBinaryResponse =
+          ct.startsWith('image/') ||
+          ct.startsWith('audio/') ||
+          ct.startsWith('video/') ||
+          ct.startsWith('model/') ||
+          ct.includes('application/octet-stream') ||
+          ct.includes('application/zip') ||
+          ct.includes('application/pdf');
+
+        if (isBinaryResponse && res.status !== 404) {
+          const arrBuf = await res.arrayBuffer();
+          const binHeaders = { 'content-type': ct };
+          const cd = res.headers.get('content-disposition');
+          const cc = res.headers.get('cache-control');
+          const corp = res.headers.get('cross-origin-resource-policy');
+          if (cd) binHeaders['content-disposition'] = cd;
+          if (cc) binHeaders['cache-control'] = cc;
+          if (corp) binHeaders['cross-origin-resource-policy'] = corp;
+          return withSecurityAndCorsHeaders(
+            new Response(Buffer.from(arrBuf), { status: res.status, headers: binHeaders }),
+            req
+          );
+        }
+
         const respText = await res.text();
         // Check if upstream returned "Application not found" or unhandled route 404
         if (
@@ -3469,7 +4224,6 @@ async function handler(req, ctx) {
         ) {
           continue;
         }
-        const ct = res.headers.get('content-type') || 'application/json';
         return withSecurityAndCorsHeaders(
           new Response(respText, { status: res.status, headers: { 'content-type': ct } }),
           req

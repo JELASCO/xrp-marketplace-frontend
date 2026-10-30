@@ -59,7 +59,7 @@ const DELIVERY_OPTS = [
   { v:'1-3d',    l:'1–3 days' },
 ];
 const TITLE_MAX = 120;
-const DESC_MAX  = 2000;
+const DESC_MAX  = 5000;
 
 async function uploadToImgbb(file) {
   if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5MB');
@@ -73,17 +73,10 @@ async function uploadToImgbb(file) {
   const r = await fetch('/api/upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ image: base64 }),
+    body: JSON.stringify({ image: base64, filename: file.name }),
   });
-  const d = await r.json();
+  const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.url) throw new Error((d && d.error) || 'Upload failed');
-  if (d.presignedPutUrl) {
-    await fetch(d.presignedPutUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || d.mimeType || 'image/png' },
-      body: file,
-    }).catch(() => {});
-  }
   return d.url;
 }
 
@@ -296,6 +289,7 @@ export default function NewListingPage() {
     digitalArchiveName: '',
     digitalArchiveSize: 0,
     digitalArchiveSha256: '',
+    r2ObjectKey: '',
     quantity: '',
     deliveryTime: 'instant',
     tags: [],
@@ -364,8 +358,11 @@ export default function NewListingPage() {
 
   function applyImportedData(data) {
     const liveRate = xrpUsd || 2.25;
-    const usdVal = data.priceUsd ? Number(data.priceUsd) : null;
-    const xrpVal = data.priceXrp ? Number(data.priceXrp) : (usdVal ? +(usdVal / liveRate).toFixed(2) : '');
+    const hasUsdPrice = data.priceUsd !== null && data.priceUsd !== undefined && data.priceUsd !== '' && Number.isFinite(Number(data.priceUsd));
+    const usdVal = hasUsdPrice ? Number(data.priceUsd) : null;
+    const xrpVal = (data.priceXrp !== null && data.priceXrp !== undefined && data.priceXrp !== '' && Number(data.priceXrp) > 0)
+      ? Number(data.priceXrp)
+      : (usdVal && usdVal > 0 ? +(usdVal / liveRate).toFixed(2) : '');
     setForm(f => ({
       ...f,
       title: (data.title || f.title).slice(0, TITLE_MAX),
@@ -373,9 +370,9 @@ export default function NewListingPage() {
       category: data.category || f.category || 'graphics',
       tags: Array.isArray(data.tags) ? data.tags.slice(0, 8) : f.tags,
       images: Array.isArray(data.images) ? data.images.map(u => sanitizeImageUrl(u)).filter(Boolean).slice(0, 6) : f.images,
-      priceUsd: usdVal ? String(usdVal) : f.priceUsd,
-      priceXrp: xrpVal ? String(xrpVal) : f.priceXrp,
-      pricingMode: usdVal ? 'USD' : f.pricingMode,
+      priceUsd: usdVal !== null && usdVal > 0 ? String(usdVal) : '',
+      priceXrp: xrpVal ? String(xrpVal) : '',
+      pricingMode: usdVal !== null && usdVal > 0 ? 'USD' : f.pricingMode,
     }));
   }
 
@@ -481,7 +478,7 @@ export default function NewListingPage() {
         fr.readAsDataURL(file);
       });
       const token = localStorage.getItem('xrpmarket_token');
-      const r = await fetch('/api/upload-archive', {
+      const r = await fetch('/api/vault/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
@@ -496,22 +493,18 @@ export default function NewListingPage() {
         }),
       });
       const d = await r.json().catch(() => ({}));
-      if (d.presignedPutUrl) {
-        await fetch(d.presignedPutUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': file.type || 'application/octet-stream' },
-          body: file,
-        }).catch(() => {});
+      if (!r.ok || !d.ok || !d.url) {
+        throw new Error((d && d.error) || 'Archive upload failed — file could not be verified in R2 Vault');
       }
       const sha = d.sha256 || localSha || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-      const archiveUrl = d.url || `vault://${encodeURIComponent(file.name)}`;
       setForm(f => ({
         ...f,
         isDigital: true,
-        digitalArchiveUrl: archiveUrl,
-        digitalArchiveName: file.name,
-        digitalArchiveSize: file.size,
+        digitalArchiveUrl: d.url,
+        digitalArchiveName: d.filename || file.name,
+        digitalArchiveSize: d.size || file.size,
         digitalArchiveSha256: sha,
+        r2ObjectKey: d.r2ObjectKey || '',
       }));
     } catch (err) {
       setError(err.message || 'Archive upload failed');
@@ -941,8 +934,8 @@ export default function NewListingPage() {
             <div className="left">DRAFT · <span className="ok">{form.title.trim() ? 'ready to publish' : 'fill in the basics first'}</span></div>
             <div className="btn-group">
               <Link href="/listings" className="xh-btn xh-btn-ghost">Cancel</Link>
-              <button type="submit" className="xh-btn xh-btn-primary" disabled={loading || uploading}>
-                {loading ? 'Publishing…' : '⛵ Publish to harbor'}
+              <button type="submit" className="xh-btn xh-btn-primary" disabled={loading || uploading || uploadingArchive}>
+                {loading ? 'Publishing…' : uploadingArchive ? 'Uploading Vault Archive…' : '⛵ Publish to harbor'}
               </button>
             </div>
           </div>

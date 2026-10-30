@@ -111,6 +111,18 @@ export function sanitizeImageUrl(url) {
       if (parsed.protocol.toLowerCase() !== 'https:') return null;
       if (parsed.username || parsed.password) return null;
       if (!parsed.hostname) return null;
+      // Rewrite raw private R2 S3 storage URLs to our public media proxy (/api/media/...)
+      if (parsed.hostname.toLowerCase().endsWith('.r2.cloudflarestorage.com')) {
+        let p = parsed.pathname.replace(/^\/+/, '');
+        const parts = p.split('/').filter(Boolean);
+        if (parts.length > 1 && !['public', 'images', 'vault'].includes(parts[0])) {
+          parts.shift();
+          p = parts.join('/');
+        }
+        if (!p || p.startsWith('vault/') || p.includes('..')) return null;
+        if (!p.startsWith('public/')) p = `public/${p}`;
+        return `/api/media/${p}`;
+      }
       return trimmed;
     } catch {
       return null;
