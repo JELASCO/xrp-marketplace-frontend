@@ -5,14 +5,18 @@ import { useState } from 'react';
 import { sanitizeImageUrl } from '../lib/sanitizeUrl';
 
 const CAT_BG = {
-  games:    'linear-gradient(135deg,#dbeafe,#eff6ff)',
-  graphics: 'linear-gradient(135deg,#ede9fe,#faf5ff)',
-  software: 'linear-gradient(135deg,#ccfbf1,#f0fdfa)',
-  accounts: 'linear-gradient(135deg,#f1f5f9,#f8fafc)',
-  other:    'linear-gradient(135deg,#fef3c7,#fffbeb)',
+  graphics:  'linear-gradient(135deg,#ede9fe,#faf5ff)',
+  templates: 'linear-gradient(135deg,#e0e7ff,#eef2ff)',
+  software:  'linear-gradient(135deg,#ccfbf1,#f0fdfa)',
+  education: 'linear-gradient(135deg,#fce7f3,#fdf2f8)',
+  prompts:   'linear-gradient(135deg,#fef3c7,#fffbeb)',
+  audio:     'linear-gradient(135deg,#dcfce7,#f0fdf4)',
+  games:     'linear-gradient(135deg,#dbeafe,#eff6ff)',
+  accounts:  'linear-gradient(135deg,#f1f5f9,#f8fafc)',
+  other:     'linear-gradient(135deg,#fef3c7,#fffbeb)',
 };
-const CAT_ICON  = { games:'🎮', graphics:'🎨', software:'💻', accounts:'👤', other:'📦' };
-const CAT_LABEL = { games:'GAMES', graphics:'GRAPHICS', software:'SOFTWARE', accounts:'ACCOUNTS', other:'OTHER' };
+const CAT_ICON  = { graphics:'🎨', templates:'🧩', software:'💻', education:'🎓', prompts:'✨', audio:'🎵', games:'🎮', accounts:'👤', other:'📦' };
+const CAT_LABEL = { graphics:'3D & DESIGN', templates:'TEMPLATES', software:'SOFTWARE & TOOLS', education:'EDUCATION', prompts:'PROMPTS', audio:'AUDIO', games:'GAMES', accounts:'ACCOUNTS', other:'OTHER' };
 
 const MONO = '"JetBrains Mono",ui-monospace,monospace';
 const BODY = '"Inter",system-ui,-apple-system,"Segoe UI",sans-serif';
@@ -162,8 +166,11 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
                 maxWidth: 110,
               }}
             >{username || 'unknown'}</span>
-            {reputation_score > 0 && (
+            {reputation_score > 0 && (Number(listing.review_count || listing.seller_reviews || 0) > 0 || Number(listing.total_sales || listing.seller_sales || 0) > 0) && (
               <span style={{ color: '#f59e0b', flexShrink: 0 }}>★ {Number(reputation_score).toFixed(1)}</span>
+            )}
+            {Number(listing.total_sales || listing.seller_sales || 0) >= 5 && (
+              <span style={{ color: 'var(--xh-text2)', fontSize: 11, flexShrink: 0 }}>· {Number(listing.total_sales || listing.seller_sales)} sales</span>
             )}
             {is_verified && (
               <span title="Verified seller" style={{ color: '#10b981', fontWeight: 600, flexShrink: 0 }}>✓</span>

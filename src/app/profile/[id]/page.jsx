@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import ListingCard from '../../../components/ListingCard';
+import { sanitizeExternalUrl } from '../../../lib/sanitizeUrl';
 
 function timeAgo(d) {
   if (!d) return '';
@@ -78,6 +79,19 @@ export default function ProfilePage() {
   const frameStyle = user.avatar_frame || (user.notification_prefs && user.notification_prefs.avatar_frame) || (isProProfile ? 'gold' : 'none');
   const activeListings = listings.filter(l => l.status === 'active');
   const soldListings = listings.filter(l => l.status === 'sold');
+  const rawSocials =
+    (user.socials && typeof user.socials === 'object' ? user.socials : null) ||
+    (user.notification_prefs && user.notification_prefs.socials && typeof user.notification_prefs.socials === 'object'
+      ? user.notification_prefs.socials
+      : null) ||
+    {};
+  const socialLinks = [
+    { key: 'discord', label: '💬 Discord', url: sanitizeExternalUrl(rawSocials.discord) },
+    { key: 'twitter', label: '𝕏 Twitter', url: sanitizeExternalUrl(rawSocials.twitter) },
+    { key: 'github', label: '💻 GitHub / ArtStation', url: sanitizeExternalUrl(rawSocials.github) },
+    { key: 'website', label: '🌐 Website', url: sanitizeExternalUrl(rawSocials.website) },
+    { key: 'telegram', label: '✈️ Telegram', url: sanitizeExternalUrl(rawSocials.telegram) },
+  ].filter(item => Boolean(item.url));
 
   return (
     <div style={{maxWidth:800,margin:'0 auto'}}>
@@ -101,6 +115,21 @@ export default function ProfilePage() {
           </div>
           <div style={{fontSize:12,color:'var(--text3)',fontFamily:'monospace',marginBottom:8,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.wallet_address}</div>
           {user.bio && <div style={{fontSize:13,color:'var(--text2)',marginTop:4}}>{user.bio}</div>}
+          {socialLinks.length > 0 && (
+            <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:10}}>
+              {socialLinks.map(s => (
+                <a
+                  key={s.key}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{display:'inline-flex',alignItems:'center',gap:5,padding:'4px 10px',borderRadius:999,background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text2)',fontSize:11.5,fontWeight:600,textDecoration:'none'}}
+                >
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
         <div style={{display:'flex',gap:8,flexShrink:0}}>
           {user.store_handle && (
@@ -141,7 +170,7 @@ export default function ProfilePage() {
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:24}}>
         <Stat label="Active" value={activeListings.length}/>
         <Stat label="Sold" value={soldListings.length}/>
-        <Stat label="Rating" value={user.reputation_score > 0 ? Number(user.reputation_score).toFixed(1) + '★' : '—'}/>
+        <Stat label="Rating" value={reviews.length > 0 && user.reputation_score > 0 ? Number(user.reputation_score).toFixed(1) + '★' : 'No ratings yet'}/>
         <Stat label="Reviews" value={reviews.length}/>
         <Stat label="Joined" value={formatJoined(user.created_at)}/>
       </div>

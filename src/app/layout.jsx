@@ -6,14 +6,14 @@ import ConfirmHost from '../components/ConfirmHost';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://xrpharbor.com';
 const SITE_NAME = 'XRPHarbor';
-const TITLE = 'XRPHarbor - P2P Game & Digital Items Marketplace';
-const DESCRIPTION = 'Buy and sell game skins, coins, accounts, and digital items with XRP Ledger escrow protection. Secure peer-to-peer marketplace powered by the XRP Ledger.';
+const TITLE = 'XRPHarbor - The Creator Marketplace on the XRP Ledger';
+const DESCRIPTION = 'The creator marketplace on the XRP Ledger. Buy and sell 3D models, shaders, UI kits, templates, indie tools, audio, and digital assets with 0% fees and on-chain XRPL escrow.';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: TITLE, template: '%s | ' + SITE_NAME },
   description: DESCRIPTION,
-  keywords: ['XRP', 'XRPL', 'marketplace', 'game items', 'skins', 'CS2', 'Valorant', 'crypto marketplace', 'P2P', 'escrow'],
+  keywords: ['XRP', 'XRPL', 'creator marketplace', '3D models', 'shaders', 'UI kits', 'templates', 'indie tools', 'audio', 'digital assets', 'RLUSD', 'escrow'],
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
   publisher: SITE_NAME,

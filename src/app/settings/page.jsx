@@ -19,6 +19,7 @@ const PREF_LABELS = {
   dispute_opened: 'A dispute is opened on your order',
   dispute_resolved: 'Admin resolves a dispute',
   new_review: 'Buyer leaves you a review',
+  product_update: 'Creator publishes a new version of an asset you bought',
 };
 
 export default function SettingsPage() {
@@ -29,12 +30,20 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarFrame, setAvatarFrame] = useState('gold');
+  const [socials, setSocials] = useState({
+    discord: '',
+    twitter: '',
+    github: '',
+    telegram: '',
+    website: '',
+  });
   const [prefs, setPrefs] = useState({
     new_order: true,
     order_completed: true,
     dispute_opened: true,
     dispute_resolved: true,
     new_review: true,
+    product_update: true,
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -64,6 +73,20 @@ export default function SettingsPage() {
     setAvatarFrame(savedFrame);
     if (user.notification_prefs && typeof user.notification_prefs === 'object') {
       setPrefs((p) => ({ ...p, ...user.notification_prefs }));
+    }
+    const existingSocials =
+      (user.socials && typeof user.socials === 'object' ? user.socials : null) ||
+      (user.notification_prefs && user.notification_prefs.socials && typeof user.notification_prefs.socials === 'object'
+        ? user.notification_prefs.socials
+        : null);
+    if (existingSocials) {
+      setSocials({
+        discord: existingSocials.discord || '',
+        twitter: existingSocials.twitter || '',
+        github: existingSocials.github || '',
+        telegram: existingSocials.telegram || '',
+        website: existingSocials.website || '',
+      });
     }
   }, [user, isPro, router]);
 
@@ -97,15 +120,18 @@ export default function SettingsPage() {
       const nextPrefs = {
         ...prefs,
         avatar_frame: isPro ? avatarFrame : 'none',
+        socials,
       };
-      const updated = await api.users.update({
+      const updateFn = api.users.updateMe || api.users.update;
+      const updated = await updateFn({
         username,
         bio,
         avatar_url: avatarUrl,
+        socials,
         notification_prefs: nextPrefs,
         avatar_frame: isPro ? avatarFrame : 'none',
       });
-      setUser({ ...user, ...updated });
+      setUser({ ...user, ...updated, socials });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
@@ -324,17 +350,6 @@ export default function SettingsPage() {
             })}
           </div>
         </div>
-
-        {/* Custom Image / GIF URL Input */}
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>
-          Or paste a custom image {isPro ? 'or animated .GIF ' : ''}URL:
-        </div>
-        <input
-          value={avatarUrl && avatarUrl.startsWith('data:') ? '' : avatarUrl}
-          onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder={isPro ? 'https://media.giphy.com/.../avatar.gif or https://...' : 'https://...'}
-          style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box' }}
-        />
       </div>
 
       {/* Profile Info */}
@@ -346,8 +361,43 @@ export default function SettingsPage() {
         </div>
         <div>
           <label style={{ fontSize: 12, color: 'var(--text3)', display: 'block', marginBottom: 6 }}>Bio</label>
-          <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={280} placeholder="Tell buyers a bit about yourself..." style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+          <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={280} placeholder="Tell buyers about your 3D assets, code templates, tools, or turnaround..." style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
           <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'right', marginTop: 4 }}>{bio.length}/280</div>
+        </div>
+      </div>
+
+      {/* Creator Social & Portfolio Links (Free for All Sellers) */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Creator Social &amp; Portfolio Links</div>
+          <span style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', fontWeight: 800, background: 'rgba(16,185,129,0.12)', color: '#10b981', padding: '2px 8px', borderRadius: 999 }}>
+            ✓ FREE FOR ALL CREATORS
+          </span>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>
+          Display clickable portfolio &amp; community links on your public profile so buyers can verify your work.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+          <div>
+            <label style={{ fontSize: 11.5, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>Discord Server / Handle URL</label>
+            <input type="url" value={socials.discord} onChange={(e) => setSocials((s) => ({ ...s, discord: e.target.value }))} placeholder="https://discord.gg/..." style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 11.5, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>X / Twitter URL</label>
+            <input type="url" value={socials.twitter} onChange={(e) => setSocials((s) => ({ ...s, twitter: e.target.value }))} placeholder="https://x.com/..." style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 11.5, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>GitHub / ArtStation URL</label>
+            <input type="url" value={socials.github} onChange={(e) => setSocials((s) => ({ ...s, github: e.target.value }))} placeholder="https://github.com/... or artstation.com/..." style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 11.5, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>Personal Website / Portfolio</label>
+            <input type="url" value={socials.website} onChange={(e) => setSocials((s) => ({ ...s, website: e.target.value }))} placeholder="https://yourstudio.com" style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: 11.5, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>Telegram URL</label>
+            <input type="url" value={socials.telegram} onChange={(e) => setSocials((s) => ({ ...s, telegram: e.target.value }))} placeholder="https://t.me/..." style={{ width: '100%', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: 'var(--text)', fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
         </div>
       </div>
 

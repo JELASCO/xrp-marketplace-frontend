@@ -15,8 +15,9 @@ const NOTIF_LABELS = {
   offer_declined: 'Your offer was declined',
   new_message: 'New message',
   new_inquiry: 'New inquiry on your listing',
+  product_update: 'Product update available for your purchase',
 };
-const NOTIF_ICONS = { sale_paid:'💰', payment_released:'✅', new_offer:'🏷️', offer_accepted:'🤝', offer_declined:'❌', new_message:'💬', new_inquiry:'❓' };
+const NOTIF_ICONS = { sale_paid:'💰', payment_released:'✅', new_offer:'🏷️', offer_accepted:'🤝', offer_declined:'❌', new_message:'💬', new_inquiry:'❓', product_update:'📦' };
 function notifTimeAgo(d){ if(!d) return ''; const sec=Math.floor((Date.now()-new Date(d).getTime())/1000); if(sec<60) return 'just now'; if(sec<3600) return Math.floor(sec/60)+'m ago'; if(sec<86400) return Math.floor(sec/3600)+'h ago'; return Math.floor(sec/86400)+'d ago'; }
 
 export default function Navbar() {
@@ -102,11 +103,11 @@ export default function Navbar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </form>)}
-          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:4,marginLeft:'auto'}}>
-            {[{href:'/listings',label:'Marketplace'},...(user?[{href:'/dashboard',label:'Dashboard'}]:[]),{href:'/listings/new',label:'List Item'},{href:'/orders',label:'Orders'}].map(l=>(
-              <Link key={l.href} href={l.href} style={{fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
-                onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'}}>
+          <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
+            {[{href:'/listings',label:'Marketplace'},...(user?[{href:'/dashboard',label:'Dashboard'}]:[]),{href:'/listings/new',label:'+ List an item',accent:true},{href:'/orders',label:'Library / Purchases'}].map(l=>(
+              <Link key={l.href} href={l.href} style={l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
+                onMouseEnter={e=>{ if(l.accent){ e.currentTarget.style.background='#2080F5'; e.currentTarget.style.color='#fff'; } else { e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'; } }}
+                onMouseLeave={e=>{ if(l.accent){ e.currentTarget.style.background='rgba(32,128,245,0.10)'; e.currentTarget.style.color='#2080F5'; } else { e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'; } }}>
                 {l.label}
               </Link>
             ))}
@@ -168,7 +169,7 @@ export default function Navbar() {
                     <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#2080F5',fontWeight:600,textDecoration:'none'}}>⭐ Upgrade to Pro</Link>
                     <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
                   </>)}
-                  {[{href:'/listings/new',label:'List an Item'},{href:'/store/create',label:'Create store'},{href:'/dashboard',label:'Dashboard'},{href:'/orders',label:'My Orders'},{href:'/messages',label:'Messages'},{href:'/favorites',label:'Favorites'},{href:'/profile/'+user.id,label:'My Profile'},{href:'/settings',label:'Settings'}].map(i=>(
+                  {[{href:'/listings/new',label:'List an Item'},{href:'/store/create',label:'Create store'},{href:'/dashboard',label:'Dashboard'},{href:'/orders',label:'Library / Purchases'},{href:'/messages',label:'Messages'},{href:'/favorites',label:'Favorites'},{href:'/profile/'+user.id,label:'My Profile'},{href:'/settings',label:'Settings'}].map(i=>(
                     <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
                       style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--text2)',textDecoration:'none',transition:'all 0.15s'}}
                       onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}

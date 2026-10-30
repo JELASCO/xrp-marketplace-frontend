@@ -46,6 +46,143 @@ function verifyJwt(token) {
   }
 }
 
+// ---- Cloudflare R2 S3-Compatible AWS SigV4 Presigned PUT/GET ----
+function getR2Config() {
+  const endpointRaw = (process.env.R2_ENDPOINT || '').trim();
+  const accessKeyId = (process.env.R2_ACCESS_KEY_ID || '').trim();
+  const secretAccessKey = (process.env.R2_SECRET_ACCESS_KEY || '').trim();
+  const bucketName = (process.env.R2_BUCKET_NAME || '').trim();
+  const configured = Boolean(
+    endpointRaw &&
+    accessKeyId &&
+    secretAccessKey &&
+    bucketName &&
+    endpointRaw !== 'undefined' &&
+    accessKeyId !== 'undefined' &&
+    secretAccessKey !== 'undefined' &&
+    bucketName !== 'undefined'
+  );
+  return {
+    configured,
+    endpoint: endpointRaw.replace(/\/+$/, ''),
+    accessKeyId,
+    secretAccessKey,
+    bucketName,
+  };
+}
+
+function isR2Configured() {
+  return getR2Config().configured;
+}
+
+function rfc3986Encode(str) {
+  return encodeURIComponent(String(str)).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+}
+
+function hmacSha256Buf(key, data) {
+  return crypto.createHmac('sha256', key).update(data, 'utf8').digest();
+}
+
+function createR2PresignedUrl({
+  method = 'GET',
+  objectKey = '',
+  expiresInSeconds = 900,
+  responseContentDisposition = null,
+} = {}) {
+  const cfg = getR2Config();
+  if (!cfg.configured || !objectKey) return null;
+  let parsedEndpoint;
+  try {
+    parsedEndpoint = new URL(cfg.endpoint);
+  } catch {
+    return null;
+  }
+  const cleanKey = String(objectKey).replace(/^\/+/, '');
+  const basePath = parsedEndpoint.pathname.replace(/\/+$/, '');
+  const bucketInPath = basePath.endsWith(`/${cfg.bucketName}`);
+  const fullPathSegments = [
+    ...basePath.split('/').filter(Boolean),
+    ...(bucketInPath ? [] : [cfg.bucketName]),
+    ...cleanKey.split('/').filter(Boolean),
+  ];
+  const canonicalUri = '/' + fullPathSegments.map(rfc3986Encode).join('/');
+  const host = parsedEndpoint.host;
+  const now = new Date();
+  const isoBasic = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  const dateStamp = isoBasic.slice(0, 8);
+  const region = 'auto';
+  const service = 's3';
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+  const ttl = Math.max(60, Math.min(604800, Math.floor(Number(expiresInSeconds) || 900)));
+
+  const queryParams = {
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': `${cfg.accessKeyId}/${credentialScope}`,
+    'X-Amz-Date': isoBasic,
+    'X-Amz-Expires': String(ttl),
+    'X-Amz-SignedHeaders': 'host',
+  };
+  if (responseContentDisposition && method.toUpperCase() === 'GET') {
+    queryParams['response-content-disposition'] = String(responseContentDisposition);
+  }
+  const sortedQueryKeys = Object.keys(queryParams).sort();
+  const canonicalQueryString = sortedQueryKeys
+    .map((k) => `${rfc3986Encode(k)}=${rfc3986Encode(queryParams[k])}`)
+    .join('&');
+  const canonicalRequest = [
+    method.toUpperCase(),
+    canonicalUri,
+    canonicalQueryString,
+    `host:${host}\n`,
+    'host',
+    'UNSIGNED-PAYLOAD',
+  ].join('\n');
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    isoBasic,
+    credentialScope,
+    crypto.createHash('sha256').update(canonicalRequest, 'utf8').digest('hex'),
+  ].join('\n');
+  const kDate = hmacSha256Buf(`AWS4${cfg.secretAccessKey}`, dateStamp);
+  const kRegion = hmacSha256Buf(kDate, region);
+  const kService = hmacSha256Buf(kRegion, service);
+  const signingKey = hmacSha256Buf(kService, 'aws4_request');
+  const signature = crypto.createHmac('sha256', signingKey).update(stringToSign, 'utf8').digest('hex');
+  return `${parsedEndpoint.protocol}//${host}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+}
+
+async function uploadBufferToR2({ objectKey, buffer, contentType = 'application/octet-stream' }) {
+  const cfg = getR2Config();
+  if (!cfg.configured) return { ok: false, error: 'R2 not configured' };
+  const putUrl = createR2PresignedUrl({ method: 'PUT', objectKey, expiresInSeconds: 600 });
+  if (!putUrl) return { ok: false, error: 'Invalid R2 endpoint' };
+  try {
+    const resp = await fetch(putUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': String(buffer ? buffer.length : 0),
+      },
+      body: buffer,
+    });
+    const publicBase = (process.env.R2_PUBLIC_URL || `${cfg.endpoint}/${cfg.bucketName}`).replace(/\/+$/, '');
+    return {
+      ok: Boolean(resp && (resp.ok || resp.status === 200 || resp.status === 201)),
+      status: resp ? resp.status : 0,
+      objectKey,
+      presignedPutUrl: putUrl,
+      publicUrl: `${publicBase}/${String(objectKey).replace(/^\/+/, '')}`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err.message || 'R2 PUT upload failed',
+      objectKey,
+      presignedPutUrl: putUrl,
+    };
+  }
+}
+
 function buildQrSvgDataUri(seedText = 'xrpharbor') {
   const hash = crypto.createHash('sha256').update(String(seedText)).digest();
   const size = 21;
@@ -106,15 +243,34 @@ function svgToDataUri(svg) {
 }
 
 const LISTING_IMAGES = {
-  karambit: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=85',
-  jetbrains: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=85',
-  valorant: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=900&q=85',
-  uikit: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=900&q=85',
-  dexbot: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=900&q=85',
-  wowgold: 'https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=900&q=85',
-  stream: 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=900&q=85',
-  steam: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?auto=format&fit=crop&w=900&q=85',
+  cyberpunkShaders: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=900&q=85',
+  xrplBoilerplate: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=85',
+  figmaDesignSystem: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&w=900&q=85',
+  synthwaveAudio: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=900&q=85',
+  dexOrderbookBot: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=900&q=85',
+  midjourneyPrompts: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=900&q=85',
+  pixelArtTileset: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=900&q=85',
+  creatorCourse: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85',
 };
+
+const STORE_ALIASES = {
+  'dockmaster': 'aether-forge',
+  'aether_forge': 'aether-forge',
+  'aether-forge': 'aether-forge',
+  'keyport': 'prism-ui',
+  'prism_ui': 'prism-ui',
+  'prism-ui': 'prism-ui',
+  'captain-lex': 'xrpl-labs',
+  'captain_lex': 'xrpl-labs',
+  'xrpl_labs': 'xrpl-labs',
+  'xrpl-labs': 'xrpl-labs',
+};
+
+function resolveStoreHandle(handle) {
+  if (!handle || typeof handle !== 'string') return '';
+  const clean = handle.trim().toLowerCase();
+  return STORE_ALIASES[clean] || clean;
+}
 
 const _UNUSED_SVG_IMAGES = {
   karambit: svgToDataUri(`
@@ -450,105 +606,152 @@ function getStore() {
       users: [
         {
           id: '11111111-1111-4111-8111-111111111111',
-          username: 'dockmaster',
+          username: 'aether_forge',
           wallet_address: 'rDockMaster9X2pL4nK8vJ6wZ3cT5yB1a2',
-          bio: 'Solo developer trading premium digital goods. CS2, Valorant and Pokemon TCG specialist with instant delivery on most items.',
+          bio: 'Indie 3D & game-dev studio crafting Blender 4.2 shader nodes, Godot 4 / Unity VFX packs, and procedural pixel-art kits. Instant ZIP vault delivery.',
           role: 'user',
-          reputation_score: 4.9,
-          total_sales: 32,
+          reputation_score: 4.95,
+          total_sales: 84,
           is_verified: true,
-          pro_until: futureIso(30),
-          store_handle: 'dockmaster',
+          founding_creator: true,
+          pro_until: futureIso(60),
+          store_handle: 'aether-forge',
+          socials: {
+            discord: 'https://discord.gg/xrpharbor',
+            twitter: 'https://x.com/xrpharbor',
+            github: 'https://github.com/xrpharbor',
+            website: 'https://xrpharbor.com',
+          },
+          notification_prefs: {
+            avatar_frame: 'gold',
+            founding_creator: true,
+            socials: {
+              discord: 'https://discord.gg/xrpharbor',
+              twitter: 'https://x.com/xrpharbor',
+              github: 'https://github.com/xrpharbor',
+              website: 'https://xrpharbor.com',
+            },
+          },
           store: {
-            name: 'Dockmaster Digital Vault',
-            tagline: 'Verified CS2, Valorant & TCG collectibles — instant XRPL escrow delivery',
-            announcement: '🟢 Online now — all CS2 & Valorant orders delivered within 10 minutes via automated escrow!',
-            about: 'Trading digital collectibles and game assets since 2021. Every order is backed by on-chain XRPL escrow.',
-            categories: ['games', 'accounts'],
+            name: 'AetherForge 3D & Shaders',
+            tagline: 'Production-ready Blender 4.2 shaders, Godot/Unity VFX & indie game asset packs',
+            announcement: '🟢 v2.4 Cyberpunk Shader Pack is live — enter code HARBOR10 at checkout for an instant 10% creator discount!',
+            about: 'Independent technical artists building procedural shaders, trim sheets, and game-ready 3D kits. Every purchase unlocks instant SHA-256 verified archive downloads backed by XRPL conditional escrow.',
+            categories: ['graphics', 'games', 'audio'],
             payoutAddress: 'rDockMaster9X2pL4nK8vJ6wZ3cT5yB1a2',
-            bannerUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80',
+            bannerUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80',
             frameStyle: 'gold',
             promoCode: 'HARBOR10',
             promoDiscount: 10,
             minOfferPct: 85,
-            followersCount: 48,
+            followersCount: 142,
             followers: [],
             faqs: [
-              { q: 'How fast are CS2 skins & accounts delivered?', a: 'All digital codes and Steam trade offers are dispatched within 5–10 minutes after XRPL escrow lock.' },
-              { q: 'How do I use the HARBOR10 promo or bundle discount?', a: 'Click "Make Offer" on any listing and mention HARBOR10 (or bundle 2+ items) for an automatic 10% discount approval.' },
-              { q: 'Are my funds protected until I verify the item?', a: 'Yes — 100% of orders use native XRPL conditional escrow. Funds stay locked on-ledger until you confirm delivery.' },
+              { q: 'How do I download my Blender / Unity / Godot ZIP archive?', a: 'The moment your XRPL escrow is locked on-chain, the encrypted Vault Download button unlocks on your Order page with SHA-256 checksum verification.' },
+              { q: 'How do I apply the HARBOR10 creator discount code?', a: 'Click the dashed HARBOR10 promo pill on our storefront (or enter HARBOR10 directly in the Promo Code box at checkout) for an automatic 10% discount.' },
+              { q: 'What license is included with AetherForge asset packs?', a: 'Every purchase includes a perpetual Commercial Indie & Studio License for unlimited commercial games, films, and client projects.' },
             ],
-            socials: { discord: 'https://discord.gg/xrpharbor', twitter: 'https://x.com/xrpharbor' },
-            settings: { autoAccept: true, requireShot: true, vacation: false, response: 'Within 4 hours (business hours)' },
+            socials: { discord: 'https://discord.gg/xrpharbor', twitter: 'https://x.com/xrpharbor', github: 'https://github.com/xrpharbor' },
+            settings: { autoAccept: true, requireShot: false, vacation: false, response: 'Instant automated vault delivery' },
           },
           created_at: new Date(Date.now() - 60 * 86400 * 1000).toISOString(),
         },
         {
           id: '22222222-2222-4222-8222-222222222222',
-          username: 'keyport',
+          username: 'prism_ui',
           wallet_address: 'rKeyPort8M3kP9vL2nJ4wZ6cT1yB5dE7f8',
-          bio: 'Licensed software key reseller. Adobe, Microsoft, Steam and developer tools — every key ships with a vendor-verified receipt.',
+          bio: 'Design engineer & AI prompt architect. Creator of the FinTech & Web3 Figma UI Kit, Midjourney v6 LUT systems, and creator Notion playbooks.',
           role: 'user',
-          reputation_score: 4.95,
-          total_sales: 128,
+          reputation_score: 4.98,
+          total_sales: 164,
           is_verified: true,
+          founding_creator: true,
           pro_until: futureIso(45),
-          store_handle: 'keyport',
+          store_handle: 'prism-ui',
+          socials: {
+            twitter: 'https://x.com/xrpharbor',
+            github: 'https://github.com/xrpharbor',
+            website: 'https://xrpharbor.com',
+          },
+          notification_prefs: {
+            avatar_frame: 'cyber',
+            founding_creator: true,
+            socials: {
+              twitter: 'https://x.com/xrpharbor',
+              github: 'https://github.com/xrpharbor',
+              website: 'https://xrpharbor.com',
+            },
+          },
           store: {
-            name: 'Keyport Software Pier',
-            tagline: 'Instant-delivery software licenses & developer tooling',
-            announcement: '⚡ Instant automated key delivery — official JetBrains, Adobe & Web3 dev toolkits in stock.',
-            about: 'Authorized digital license distributor with automated escrow delivery.',
-            categories: ['software', 'graphics'],
+            name: 'Prism UI & Design Systems',
+            tagline: 'Figma design systems, 3D glassmorphic icon kits & AI visual prompt libraries',
+            announcement: '⚡ Instant Vault Delivery — use code PRISM15 or HARBOR10 at checkout for up to 15% off any design system!',
+            about: 'Crafting high-craft Figma component libraries, variables-first UI kits, and cinematic LUT/prompt systems for modern product teams and indie creators.',
+            categories: ['templates', 'graphics', 'prompts', 'education'],
             payoutAddress: 'rKeyPort8M3kP9vL2nJ4wZ6cT1yB5dE7f8',
-            bannerUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1400&q=80',
+            bannerUrl: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&w=1400&q=80',
             frameStyle: 'cyber',
-            promoCode: 'DEVPRO15',
+            promoCode: 'PRISM15',
             promoDiscount: 15,
             minOfferPct: 80,
-            followersCount: 112,
+            followersCount: 218,
             followers: [],
             faqs: [
-              { q: 'Are software licenses official and global?', a: 'Yes, every license key is region-free and activates directly on the official vendor portal (JetBrains, Steam, Figma).' },
-              { q: 'When do I receive my activation key?', a: 'Digital keys are revealed automatically the moment your XRPL escrow is locked on-chain.' },
-              { q: 'Do you offer team or multi-seat discounts?', a: 'Yes! Use promo code DEVPRO15 via Make Offer for 15% off multi-key or bundle orders.' },
+              { q: 'What files are included in the download archive?', a: 'Each kit ships as a verified .zip archive containing the source .fig file, high-res PNG/SVG exports, Blender 4.x scenes, and commercial license PDF.' },
+              { q: 'When do I receive my download link?', a: 'Digital archives unlock immediately once your XRPL escrow payment is confirmed on-ledger — no waiting for manual seller approval.' },
+              { q: 'How do I get free lifetime version updates?', a: 'Whenever we push a new version (e.g. v1.8 -> v2.0), you receive an instant notification on XRPHarbor and can re-download the updated archive from your order.' },
             ],
             socials: { twitter: 'https://x.com/xrpharbor', website: 'https://xrpharbor.com' },
-            settings: { autoAccept: true, requireShot: false, vacation: false, response: 'Within 4 hours (business hours)' },
+            settings: { autoAccept: true, requireShot: false, vacation: false, response: 'Instant automated vault delivery' },
           },
           created_at: new Date(Date.now() - 90 * 86400 * 1000).toISOString(),
         },
         {
           id: '33333333-3333-4333-8333-333333333333',
-          username: 'captain_lex',
+          username: 'xrpl_labs',
           wallet_address: 'rCaptLex5N7pQ3vL9nJ2wZ8cT4yB6dE1c3',
-          bio: 'CS2 and Valorant skin trader, four years on the Steam Market. Now exclusive on XRPHarbor for serious collectors.',
+          bio: 'Full-stack Web3 & XRPL engineering collective. Shipping Next.js 15 + Xaman SaaS boilerplates, TypeScript DEX analytics engines, and developer tooling.',
           role: 'user',
-          reputation_score: 4.8,
-          total_sales: 76,
+          reputation_score: 4.92,
+          total_sales: 96,
           is_verified: true,
-          pro_until: futureIso(25),
-          store_handle: 'captain-lex',
+          founding_creator: true,
+          pro_until: futureIso(40),
+          store_handle: 'xrpl-labs',
+          socials: {
+            github: 'https://github.com/xrpharbor',
+            discord: 'https://discord.gg/xrpharbor',
+            twitter: 'https://x.com/xrpharbor',
+          },
+          notification_prefs: {
+            avatar_frame: 'plasma',
+            founding_creator: true,
+            socials: {
+              github: 'https://github.com/xrpharbor',
+              discord: 'https://discord.gg/xrpharbor',
+              twitter: 'https://x.com/xrpharbor',
+            },
+          },
           store: {
-            name: 'Captain Lex Armory',
-            tagline: 'Rare CS2 knives, gloves & Valorant bundles',
-            announcement: '🔥 Rare Factory New Karambits & Champions bundles available — 0% buyer fee via XRPL escrow.',
-            about: 'Curated high-tier skins with fast Steam trade offer or account handover.',
-            categories: ['games'],
+            name: 'XRPL Labs & Boilerplates',
+            tagline: 'Production Next.js + XRPL SaaS starter kits, TypeScript SDKs & DEX engines',
+            announcement: '🔥 Next.js 15 + Xaman SaaS Starter v2.1 released — 0% buyer fee & instant source archive download!',
+            about: 'Clean, audited TypeScript codebases for indie hackers and Web3 engineers. Skip weeks of wallet auth, conditional escrow, and ledger indexing boilerplate.',
+            categories: ['software', 'templates', 'education'],
             payoutAddress: 'rCaptLex5N7pQ3vL9nJ2wZ8cT4yB6dE1c3',
-            bannerUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1400&q=80',
+            bannerUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1400&q=80',
             frameStyle: 'plasma',
-            promoCode: 'ARMORY5',
-            promoDiscount: 5,
-            minOfferPct: 90,
-            followersCount: 64,
+            promoCode: 'HARBOR10',
+            promoDiscount: 10,
+            minOfferPct: 85,
+            followersCount: 176,
             followers: [],
             faqs: [
-              { q: 'Are all CS2 knives trade-ready without cooldown?', a: 'Yes, every listed skin in Captain Lex Armory is trade-ready immediately with 0-day Steam hold.' },
-              { q: 'Can I inspect the float and pattern in-game first?', a: 'Absolutely — message us on any listing for the direct Steam inspect link before locking escrow.' },
+              { q: 'Do I get full unminified TypeScript source code?', a: 'Yes — every codebase ships as a complete, dependency-locked Git archive (.zip) with comprehensive README, .env.example, and test suite.' },
+              { q: 'How does the 24h FinishAfter escrow protection work?', a: 'Your XRP is locked in native XRPL escrow. You get immediate access to download and verify the SHA-256 archive, and funds auto-release to the creator after 24 hours.' },
             ],
-            socials: { discord: 'https://discord.gg/xrpharbor' },
-            settings: { autoAccept: true, requireShot: true, vacation: false, response: 'Within 4 hours (business hours)' },
+            socials: { github: 'https://github.com/xrpharbor', discord: 'https://discord.gg/xrpharbor' },
+            settings: { autoAccept: true, requireShot: false, vacation: false, response: 'Instant automated vault delivery' },
           },
           created_at: new Date(Date.now() - 45 * 86400 * 1000).toISOString(),
         },
@@ -557,193 +760,249 @@ function getStore() {
         {
           id: 'a1111111-1111-4111-8111-111111111101',
           seller_id: '11111111-1111-4111-8111-111111111111',
-          title: 'CS2 Karambit | Doppler Phase 2 (Factory New 0.008 Float)',
-          description: 'Clean corner Factory New Karambit Doppler Phase 2 with max pink galaxy pattern. Trade-ready immediately via Steam trade link once XRPL escrow is locked.',
-          category: 'games',
-          game: 'CS2',
-          platform: 'PC / Steam',
-          price_xrp: 420,
+          title: 'Cyberpunk 3D Blender Shader & Procedural Kitbash Pack (40+ Materials)',
+          description: 'Production-ready Blender 4.2 procedural shader library and low-poly neon kitbash assets. Includes animated rain-wet asphalt, holographic signage, anisotropic carbon fiber, and volumetric fog presets. Ready for Cycles, Eevee Next, and Godot 4 / Unity GLTF export.',
+          category: 'graphics',
+          game: 'Blender / 3D Assets',
+          platform: 'Blender 4.2 / Godot 4',
+          price_xrp: 35,
+          price_usd: 75,
+          pricing_mode: 'XRP',
           currency: 'XRP',
-          images: [LISTING_IMAGES.karambit],
+          version: '2.4.0',
+          images: [LISTING_IMAGES.cyberpunkShaders],
           status: 'active',
           is_featured: true,
           featured_until: futureIso(7),
           is_digital: true,
-          digital_content: 'STEAM-TRADE-TOKEN: KRM-P2-FN-008-XRPHARBOR',
-          digital_link: 'https://steamcommunity.com/tradeoffer/new/',
-          quantity: 1,
-          quantity_sold: 0,
-          delivery_time: 'instant',
-          tags: ['cs2', 'karambit', 'doppler', 'skins'],
-          views: 184,
+          digital_content: 'VAULT-LICENSE: AETHER-CYBER-SHADERS-V2.4 | Commercial Studio License Key: AF-9941-CYB24',
+          digital_link: '/api/vault/aether-cyberpunk-shaders-v2.4.zip',
+          digital_archive_url: '/api/vault/aether-cyberpunk-shaders-v2.4.zip',
+          digital_archive_name: 'aether-cyberpunk-shaders-v2.4.zip',
+          digital_archive_size: 148204544,
+          digital_archive_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+          quantity: 50,
+          quantity_sold: 14,
+          delivery_time: 'Instant Vault Download',
+          tags: ['blender', 'shaders', '3d-assets', 'cyberpunk', 'godot'],
+          views: 312,
           created_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
         },
         {
           id: 'a1111111-1111-4111-8111-111111111102',
-          seller_id: '22222222-2222-4222-8222-222222222222',
-          title: 'JetBrains All Products Pack — 1 Year Pro License Key',
-          description: 'Official 12-month activation code for JetBrains All Products Pack (IntelliJ IDEA Ultimate, WebStorm, PyCharm, GoLand, CLion). Redeems directly on your JetBrains account.',
-          category: 'software',
-          game: 'Licenses & keys',
-          platform: 'Cross-platform',
-          price_xrp: 65,
+          seller_id: '33333333-3333-4333-8333-333333333333',
+          title: 'Next.js 15 + XRPL Xaman SaaS Boilerplate (TypeScript + Escrow SDK)',
+          description: 'Launch your XRPL Web3 app or digital storefront in hours instead of weeks. Includes Xaman (Xumm) QR + deep-link sign-in, PREIMAGE-SHA-256 conditional escrow helpers, RLUSD trustline detection, Tailwind UI components, and automated Playwright security tests.',
+          category: 'templates',
+          game: 'Next.js / Web3 SaaS',
+          platform: 'Next.js 15 / TypeScript',
+          price_xrp: 45,
+          price_usd: 99,
+          pricing_mode: 'USD',
           currency: 'XRP',
-          images: [LISTING_IMAGES.jetbrains],
+          version: '2.1.0',
+          images: [LISTING_IMAGES.xrplBoilerplate],
           status: 'active',
           is_featured: true,
           featured_until: futureIso(7),
           is_digital: true,
-          digital_content: 'JB-ALL-2026-XRPH-9941-8820-KPORT',
-          digital_link: 'https://account.jetbrains.com/redeem',
-          quantity: 5,
-          quantity_sold: 1,
-          delivery_time: 'instant',
-          tags: ['jetbrains', 'license', 'ide', 'developer'],
-          views: 142,
+          digital_content: 'VAULT-LICENSE: XRPL-SAAS-STARTER-V2.1 | Git Archive Checksum Verified',
+          digital_link: '/api/vault/nextjs15-xrpl-saas-boilerplate-v2.1.zip',
+          digital_archive_url: '/api/vault/nextjs15-xrpl-saas-boilerplate-v2.1.zip',
+          digital_archive_name: 'nextjs15-xrpl-saas-boilerplate-v2.1.zip',
+          digital_archive_size: 24680960,
+          digital_archive_sha256: '8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4',
+          quantity: 100,
+          quantity_sold: 29,
+          delivery_time: 'Instant Vault Download',
+          tags: ['nextjs', 'xrpl', 'boilerplate', 'typescript', 'xaman'],
+          views: 428,
           created_at: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
         },
         {
           id: 'a1111111-1111-4111-8111-111111111103',
-          seller_id: '33333333-3333-4333-8333-333333333333',
-          title: 'Valorant Champions 2021 Vandal + Karambit Account (EU/NA)',
-          description: 'Full-access Valorant account featuring the rare Champions 2021 Vandal & Karambit, Kuronami Vandal, Reaver Operator, and 4,200 VP balance. Original email included.',
-          category: 'accounts',
-          game: 'Valorant',
-          platform: 'PC / Riot',
-          price_xrp: 195,
+          seller_id: '22222222-2222-4222-8222-222222222222',
+          title: 'FinTech & Web3 3D Glassmorphic Icon + UI Design System (Figma + Blender)',
+          description: '160+ custom 3D glassmorphic crypto, wallet, and ledger icons + complete dark/light variable-driven design system in Figma & Blender 4.2. Built for creator marketplaces, DeFi dashboards, and modern fintech apps with full commercial license.',
+          category: 'templates',
+          game: 'Figma / UI Systems',
+          platform: 'Figma + Blender 4.2',
+          price_xrp: 28,
+          price_usd: 59,
+          pricing_mode: 'XRP',
           currency: 'XRP',
-          images: [LISTING_IMAGES.valorant],
+          version: '1.8.0',
+          images: [LISTING_IMAGES.figmaDesignSystem],
           status: 'active',
           is_featured: true,
           featured_until: futureIso(5),
           is_digital: true,
-          digital_content: 'RIOT-ID: ChampHarbor#XRP | Transfer Code: VL-2021-CHAMP-883',
-          digital_link: null,
-          quantity: 1,
-          quantity_sold: 0,
-          delivery_time: 'instant',
-          tags: ['valorant', 'champions', 'kuronami', 'account'],
-          views: 231,
+          digital_content: 'VAULT-LICENSE: PRISM-UIKIT-PRO-V1.8 | Commercial Team License Included',
+          digital_link: '/api/vault/prism-fintech-web3-uikit-v1.8.zip',
+          digital_archive_url: '/api/vault/prism-fintech-web3-uikit-v1.8.zip',
+          digital_archive_name: 'prism-fintech-web3-uikit-v1.8.zip',
+          digital_archive_size: 92405760,
+          digital_archive_sha256: '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae',
+          quantity: 100,
+          quantity_sold: 41,
+          delivery_time: 'Instant Vault Download',
+          tags: ['figma', 'ui-kit', '3d-icons', 'design-system', 'web3'],
+          views: 289,
           created_at: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
         },
         {
           id: 'a1111111-1111-4111-8111-111111111104',
-          seller_id: '22222222-2222-4222-8222-222222222222',
-          title: 'Fintech & Web3 3D Icon + UI Kit (Figma + Blender Source)',
-          description: '160+ custom 3D glassmorphic crypto, wallet, and ledger icons + complete dark/light design system in Figma & Blender 4.0. Commercial license included.',
-          category: 'graphics',
-          game: 'UI/UX kits',
-          platform: 'Figma / Blender',
-          price_xrp: 28,
+          seller_id: '11111111-1111-4111-8111-111111111111',
+          title: 'Modular Synthwave & Sci-Fi UI Game Audio Stem Pack (24-Bit WAV + Loops)',
+          description: '220+ royalty-free 24-bit/96kHz WAV audio stems, seamless combat/exploration loops, tactile sci-fi HUD clicks, and analog synth risers. Pre-looped for Unreal Engine 5 MetaSounds, Unity Audio Mixer, and Godot 4.',
+          category: 'audio',
+          game: 'Game Audio & SFX',
+          platform: '24-Bit WAV / Unity / UE5',
+          price_xrp: 18,
+          price_usd: 39,
+          pricing_mode: 'XRP',
           currency: 'XRP',
-          images: [LISTING_IMAGES.uikit],
+          version: '1.3.0',
+          images: [LISTING_IMAGES.synthwaveAudio],
           status: 'active',
           is_featured: false,
           featured_until: null,
           is_digital: true,
-          digital_content: 'LICENSE: XH-UIKIT-PRO-2026',
-          digital_link: 'https://xrpharbor.com/downloads/web3-ui-kit.zip',
-          quantity: 20,
-          quantity_sold: 4,
-          delivery_time: 'instant',
-          tags: ['figma', '3d', 'ui-kit', 'web3'],
-          views: 97,
+          digital_content: 'VAULT-LICENSE: AETHER-SYNTH-AUDIO-V1.3 | Royalty-Free Commercial Audio License',
+          digital_link: '/api/vault/aether-synthwave-audio-stems-v1.3.zip',
+          digital_archive_url: '/api/vault/aether-synthwave-audio-stems-v1.3.zip',
+          digital_archive_name: 'aether-synthwave-audio-stems-v1.3.zip',
+          digital_archive_size: 312475648,
+          digital_archive_sha256: '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a',
+          quantity: 100,
+          quantity_sold: 19,
+          delivery_time: 'Instant Vault Download',
+          tags: ['audio', 'synthwave', 'sfx', 'wav', 'gamedev'],
+          views: 174,
           created_at: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
         },
         {
           id: 'a1111111-1111-4111-8111-111111111105',
-          seller_id: '11111111-1111-4111-8111-111111111111',
-          title: 'XRPL DEX Arbitrage & Orderbook Monitor Bot (Node.js + TypeScript)',
-          description: 'Full source code for a low-latency XRPL DEX orderbook scanner and auto-pathfinding monitor with Telegram/Discord alerts and Xaman signing integration.',
+          seller_id: '33333333-3333-4333-8333-333333333333',
+          title: 'XRPL DEX Orderbook Scanner & Pathfinding Analytics Engine (Node.js + TS)',
+          description: 'Full TypeScript source code for a low-latency XRPL WebSocket orderbook indexer, auto-bridging pathfinder, and spread telemetry dashboard with Telegram/Discord webhook alerts and Docker compose deployment.',
           category: 'software',
-          game: 'Scripts & bots',
-          platform: 'Node.js',
-          price_xrp: 85,
+          game: 'XRPL Developer Tools',
+          platform: 'Node.js 20 / TypeScript',
+          price_xrp: 60,
+          price_usd: 129,
+          pricing_mode: 'XRP',
           currency: 'XRP',
-          images: [LISTING_IMAGES.dexbot],
+          version: '3.0.2',
+          images: [LISTING_IMAGES.dexOrderbookBot],
           status: 'active',
           is_featured: false,
           featured_until: null,
           is_digital: true,
-          digital_content: 'REPO-ACCESS-TOKEN: XH-XRPL-BOT-SRC-2026',
-          digital_link: 'https://github.com/xrpharbor/dex-monitor',
-          quantity: 10,
-          quantity_sold: 2,
-          delivery_time: 'instant',
-          tags: ['xrpl', 'bot', 'typescript', 'source-code'],
-          views: 165,
+          digital_content: 'VAULT-LICENSE: XRPL-DEX-ENGINE-V3.0.2 | Full Source Archive + Docker Suite',
+          digital_link: '/api/vault/xrpl-dex-orderbook-engine-v3.0.2.zip',
+          digital_archive_url: '/api/vault/xrpl-dex-orderbook-engine-v3.0.2.zip',
+          digital_archive_name: 'xrpl-dex-orderbook-engine-v3.0.2.zip',
+          digital_archive_size: 18452480,
+          digital_archive_sha256: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
+          quantity: 40,
+          quantity_sold: 11,
+          delivery_time: 'Instant Vault Download',
+          tags: ['xrpl', 'typescript', 'dex', 'source-code', 'analytics'],
+          views: 245,
           created_at: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
         },
         {
           id: 'a1111111-1111-4111-8111-111111111106',
-          seller_id: '33333333-3333-4333-8333-333333333333',
-          title: 'World of Warcraft — 1,000,000 Gold (EU/US Any Realm)',
-          description: 'Hand-farmed WoW The War Within gold delivered via Guild Bank or face-to-face trade in Dornogal within 15 minutes of escrow lock.',
-          category: 'games',
-          game: 'World of Warcraft',
-          platform: 'PC / Battle.net',
-          price_xrp: 45,
+          seller_id: '22222222-2222-4222-8222-222222222222',
+          title: 'Midjourney v6.1 & Flux Pro Isometric Game World Prompt Matrix + 32 LUTs',
+          description: '500+ structured parameter-tuned prompts, style-reference seeds, and 32 cinematic .CUBE color-grading LUTs for generating consistent isometric RPG environments, character sheets, and UI textures.',
+          category: 'prompts',
+          game: 'AI Prompts & LUTs',
+          platform: 'Midjourney v6 / Blender LUTs',
+          price_xrp: 14,
+          price_usd: 29,
+          pricing_mode: 'USD',
           currency: 'XRP',
-          images: [LISTING_IMAGES.wowgold],
+          version: '1.5.0',
+          images: [LISTING_IMAGES.midjourneyPrompts],
           status: 'active',
           is_featured: false,
           featured_until: null,
           is_digital: true,
-          digital_content: 'DELIVERY-VOUCHER: WOW-1M-GOLD-ESCROW',
-          digital_link: null,
-          quantity: 8,
-          quantity_sold: 3,
-          delivery_time: '1h',
-          tags: ['wow', 'gold', 'currency'],
-          views: 88,
+          digital_content: 'VAULT-LICENSE: PRISM-PROMPT-MATRIX-V1.5 | Notion Database + 32 .CUBE LUTs',
+          digital_link: '/api/vault/prism-isometric-prompt-matrix-v1.5.zip',
+          digital_archive_url: '/api/vault/prism-isometric-prompt-matrix-v1.5.zip',
+          digital_archive_name: 'prism-isometric-prompt-matrix-v1.5.zip',
+          digital_archive_size: 45120512,
+          digital_archive_sha256: 'e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683',
+          quantity: 200,
+          quantity_sold: 53,
+          delivery_time: 'Instant Vault Download',
+          tags: ['prompts', 'midjourney', 'luts', 'isometric', 'game-art'],
+          views: 198,
           created_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
         },
         {
           id: 'a1111111-1111-4111-8111-111111111107',
           seller_id: '11111111-1111-4111-8111-111111111111',
-          title: 'Custom Animated Stream Overlay & Branding Pack',
-          description: 'Bespoke 6-scene OBS/Streamlabs animated overlay pack, stinger transition, custom alerts, and vector mascot logo tailored to your channel.',
-          category: 'graphics',
-          game: 'Illustrations',
-          platform: 'OBS / After Effects',
-          price_xrp: 55,
+          title: '2D Pixel Art Action-RPG Tileset, Animated Boss Sprites & Godot 4 Project',
+          description: 'Hand-pixelled 16x16 & 32x32 dark-fantasy dungeon tileset, 18 fully animated character/boss Aseprite source files, normal maps for 2D dynamic point lighting, and a drop-in Godot 4.3 autotile demo scene.',
+          category: 'games',
+          game: 'Godot / Unity 2D Assets',
+          platform: 'Aseprite / Godot 4 / Unity',
+          price_xrp: 22,
+          price_usd: 49,
+          pricing_mode: 'XRP',
           currency: 'XRP',
-          images: [LISTING_IMAGES.stream],
+          version: '1.6.1',
+          images: [LISTING_IMAGES.pixelArtTileset],
           status: 'active',
           is_featured: false,
           featured_until: null,
           is_digital: true,
-          digital_content: 'DESIGN-BRIEF-CODE: XH-STREAM-PACK-77',
-          digital_link: null,
-          quantity: 3,
-          quantity_sold: 0,
-          delivery_time: '24h',
-          tags: ['stream', 'overlay', 'branding', 'logo'],
-          views: 64,
+          digital_content: 'VAULT-LICENSE: AETHER-PIXEL-RPG-V1.6.1 | Aseprite Source + Godot 4 TileSet',
+          digital_link: '/api/vault/aether-pixel-rpg-tileset-v1.6.1.zip',
+          digital_archive_url: '/api/vault/aether-pixel-rpg-tileset-v1.6.1.zip',
+          digital_archive_name: 'aether-pixel-rpg-tileset-v1.6.1.zip',
+          digital_archive_size: 68157440,
+          digital_archive_sha256: '7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451',
+          quantity: 100,
+          quantity_sold: 27,
+          delivery_time: 'Instant Vault Download',
+          tags: ['pixel-art', 'godot', 'tileset', 'sprites', 'indie-game'],
+          views: 216,
           created_at: new Date(Date.now() - 30 * 3600 * 1000).toISOString(),
         },
         {
           id: 'a1111111-1111-4111-8111-111111111108',
           seller_id: '22222222-2222-4222-8222-222222222222',
-          title: 'Steam Global Wallet Gift Card — $100 USD Code',
-          description: 'Region-free $100 USD Steam Wallet digital gift code. Instant automated code reveal immediately upon escrow release.',
-          category: 'other',
-          game: 'Gift cards',
-          platform: 'Steam',
-          price_xrp: 38,
+          title: 'Zero-to-Launch Indie Creator Playbook + Notion OS & Pricing Calculator',
+          description: 'Complete 140-page interactive PDF handbook + Notion Creator OS template covering digital product packaging, Gumroad/itch.io migration to Web3 escrow, launch sequences, and parity pricing models.',
+          category: 'education',
+          game: 'Creator Guides & Notion OS',
+          platform: 'PDF + Notion Template',
+          price_xrp: 12,
+          price_usd: 25,
+          pricing_mode: 'USD',
           currency: 'XRP',
-          images: [LISTING_IMAGES.steam],
+          version: '2.0.0',
+          images: [LISTING_IMAGES.creatorCourse],
           status: 'active',
           is_featured: false,
           featured_until: null,
           is_digital: true,
-          digital_content: 'STEAM-USD100: XH79M-4K2PL-9V8NJ',
-          digital_link: 'https://store.steampowered.com/account/redeemwalletcode',
-          quantity: 12,
-          quantity_sold: 5,
-          delivery_time: 'instant',
-          tags: ['steam', 'gift-card', 'instant'],
-          views: 210,
+          digital_content: 'VAULT-LICENSE: PRISM-CREATOR-OS-V2.0 | PDF Playbook + Notion Duplicate Link',
+          digital_link: '/api/vault/indie-creator-playbook-v2.0.pdf',
+          digital_archive_url: '/api/vault/indie-creator-playbook-v2.0.pdf',
+          digital_archive_name: 'indie-creator-playbook-v2.0.pdf',
+          digital_archive_size: 15728640,
+          digital_archive_sha256: '2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3',
+          quantity: 500,
+          quantity_sold: 68,
+          delivery_time: 'Instant Vault Download',
+          tags: ['ebook', 'notion', 'creator-economy', 'guide', 'templates'],
+          views: 340,
           created_at: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
         },
       ],
@@ -757,12 +1016,42 @@ function getStore() {
       consumedSignInUuids: new Map(),
       messages: [],
       contact_messages: [],
-      reviews: [],
+      reviews: [
+        {
+          id: 'c1111111-1111-4111-8111-111111111101',
+          order_id: 'b1111111-1111-4111-8111-111111111101',
+          reviewer_id: '22222222-2222-4222-8222-222222222222',
+          reviewed_id: '11111111-1111-4111-8111-111111111111',
+          rating: 5,
+          comment: 'Incredible Blender 4.2 shader node groups — the wet neon asphalt material dropped right into our Godot 4 scene. Instant vault ZIP download as soon as escrow locked!',
+          created_at: new Date(Date.now() - 5 * 86400 * 1000).toISOString(),
+        },
+        {
+          id: 'c1111111-1111-4111-8111-111111111102',
+          order_id: 'b1111111-1111-4111-8111-111111111102',
+          reviewer_id: '33333333-3333-4333-8333-333333333333',
+          reviewed_id: '22222222-2222-4222-8222-222222222222',
+          rating: 5,
+          comment: 'Cleanest Web3 Figma design system we have bought. Having the .blend source files alongside the Figma token variables saved us two weeks of UI work.',
+          created_at: new Date(Date.now() - 3 * 86400 * 1000).toISOString(),
+        },
+        {
+          id: 'c1111111-1111-4111-8111-111111111103',
+          order_id: 'b1111111-1111-4111-8111-111111111103',
+          reviewer_id: '11111111-1111-4111-8111-111111111111',
+          reviewed_id: '33333333-3333-4333-8333-333333333333',
+          rating: 5,
+          comment: 'The Next.js 15 + Xaman escrow boilerplate is rock solid. Audited payment verification out of the box and super clean TypeScript architecture.',
+          created_at: new Date(Date.now() - 2 * 86400 * 1000).toISOString(),
+        },
+      ],
+      founding_creators_claimed: 14,
+      vault_archives: [],
       activity: [
-        { kind: 'released', xrp: 420, at: new Date(Date.now() - 4 * 60 * 1000).toISOString() },
-        { kind: 'created', xrp: 65, at: new Date(Date.now() - 12 * 60 * 1000).toISOString() },
-        { kind: 'released', xrp: 195, at: new Date(Date.now() - 27 * 60 * 1000).toISOString() },
-        { kind: 'released', xrp: 85, at: new Date(Date.now() - 52 * 60 * 1000).toISOString() },
+        { kind: 'released', xrp: 45, at: new Date(Date.now() - 4 * 60 * 1000).toISOString() },
+        { kind: 'created', xrp: 35, at: new Date(Date.now() - 12 * 60 * 1000).toISOString() },
+        { kind: 'released', xrp: 28, at: new Date(Date.now() - 27 * 60 * 1000).toISOString() },
+        { kind: 'released', xrp: 60, at: new Date(Date.now() - 52 * 60 * 1000).toISOString() },
       ],
     };
   }
@@ -1067,6 +1356,25 @@ function validateArchiveEntries(entries) {
   return { valid: true, ok: true, safePaths };
 }
 
+const ALLOWED_CATEGORIES = ['games', 'accounts', 'graphics', 'software', 'education', 'templates', 'prompts', 'audio', 'other'];
+const FREE_LISTING_LIMIT = 30;
+
+function getEffectiveUserStats(store, u) {
+  if (!u) return { reputationScore: 0, reviewCount: 0, totalSales: 0 };
+  const userReviews = (store.reviews || []).filter(r => r.reviewed_id === u.id);
+  const reviewCount = userReviews.length;
+  const completedSales = (store.orders || []).filter(o => o.seller_id === u.id && o.status === 'completed').length;
+  const totalSales = Math.max(Number(u.total_sales || 0), completedSales);
+  if (reviewCount === 0 && totalSales === 0) {
+    return { reputationScore: 0, reviewCount: 0, totalSales: 0 };
+  }
+  if (reviewCount > 0) {
+    const avg = userReviews.reduce((s, r) => s + Number(r.rating || 0), 0) / reviewCount;
+    return { reputationScore: Number(avg.toFixed(2)), reviewCount, totalSales };
+  }
+  return { reputationScore: Number(u.reputation_score || 0), reviewCount: 0, totalSales };
+}
+
 function validateListingPayload(body, partial = false) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { valid: false, error: 'Request body must be a JSON object' };
@@ -1084,6 +1392,11 @@ function validateListingPayload(body, partial = false) {
   if (!partial || hasPrice) {
     if (!validatePositiveAmount(rawPrice)) {
       return { valid: false, error: 'priceXrp must be a valid positive number' };
+    }
+  }
+  if (body.category !== undefined && body.category !== null) {
+    if (typeof body.category !== 'string' || !ALLOWED_CATEGORIES.includes(body.category.trim().toLowerCase())) {
+      return { valid: false, error: `Invalid category. Allowed: ${ALLOWED_CATEGORIES.join(', ')}` };
     }
   }
   if (body.description !== undefined && body.description !== null) {
@@ -1109,11 +1422,12 @@ function enrichListing(store, l, viewerUser = null) {
   if (!l) return null;
   const u = store.users.find(x => x.id === l.seller_id) || {};
   const isPro = Boolean(u.pro_until && new Date(u.pro_until).getTime() > Date.now());
+  const { reputationScore } = getEffectiveUserStats(store, u);
   const copy = {
     ...l,
     username: u.username || 'seller',
-    reputation_score: u.reputation_score ?? 4.9,
-    is_verified: u.is_verified ?? true,
+    reputation_score: reputationScore,
+    is_verified: Boolean(u.is_verified),
     wallet_address: u.wallet_address || '',
     store_handle: u.store_handle || null,
     seller_is_pro: isPro,
@@ -1237,11 +1551,13 @@ function ensureAuthUser(store, req) {
       wallet_address: decoded.walletAddress || DEFAULT_DEMO_WALLET,
       role: decoded.role || 'user',
       bio: '',
-      reputation_score: 5.0,
-      is_verified: true,
+      reputation_score: 0,
+      total_sales: 0,
+      is_verified: false,
       pro_until: null,
       store: null,
       store_handle: null,
+      socials: {},
       created_at: nowIso(),
     };
     store.users.push(u);
@@ -1322,6 +1638,7 @@ async function createXummOrDemoPayload(txjson) {
           wsUrl: d.refs?.websocket_status || null,
           nextUrl: d.next?.always || null,
           deepLink: d.next?.always || null,
+          txjson,
           demoMode: false,
         };
       }
@@ -1335,6 +1652,7 @@ async function createXummOrDemoPayload(txjson) {
     wsUrl: null,
     nextUrl,
     deepLink: nextUrl,
+    txjson,
     demoMode: true,
   };
 }
@@ -1413,15 +1731,17 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (!u) {
       u = {
         id: crypto.randomUUID(),
-        username: 'captain_' + walletAddress.slice(-5).toLowerCase(),
+        username: 'creator_' + walletAddress.slice(-5).toLowerCase(),
         wallet_address: walletAddress,
         role: 'user',
-        bio: 'XRPHarbor verified trader',
-        reputation_score: 5.0,
-        is_verified: true,
+        bio: 'XRPHarbor creator & digital collector',
+        reputation_score: 0,
+        total_sales: 0,
+        is_verified: false,
         pro_until: null,
         store: null,
         store_handle: null,
+        socials: {},
         created_at: nowIso(),
       };
       store.users.push(u);
@@ -1436,17 +1756,25 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   if (method === 'GET' && pathStr === 'auth/me') {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Invalid token' }, 401);
+    const stats = getEffectiveUserStats(store, u);
     return jsonRes({
       id: u.id,
       username: u.username,
       walletAddress: u.wallet_address,
       role: u.role || 'user',
       bio: u.bio || '',
-      reputationScore: u.reputation_score ?? 5.0,
-      isVerified: u.is_verified ?? true,
+      reputationScore: stats.reputationScore,
+      reputation_score: stats.reputationScore,
+      avgRating: stats.reputationScore,
+      reviewCount: stats.reviewCount,
+      isVerified: Boolean(u.is_verified),
+      is_verified: Boolean(u.is_verified),
       avatar_url: u.avatar_url || null,
       notification_prefs: u.notification_prefs || {},
+      socials: u.socials || (u.notification_prefs && u.notification_prefs.socials) || {},
+      founding_creator: Boolean(u.founding_creator || (u.notification_prefs && u.notification_prefs.founding_creator)),
       proUntil: u.pro_until || null,
+      store_handle: u.store_handle || null,
     });
   }
 
@@ -1510,9 +1838,53 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       standardCommissionRate: commissionEnabled ? 0.03 : 0,
       freeBoostAvailable,
       limits: {
-        standard: { maxActiveListings: 5, maxImages: 3, customStore: false, monthlyFreeFeatured: 0 },
+        standard: { maxActiveListings: FREE_LISTING_LIMIT, maxImages: 3, customStore: false, monthlyFreeFeatured: 0 },
         pro: { maxActiveListings: 'unlimited', maxImages: 6, customStore: true, monthlyFreeFeatured: 1 },
       },
+    });
+  }
+
+  if (method === 'GET' && pathStr === 'upgrades/founding-status') {
+    const claimed = Math.min(50, Math.max(0, Number(store.founding_creators_claimed || 14)));
+    return jsonRes({
+      claimed,
+      total: 50,
+      remaining: Math.max(0, 50 - claimed),
+      proDaysGranted: 90,
+    });
+  }
+
+  if (method === 'POST' && pathStr === 'upgrades/claim-founding') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Please sign in with your Xaman wallet first to claim a Founding Creator spot.' }, 401);
+    if (u.founding_creator || (u.notification_prefs && u.notification_prefs.founding_creator)) {
+      return jsonRes({
+        ok: true,
+        alreadyClaimed: true,
+        proUntil: u.pro_until,
+        claimed: store.founding_creators_claimed || 14,
+        total: 50,
+        remaining: Math.max(0, 50 - (store.founding_creators_claimed || 14)),
+      });
+    }
+    const claimed = Number(store.founding_creators_claimed || 14);
+    if (claimed >= 50) {
+      return jsonRes({ error: 'All 50 Founding Creator spots have been claimed.' }, 400);
+    }
+    store.founding_creators_claimed = claimed + 1;
+    const baseMs = u.pro_until && new Date(u.pro_until).getTime() > Date.now() ? new Date(u.pro_until).getTime() : Date.now();
+    u.pro_until = new Date(baseMs + 90 * 86400 * 1000).toISOString();
+    u.founding_creator = true;
+    u.is_verified = true;
+    u.notification_prefs = { ...(u.notification_prefs || {}), founding_creator: true, avatar_frame: 'gold' };
+    return jsonRes({
+      ok: true,
+      alreadyClaimed: false,
+      proUntil: u.pro_until,
+      claimed: store.founding_creators_claimed,
+      total: 50,
+      remaining: Math.max(0, 50 - store.founding_creators_claimed),
+      badge: 'Founding Creator',
     });
   }
 
@@ -1659,25 +2031,40 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     const isPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin');
     if (!isPro) {
       const activeCount = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').length;
-      if (activeCount >= 5) {
-        return jsonRes({ error: 'Standard accounts can have up to 5 active listings. Upgrade to Pro for unlimited active listings!' }, 403);
+      if (activeCount >= FREE_LISTING_LIMIT) {
+        return jsonRes({ error: `Standard accounts can have up to ${FREE_LISTING_LIMIT} active listings. Upgrade to Pro for unlimited active listings!` }, 403);
       }
       if (Array.isArray(body.images) && body.images.length > 3) {
         return jsonRes({ error: 'Standard accounts can upload up to 3 images per listing. Upgrade to Pro for up to 6 images!' }, 400);
       }
     }
     const maxImages = isPro ? 6 : 3;
-    const { title, description, category, game, platform, priceXrp, price_xrp, images, isDigital, digitalContent, digitalLink, quantity, deliveryTime, tags } = body;
+    const {
+      title, description, category, game, platform,
+      priceXrp, price_xrp, priceUsd, price_usd, pricingMode, pricing_mode,
+      images, isDigital, digitalContent, digitalLink,
+      digitalArchiveUrl, digital_archive_url, digitalArchiveName, digital_archive_name,
+      digitalArchiveSize, digital_archive_size, digitalArchiveSha256, digital_archive_sha256,
+      version, quantity, deliveryTime, tags,
+    } = body;
     const finalPrice = Number(priceXrp !== undefined ? priceXrp : price_xrp);
+    const rawPriceUsd = priceUsd !== undefined ? priceUsd : price_usd;
+    const rawPricingMode = pricingMode !== undefined ? pricingMode : pricing_mode;
+    const rawArchiveUrl = digitalArchiveUrl !== undefined ? digitalArchiveUrl : digital_archive_url;
+    const rawArchiveName = digitalArchiveName !== undefined ? digitalArchiveName : digital_archive_name;
+    const rawArchiveSize = digitalArchiveSize !== undefined ? digitalArchiveSize : digital_archive_size;
+    const rawArchiveSha = digitalArchiveSha256 !== undefined ? digitalArchiveSha256 : digital_archive_sha256;
     const newListing = {
       id: crypto.randomUUID(),
       seller_id: u.id,
       title: sanitizeString(title, 120),
       description: description ? sanitizeString(description, 5000) : '',
-      category: category ? sanitizeString(category, 30) : 'other',
+      category: category && ALLOWED_CATEGORIES.includes(String(category).toLowerCase()) ? String(category).toLowerCase() : 'other',
       game: game ? sanitizeString(game, 60) : null,
-      platform: platform ? sanitizeString(platform, 30) : null,
+      platform: platform ? sanitizeString(platform, 60) : null,
       price_xrp: finalPrice,
+      price_usd: rawPriceUsd != null && Number.isFinite(Number(rawPriceUsd)) && Number(rawPriceUsd) >= 0 ? Number(Number(rawPriceUsd).toFixed(2)) : null,
+      pricing_mode: rawPricingMode === 'usd_pegged' ? 'usd_pegged' : 'xrp',
       currency: 'XRP',
       images: Array.isArray(images) ? images.slice(0, maxImages) : [],
       status: 'active',
@@ -1686,6 +2073,11 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       is_digital: Boolean(isDigital ?? true),
       digital_content: digitalContent ? sanitizeString(String(digitalContent), 10000) : null,
       digital_link: digitalLink ? sanitizeString(String(digitalLink), 1000) : null,
+      digital_archive_url: rawArchiveUrl ? sanitizeString(String(rawArchiveUrl), 1000) : null,
+      digital_archive_name: rawArchiveName ? sanitizeString(String(rawArchiveName), 120) : null,
+      digital_archive_size: rawArchiveSize != null && Number.isFinite(Number(rawArchiveSize)) ? Math.max(0, Math.round(Number(rawArchiveSize))) : null,
+      digital_archive_sha256: rawArchiveSha && /^[a-fA-F0-9]{64}$/.test(String(rawArchiveSha).trim()) ? String(rawArchiveSha).trim().toLowerCase() : null,
+      version: version ? sanitizeString(String(version), 32) : 'v1.0.0',
       quantity: Math.max(1, parseInt(quantity, 10) || 1),
       quantity_sold: 0,
       delivery_time: deliveryTime ? sanitizeString(String(deliveryTime), 40) : 'instant',
@@ -1695,6 +2087,49 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     };
     store.listings.unshift(newListing);
     return jsonRes(enrichListing(store, newListing, u), 201);
+  }
+
+  if (segments[0] === 'listings' && segments[1] && segments[2] === 'notify-update' && method === 'POST') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid listing ID' }, 400);
+    const l = store.listings.find(x => x.id === segments[1]);
+    if (!l) return jsonRes({ error: 'Listing not found' }, 404);
+    if (l.seller_id !== u.id && u.role !== 'admin') return jsonRes({ error: 'Forbidden' }, 403);
+    const nextVersion = body.version && typeof body.version === 'string'
+      ? sanitizeString(body.version.trim(), 32)
+      : (l.version || 'v1.1.0');
+    const rawChangelog = body.changelog || body.notes;
+    const changelog = rawChangelog && typeof rawChangelog === 'string'
+      ? sanitizeString(rawChangelog.trim(), 500)
+      : 'New version uploaded to the XRPHarbor Digital Vault.';
+    l.version = nextVersion;
+    l.updated_at = nowIso();
+    const pastOrders = store.orders.filter(
+      o => o.listing_id === l.id && ['escrow_locked', 'in_escrow', 'delivered', 'release_approved', 'completed'].includes(o.status)
+    );
+    const buyerIds = [...new Set(pastOrders.map(o => o.buyer_id).filter(Boolean))];
+    for (const buyerId of buyerIds) {
+      store.notifications.unshift({
+        id: crypto.randomUUID(),
+        user_id: buyerId,
+        type: 'product_update',
+        title: `Update ${nextVersion}: ${l.title}`,
+        body: changelog,
+        payload: { listingId: l.id, listingTitle: l.title, message: `${nextVersion}: ${changelog}` },
+        link: `/listing/${l.id}`,
+        is_read: false,
+        created_at: nowIso(),
+      });
+    }
+    return jsonRes({
+      ok: true,
+      listingId: l.id,
+      version: nextVersion,
+      changelog,
+      notifiedBuyers: buyerIds.length,
+      notifiedCount: buyerIds.length,
+    });
   }
 
   if (segments[0] === 'listings' && segments[1] && segments[2] === 'view' && method === 'POST') {
@@ -1720,11 +2155,29 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       const check = validateListingPayload(body, true);
       if (!check.valid) return jsonRes({ error: check.error }, 400);
       const nextPrice = body.price_xrp !== undefined ? body.price_xrp : body.priceXrp;
+      const nextPriceUsd = body.price_usd !== undefined ? body.price_usd : body.priceUsd;
+      const nextPricingMode = body.pricing_mode !== undefined ? body.pricing_mode : body.pricingMode;
+      const nextArchiveUrl = body.digital_archive_url !== undefined ? body.digital_archive_url : body.digitalArchiveUrl;
+      const nextArchiveName = body.digital_archive_name !== undefined ? body.digital_archive_name : body.digitalArchiveName;
+      const nextArchiveSize = body.digital_archive_size !== undefined ? body.digital_archive_size : body.digitalArchiveSize;
+      const nextArchiveSha = body.digital_archive_sha256 !== undefined ? body.digital_archive_sha256 : body.digitalArchiveSha256;
+      const nextContent = body.digital_content !== undefined ? body.digital_content : body.digitalContent;
+      const nextLink = body.digital_link !== undefined ? body.digital_link : body.digitalLink;
       Object.assign(l, {
         title: body.title !== undefined ? sanitizeString(body.title, 120) : l.title,
         description: body.description !== undefined ? sanitizeString(body.description, 5000) : l.description,
         price_xrp: nextPrice !== undefined ? Number(nextPrice) : l.price_xrp,
+        price_usd: nextPriceUsd !== undefined ? (nextPriceUsd != null && Number.isFinite(Number(nextPriceUsd)) ? Number(Number(nextPriceUsd).toFixed(2)) : null) : l.price_usd,
+        pricing_mode: nextPricingMode !== undefined ? (nextPricingMode === 'usd_pegged' ? 'usd_pegged' : 'xrp') : l.pricing_mode,
         status: body.status ?? l.status,
+        version: body.version !== undefined ? sanitizeString(String(body.version), 32) : (l.version || 'v1.0.0'),
+        digital_content: nextContent !== undefined ? (nextContent ? sanitizeString(String(nextContent), 10000) : null) : l.digital_content,
+        digital_link: nextLink !== undefined ? (nextLink ? sanitizeString(String(nextLink), 1000) : null) : l.digital_link,
+        digital_archive_url: nextArchiveUrl !== undefined ? (nextArchiveUrl ? sanitizeString(String(nextArchiveUrl), 1000) : null) : l.digital_archive_url,
+        digital_archive_name: nextArchiveName !== undefined ? (nextArchiveName ? sanitizeString(String(nextArchiveName), 120) : null) : l.digital_archive_name,
+        digital_archive_size: nextArchiveSize !== undefined ? (nextArchiveSize != null && Number.isFinite(Number(nextArchiveSize)) ? Math.max(0, Math.round(Number(nextArchiveSize))) : null) : l.digital_archive_size,
+        digital_archive_sha256: nextArchiveSha !== undefined ? (nextArchiveSha && /^[a-fA-F0-9]{64}$/.test(String(nextArchiveSha).trim()) ? String(nextArchiveSha).trim().toLowerCase() : null) : l.digital_archive_sha256,
+        updated_at: nowIso(),
       });
       return jsonRes(enrichListing(store, l, u));
     }
@@ -1738,12 +2191,62 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     }
   }
 
+  // Promo code validation
+  if (method === 'POST' && pathStr === 'promo/validate') {
+    const rawListingId = body.listingId !== undefined ? body.listingId : body.listing_id;
+    const rawCode = body.promoCode !== undefined ? body.promoCode : body.promo_code;
+    if (!isValidUuid(rawListingId)) return jsonRes({ error: 'Valid listingId is required' }, 400);
+    if (!rawCode || typeof rawCode !== 'string' || !rawCode.trim()) {
+      return jsonRes({ error: 'Promo code is required' }, 400);
+    }
+    const code = rawCode.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    const l = store.listings.find(x => x.id === rawListingId);
+    if (!l) return jsonRes({ error: 'Listing not found' }, 404);
+    const seller = store.users.find(x => x.id === l.seller_id) || {};
+    const sellerStore = seller.store && typeof seller.store === 'object' ? seller.store : {};
+    let discountPct = 0;
+    let label = '';
+    if (code === 'HARBOR10') {
+      discountPct = 10;
+      label = 'XRPHarbor Launch Promo (10% OFF)';
+    } else if (sellerStore.promoCode && String(sellerStore.promoCode).toUpperCase() === code && Number(sellerStore.promoDiscount) > 0) {
+      discountPct = Math.min(90, Math.max(1, Number(sellerStore.promoDiscount)));
+      label = `${sellerStore.name || seller.username} Creator Promo (${discountPct}% OFF)`;
+    } else {
+      return jsonRes({ valid: false, error: 'Invalid or expired promo code for this creator studio' }, 400);
+    }
+    const basePrice = Number(Number(l.price_xrp).toFixed(6));
+    const discountXrp = Number(((basePrice * discountPct) / 100).toFixed(6));
+    const finalPriceXrp = Number(Math.max(0.000001, basePrice - discountXrp).toFixed(6));
+    return jsonRes({
+      valid: true,
+      promoCode: code,
+      discountPct,
+      originalPriceXrp: basePrice,
+      discountXrp,
+      finalPriceXrp,
+      label,
+    });
+  }
+
   // Orders
   if (method === 'POST' && pathStr === 'orders') {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Please sign in to purchase' }, 401);
     const listingId = body.listingId !== undefined ? body.listingId : body.listing_id;
     if (!isValidUuid(listingId)) return jsonRes({ error: 'Valid listingId (UUID) is required' }, 400);
+    const rawPromo = body.promoCode !== undefined ? body.promoCode : body.promo_code;
+    if (rawPromo !== undefined && rawPromo !== null && rawPromo !== '') {
+      if (typeof rawPromo !== 'string' || rawPromo.trim().length > 32 || !/^[a-zA-Z0-9_-]+$/.test(rawPromo.trim())) {
+        return jsonRes({ error: 'Invalid promoCode format' }, 400);
+      }
+    }
+    const rawCurrency = body.settlementCurrency !== undefined ? body.settlementCurrency : body.settlement_currency;
+    if (rawCurrency !== undefined && rawCurrency !== null && rawCurrency !== '') {
+      if (!['XRP', 'RLUSD'].includes(String(rawCurrency).toUpperCase())) {
+        return jsonRes({ error: 'settlementCurrency must be XRP or RLUSD' }, 400);
+      }
+    }
     const l = store.listings.find(x => x.id === listingId && x.status === 'active');
     if (!l) return jsonRes({ error: 'Listing not found or not active' }, 404);
     if (l.seller_id === u.id) return jsonRes({ error: 'Cannot buy your own listing' }, 400);
@@ -1753,6 +2256,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     // Server-side price authority: compute total_xrp, commission_rate, commission_xrp, and seller_receives_xrp
     // strictly from stored listing and seller records (never from client request body).
     const seller = store.users.find(x => x.id === l.seller_id) || {};
+    const sellerStore = seller.store && typeof seller.store === 'object' ? seller.store : {};
     const sellerIsPro = Boolean(seller.pro_until && new Date(seller.pro_until).getTime() > Date.now());
     const commissionEnabled = process.env.ENABLE_SALES_COMMISSION === 'true';
     const commissionRate = commissionEnabled
@@ -1760,9 +2264,27 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
           ? parseFloat(process.env.COMMISSION_RATE_PRO || '0.015')
           : parseFloat(process.env.COMMISSION_RATE || '0.03'))
       : 0;
-    const authoritativePriceXrp = Number(Number(l.price_xrp).toFixed(6));
+    const basePriceXrp = Number(Number(l.price_xrp).toFixed(6));
+    let discountPct = 0;
+    let appliedPromoCode = null;
+    if (rawPromo && typeof rawPromo === 'string' && rawPromo.trim()) {
+      const cleanPromo = rawPromo.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (cleanPromo === 'HARBOR10') {
+        discountPct = 10;
+        appliedPromoCode = 'HARBOR10';
+      } else if (sellerStore.promoCode && String(sellerStore.promoCode).toUpperCase() === cleanPromo && Number(sellerStore.promoDiscount) > 0) {
+        discountPct = Math.min(90, Math.max(0, Number(sellerStore.promoDiscount)));
+        appliedPromoCode = cleanPromo;
+      }
+    }
+    const discountXrp = discountPct > 0 ? Number(((basePriceXrp * discountPct) / 100).toFixed(6)) : 0;
+    const authoritativePriceXrp = Number(Math.max(0.000001, basePriceXrp - discountXrp).toFixed(6));
     const commission = Number((authoritativePriceXrp * commissionRate).toFixed(6));
     const sellerReceives = Number((authoritativePriceXrp - commission).toFixed(6));
+    const isDigitalItem = Boolean(l.is_digital ?? true);
+    const finishAfterWindowSec = isDigitalItem ? 24 * 3600 : 72 * 3600;
+    const finishAfterIso = new Date(Date.now() + finishAfterWindowSec * 1000).toISOString();
+    const settlementCurrency = rawCurrency ? String(rawCurrency).toUpperCase() : (l.currency || 'XRP');
     const order = {
       id: crypto.randomUUID(),
       listing_id: l.id,
@@ -1772,16 +2294,24 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       seller_id: l.seller_id,
       buyer_wallet_address: u.wallet_address,
       seller_wallet_address: seller.wallet_address || 'rDockMaster9X2pL4nK8vJ6wZ3cT5yB1a2',
+      original_price_xrp: basePriceXrp,
+      discount_xrp: discountXrp,
+      promo_code_applied: appliedPromoCode,
+      discount_pct: discountPct,
       total_xrp: authoritativePriceXrp,
       commission_rate: commissionRate,
       commission_xrp: commission,
       seller_receives_xrp: sellerReceives,
       currency: l.currency || 'XRP',
+      settlement_currency: settlementCurrency,
       escrow_tx_hash: null,
       escrow_sequence: null,
       finish_tx_hash: null,
       cancel_tx_hash: null,
       escrow_finish_after: null,
+      finish_after: finishAfterIso,
+      download_logs: [],
+      buyer_downloaded_at: null,
       status: 'pending',
       created_at: nowIso(),
       updated_at: nowIso(),
@@ -1817,20 +2347,112 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
 
     if (segments[2] === 'delivery' && method === 'GET') {
       if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can access delivery' }, 403);
-      if (!['delivered', 'completed'].includes(order.status)) {
+      if (!['escrow_locked', 'in_escrow', 'delivered', 'release_approved', 'completed'].includes(order.status)) {
         return jsonRes({
           isDigital: true,
           unlocked: false,
           status: order.status,
-          message: 'Delivery unlocks once payment is locked in escrow and released.',
+          message: 'Delivery unlocks once payment is locked in escrow.',
         });
       }
       return jsonRes({
         isDigital: true,
         unlocked: true,
         content: listing.digital_content || ('XRPHARBOR-DELIVERY-' + order.id.slice(0, 8).toUpperCase()),
-        link: listing.digital_link || null,
+        link: listing.digital_archive_url || listing.digital_link || null,
+        filename: listing.digital_archive_name || null,
+        fileSize: listing.digital_archive_size || null,
+        sha256: listing.digital_archive_sha256 || null,
+        version: listing.version || 'v1.0.0',
         listingTitle: order.listing_title,
+        finishAfter: order.finish_after || null,
+        buyerDownloadedAt: order.buyer_downloaded_at || null,
+        downloadLogs: Array.isArray(order.download_logs) ? order.download_logs : [],
+      });
+    }
+
+    if (segments[2] === 'download' && (method === 'GET' || method === 'POST')) {
+      if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can download vault files for this order' }, 403);
+      if (!['escrow_locked', 'in_escrow', 'delivered', 'release_approved', 'completed'].includes(order.status)) {
+        return jsonRes({ error: 'Payment must be locked in XRPL Escrow before downloading from the Digital Vault.' }, 400);
+      }
+      const downloadedAt = nowIso();
+      const sha256 = listing.digital_archive_sha256 || crypto.createHash('sha256').update(String(listing.id || order.id)).digest('hex');
+      const sigPayload = `${order.id}:${u.id}:${sha256}:${downloadedAt}`;
+      const signature = crypto.createHmac('sha256', getJwtSecret()).update(sigPayload).digest('hex');
+      const logEntry = {
+        id: crypto.randomUUID(),
+        order_id: order.id,
+        buyer_id: u.id,
+        buyer_wallet: u.wallet_address,
+        sha256,
+        version: listing.version || 'v1.0.0',
+        downloaded_at: downloadedAt,
+        signature,
+      };
+      if (!Array.isArray(order.download_logs)) order.download_logs = [];
+      order.download_logs.push(logEntry);
+      order.buyer_downloaded_at = downloadedAt;
+      order.updated_at = downloadedAt;
+      const safeFilename = listing.digital_archive_name || `${(listing.title || 'xrpharbor-asset').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.zip`;
+      const rawUrl = listing.digital_archive_url || listing.digital_link || `/api/vault/demo-${listing.id || order.id}`;
+      let presignedGetUrl = null;
+      if (isR2Configured()) {
+        const archiveIdFromUrl = rawUrl.startsWith('/api/vault/') ? rawUrl.replace('/api/vault/', '').split('?')[0] : null;
+        const matchedVault = archiveIdFromUrl ? (store.vault_archives || []).find(a => a.id === archiveIdFromUrl) : null;
+        const objectKey = (matchedVault && matchedVault.r2_object_key)
+          || listing.r2_object_key
+          || (archiveIdFromUrl ? `vault/${archiveIdFromUrl}` : `vault/${listing.id || order.id}/${safeFilename}`);
+        presignedGetUrl = createR2PresignedUrl({
+          method: 'GET',
+          objectKey,
+          expiresInSeconds: 900,
+          responseContentDisposition: `attachment; filename="${safeFilename.replace(/["\\]/g, '_')}"`,
+        });
+      }
+      return jsonRes({
+        ok: true,
+        orderId: order.id,
+        downloadUrl: presignedGetUrl || rawUrl,
+        presignedGetUrl,
+        storageProvider: presignedGetUrl ? 'cloudflare_r2' : 'vault_fallback',
+        expiresInSeconds: presignedGetUrl ? 900 : null,
+        filename: safeFilename,
+        fileSize: listing.digital_archive_size || 1048576,
+        sha256,
+        version: listing.version || 'v1.0.0',
+        content: listing.digital_content || null,
+        downloadedAt,
+        logEntry,
+        totalDownloads: order.download_logs.length,
+      });
+    }
+
+    if (segments[2] === 'auto-release' && method === 'POST') {
+      if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
+      if (order.status === 'disputed') {
+        return jsonRes({ error: 'Cannot auto-release an order with an active dispute' }, 400);
+      }
+      if (order.status === 'completed') {
+        return jsonRes({ ok: true, status: 'completed', alreadyCompleted: true });
+      }
+      const finishAfterMs = order.finish_after ? new Date(order.finish_after).getTime() : 0;
+      const windowElapsed = finishAfterMs > 0 && Date.now() >= finishAfterMs;
+      const buyerDownloaded = Boolean(order.buyer_downloaded_at);
+      if (!windowElapsed && !buyerDownloaded && !isAdmin) {
+        return jsonRes({ error: 'Auto-release requires either the FinishAfter window to elapse or verified buyer vault download.' }, 400);
+      }
+      order.status = 'completed';
+      order.finish_tx_hash = order.finish_tx_hash || ('F' + crypto.randomBytes(31).toString('hex').toUpperCase());
+      order.completed_at = nowIso();
+      order.updated_at = nowIso();
+      const sellerUser = store.users.find(x => x.id === order.seller_id);
+      if (sellerUser) sellerUser.total_sales = Number(sellerUser.total_sales || 0) + 1;
+      return jsonRes({
+        ok: true,
+        status: 'completed',
+        finish_tx_hash: order.finish_tx_hash,
+        completed_at: order.completed_at,
       });
     }
 
@@ -1897,7 +2519,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         Owner: order.buyer_wallet_address,
         OfferSequence: order.escrow_sequence || 100001,
       });
-      return jsonRes({ xumm: payload, orderId: order.id });
+      return jsonRes({ xumm: payload, txjson: payload.txjson, orderId: order.id });
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'cancel' && method === 'POST') {
@@ -1909,7 +2531,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         Owner: order.buyer_wallet_address,
         OfferSequence: order.escrow_sequence,
       });
-      return jsonRes({ xumm: payload, orderId: order.id });
+      return jsonRes({ xumm: payload, txjson: payload.txjson, orderId: order.id });
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'claim' && method === 'POST') {
@@ -1921,7 +2543,42 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         Owner: order.buyer_wallet_address,
         OfferSequence: order.escrow_sequence || 100001,
       });
-      return jsonRes({ xumm: payload, orderId: order.id });
+      return jsonRes({ xumm: payload, txjson: payload.txjson, orderId: order.id });
+    }
+
+    if (segments[2] === 'escrow' && segments[3] === 'webhook' && method === 'POST') {
+      const { signed, txHash, txType, sequence, wallet } = body || {};
+      if (!signed) return jsonRes({ ok: true });
+      const cleanHash = typeof txHash === 'string' && /^[A-Fa-f0-9]{64}$/.test(txHash.trim())
+        ? txHash.trim()
+        : ('E' + crypto.randomBytes(31).toString('hex').toUpperCase());
+      const resolvedTxType = txType || (order.status === 'pending' || order.status === 'awaiting_payment' ? 'EscrowCreate' : 'EscrowFinish');
+      if (resolvedTxType === 'EscrowCreate') {
+        order.status = 'escrow_locked';
+        order.escrow_tx_hash = cleanHash;
+        order.escrow_sequence = Number(sequence) || order.escrow_sequence || Math.floor(100000 + Math.random() * 900000);
+        order.updated_at = nowIso();
+        store.activity.unshift({ kind: 'created', xrp: order.total_xrp, at: nowIso() });
+      } else if (resolvedTxType === 'EscrowCancel') {
+        order.status = 'refunded';
+        order.cancel_tx_hash = cleanHash;
+        order.updated_at = nowIso();
+      } else {
+        order.status = 'completed';
+        order.finish_tx_hash = cleanHash;
+        order.completed_at = nowIso();
+        order.updated_at = nowIso();
+        const sellerUser = store.users.find(x => x.id === order.seller_id);
+        if (sellerUser) sellerUser.total_sales = Number(sellerUser.total_sales || 0) + 1;
+        store.activity.unshift({ kind: 'released', xrp: order.total_xrp, at: nowIso() });
+      }
+      return jsonRes({
+        ok: true,
+        status: order.status,
+        txHash: cleanHash,
+        wallet: wallet || 'xrpl',
+        escrow_sequence: order.escrow_sequence,
+      });
     }
 
     if (segments[2] === 'deliver' && method === 'POST') {
@@ -1957,7 +2614,24 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       if (order.status !== 'completed') {
         return jsonRes({ error: 'Can only review completed orders' }, 400);
       }
-      return jsonRes({ ok: true });
+      if (!Array.isArray(store.reviews)) store.reviews = [];
+      const review = {
+        id: crypto.randomUUID(),
+        order_id: order.id,
+        reviewer_id: u.id,
+        reviewed_id: order.seller_id,
+        rating: r,
+        comment: body.comment ? sanitizeString(body.comment, 2000) : '',
+        created_at: nowIso(),
+      };
+      store.reviews.unshift(review);
+      const sellerUser = store.users.find(x => x.id === order.seller_id);
+      if (sellerUser) {
+        const sellerReviews = store.reviews.filter(rv => rv.reviewed_id === sellerUser.id);
+        const avg = sellerReviews.reduce((s, rv) => s + Number(rv.rating || 0), 0) / sellerReviews.length;
+        sellerUser.reputation_score = Number(avg.toFixed(2));
+      }
+      return jsonRes({ ok: true, review });
     }
 
     if (segments[2] === 'dispute' && method === 'POST') {
@@ -2129,19 +2803,22 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     }
   }
 
-  if (method === 'GET' && pathStr === 'me/stats') {
+  if (method === 'GET' && (pathStr === 'me/stats' || pathStr === 'users/me/stats')) {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const stats = getEffectiveUserStats(store, u);
+    const completedSalesList = store.orders.filter(o => o.seller_id === u.id && o.status === 'completed');
+    const totalRevenueXrp = completedSalesList.reduce((s, o) => s + Number(o.seller_receives_xrp || o.total_xrp || 0), 0);
     return jsonRes({
       activeListings: store.listings.filter(l => l.seller_id === u.id && l.status === 'active').length,
       soldListings: store.listings.filter(l => l.seller_id === u.id && l.status === 'sold').length,
-      completedSales: store.orders.filter(o => o.seller_id === u.id && o.status === 'completed').length,
-      totalRevenueXrp: 0,
+      completedSales: completedSalesList.length,
+      totalRevenueXrp: Number(totalRevenueXrp.toFixed(2)),
       inEscrow: store.orders.filter(o => o.seller_id === u.id && o.status === 'escrow_locked').length,
       completedPurchases: store.orders.filter(o => o.buyer_id === u.id && o.status === 'completed').length,
       openDisputes: 0,
-      reviewCount: 1,
-      avgRating: 5.0,
+      reviewCount: stats.reviewCount,
+      avgRating: stats.reputationScore,
     });
   }
 
@@ -2151,6 +2828,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         .filter(u => u.store_handle && u.store && ((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin'))
         .map(u => {
           const activeListingsCount = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').length;
+          const stats = getEffectiveUserStats(store, u);
           return {
             handle: u.store_handle,
             store: u.store,
@@ -2159,9 +2837,10 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
               id: u.id,
               username: u.username,
               avatar_url: u.avatar_url || null,
-              reputation_score: u.reputation_score ?? 5.0,
-              total_sales: Number(u.total_sales || 0),
-              is_verified: Boolean(u.is_verified ?? true),
+              reputation_score: stats.reputationScore,
+              reviewCount: stats.reviewCount,
+              total_sales: stats.totalSales,
+              is_verified: Boolean(u.is_verified),
               seller_is_pro: true,
             },
           };
@@ -2193,7 +2872,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         if (dupe) return jsonRes({ error: 'That store URL is already taken' }, 409);
         const cleanSocials = {};
         if (body.socials && typeof body.socials === 'object' && !Array.isArray(body.socials)) {
-          for (const k of ['discord', 'twitter', 'telegram', 'website']) {
+          for (const k of ['discord', 'twitter', 'github', 'telegram', 'website']) {
             if (typeof body.socials[k] === 'string' && body.socials[k].trim()) {
               cleanSocials[k] = sanitizeString(body.socials[k].trim(), 200);
             }
@@ -2259,7 +2938,8 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       const viewer = ensureAuthUser(store, req);
       if (!viewer) return jsonRes({ error: 'Unauthorized' }, 401);
       if (!/^[a-z0-9-]{2,40}$/i.test(segments[1])) return jsonRes({ error: 'Invalid store handle' }, 400);
-      const u = store.users.find(x => x.store_handle === segments[1]);
+      const handle = resolveStoreHandle(segments[1]);
+      const u = store.users.find(x => x.store_handle === handle);
       if (!u || !u.store) return jsonRes({ error: 'Store not found' }, 404);
       const followers = Array.isArray(u.store.followers) ? [...u.store.followers] : [];
       const baseCount = typeof u.store.followersCount === 'number' ? Math.max(0, u.store.followersCount - followers.length) : 24;
@@ -2276,14 +2956,27 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       return jsonRes({ following, followersCount: u.store.followersCount });
     } else if (segments[1] && method === 'GET') {
       if (!/^[a-z0-9-]{2,40}$/i.test(segments[1])) return jsonRes({ error: 'Invalid store handle' }, 400);
-      const u = store.users.find(x => x.store_handle === segments[1]);
+      const handle = resolveStoreHandle(segments[1]);
+      const u = store.users.find(x => x.store_handle === handle);
       if (!u || !u.store) return jsonRes({ error: 'Store not found' }, 404);
       const viewer = ensureAuthUser(store, req);
       const listings = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').map(l => enrichListing(store, l, viewer));
       const sellerIsPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin');
       const followers = Array.isArray(u.store.followers) ? u.store.followers : [];
       const viewerFollowing = Boolean(viewer && followers.includes(viewer.id));
-      return jsonRes({ seller: { ...u, seller_is_pro: sellerIsPro }, store: { ...u.store, viewerFollowing }, handle: u.store_handle, listings });
+      const stats = getEffectiveUserStats(store, u);
+      return jsonRes({
+        seller: {
+          ...u,
+          reputation_score: stats.reputationScore,
+          avgRating: stats.reputationScore,
+          reviewCount: stats.reviewCount,
+          seller_is_pro: sellerIsPro,
+        },
+        store: { ...u.store, viewerFollowing },
+        handle: u.store_handle,
+        listings,
+      });
     }
   }
 
@@ -2319,13 +3012,30 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
           return jsonRes({ error: 'avatar_url must be a valid http(s) URL or safe image data URI' }, 400);
         }
       }
+      if (body.socials && typeof body.socials === 'object' && !Array.isArray(body.socials)) {
+        const cleanSocials = {};
+        for (const k of ['discord', 'twitter', 'github', 'telegram', 'website']) {
+          if (typeof body.socials[k] === 'string' && body.socials[k].trim()) {
+            cleanSocials[k] = sanitizeString(body.socials[k].trim(), 200);
+          }
+        }
+        u.socials = { ...(u.socials || {}), ...cleanSocials };
+        u.notification_prefs = { ...(u.notification_prefs || {}), socials: u.socials };
+      }
       if (body.notification_prefs && typeof body.notification_prefs === 'object' && !Array.isArray(body.notification_prefs)) {
         u.notification_prefs = { ...(u.notification_prefs || {}), ...body.notification_prefs };
       }
       if (body.avatar_frame && ['gold', 'cyber', 'plasma', 'diamond', 'none'].includes(body.avatar_frame)) {
         u.notification_prefs = { ...(u.notification_prefs || {}), avatar_frame: isPro ? body.avatar_frame : 'none' };
       }
-      return jsonRes(u);
+      const stats = getEffectiveUserStats(store, u);
+      return jsonRes({
+        ...u,
+        reputation_score: stats.reputationScore,
+        avgRating: stats.reputationScore,
+        reviewCount: stats.reviewCount,
+        socials: u.socials || (u.notification_prefs && u.notification_prefs.socials) || {},
+      });
     }
     if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid user ID' }, 400);
     const target = store.users.find(x => x.id === segments[1]);
@@ -2334,12 +3044,26 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       return jsonRes(store.listings.filter(l => l.seller_id === segments[1]).map(l => enrichListing(store, l, viewer)));
     }
     if (segments[2] === 'reviews') {
-      return jsonRes([]);
+      const userReviews = (store.reviews || []).filter(r => r.reviewed_id === segments[1]).map(r => {
+        const reviewer = store.users.find(x => x.id === r.reviewer_id);
+        return {
+          ...r,
+          username: (reviewer && reviewer.username) || 'xrp_collector',
+          avatar_url: (reviewer && reviewer.avatar_url) || null,
+        };
+      });
+      return jsonRes(userReviews);
     }
     if (target) {
       const isPro = Boolean((target.pro_until && new Date(target.pro_until).getTime() > Date.now()) || target.store_handle);
+      const stats = getEffectiveUserStats(store, target);
       return jsonRes({
         ...target,
+        reputation_score: stats.reputationScore,
+        avgRating: stats.reputationScore,
+        reviewCount: stats.reviewCount,
+        socials: target.socials || (target.notification_prefs && target.notification_prefs.socials) || {},
+        founding_creator: Boolean(target.founding_creator || (target.notification_prefs && target.notification_prefs.founding_creator)),
         seller_is_pro: isPro,
         avatar_frame: (target.notification_prefs && target.notification_prefs.avatar_frame) || (isPro ? 'gold' : 'none'),
       });
@@ -2373,6 +3097,29 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (!validation.valid) {
       return jsonRes({ error: validation.error || 'Invalid image file signature' }, 400);
     }
+    if (isR2Configured()) {
+      const objectKey = `images/${u.id}/${crypto.randomUUID()}-${validation.safeFilename}`;
+      const r2Upload = await uploadBufferToR2({
+        objectKey,
+        buffer: validation.buffer,
+        contentType: validation.mimeType,
+      });
+      const presignedGetUrl = createR2PresignedUrl({
+        method: 'GET',
+        objectKey,
+        expiresInSeconds: 7 * 86400,
+      });
+      return jsonRes({
+        url: r2Upload.ok ? r2Upload.publicUrl : presignedGetUrl,
+        presignedPutUrl: r2Upload.presignedPutUrl,
+        presignedGetUrl,
+        r2ObjectKey: objectKey,
+        storageProvider: 'cloudflare_r2',
+        mimeType: validation.mimeType,
+        filename: validation.safeFilename,
+        size: validation.size,
+      });
+    }
     const apiKey = process.env.IMGBB_API_KEY || process.env.IMGBB_KEY;
     if (apiKey) {
       try {
@@ -2388,6 +3135,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         }
         return jsonRes({
           url: uploadedUrl,
+          storageProvider: 'imgbb_fallback',
           mimeType: validation.mimeType,
           filename: validation.safeFilename,
           size: validation.size,
@@ -2398,10 +3146,225 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     }
     return jsonRes({
       url: `https://i.ibb.co/demo/${validation.safeFilename}`,
+      storageProvider: 'demo_fallback',
       mimeType: validation.mimeType,
       filename: validation.safeFilename,
       size: validation.size,
       demoMode: true,
+    });
+  }
+
+  if (method === 'POST' && pathStr === 'r2/presign-upload') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const { filename, contentType, kind } = body || {};
+    if (!filename || typeof filename !== 'string' || !filename.trim()) {
+      return jsonRes({ error: 'filename is required' }, 400);
+    }
+    const cleanName = filename.trim().replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
+    const prefix = kind === 'image' ? 'images' : 'vault';
+    const objectKey = `${prefix}/${u.id}/${crypto.randomUUID()}-${cleanName}`;
+    if (!isR2Configured()) {
+      return jsonRes({
+        ok: true,
+        r2Configured: false,
+        storageProvider: 'fallback',
+        objectKey,
+        presignedPutUrl: null,
+      });
+    }
+    const presignedPutUrl = createR2PresignedUrl({
+      method: 'PUT',
+      objectKey,
+      expiresInSeconds: 900,
+    });
+    return jsonRes({
+      ok: true,
+      r2Configured: true,
+      storageProvider: 'cloudflare_r2',
+      objectKey,
+      presignedPutUrl,
+      contentType: sanitizeString(String(contentType || 'application/octet-stream'), 120),
+      expiresInSeconds: 900,
+    });
+  }
+
+  if (method === 'POST' && pathStr === 'upload-archive') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const { filename, dataBase64, size, archiveEntries, mimeType } = body;
+    if (!filename || typeof filename !== 'string') {
+      return jsonRes({ error: 'filename is required' }, 400);
+    }
+    const cleanName = filename.trim().replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
+    const allowedArchiveExts = /\.(zip|rar|7z|tar\.gz|tgz|pdf|fig|blend|unitypackage|fbx|glb|gltf|obj|wav|mp3|flac|txt|md|json|js|ts|py|sol|ogg|cube)$/i;
+    if (!allowedArchiveExts.test(cleanName)) {
+      return jsonRes({ error: 'Unsupported archive or asset file extension' }, 400);
+    }
+    if (archiveEntries !== undefined) {
+      const archiveCheck = validateArchiveEntries(archiveEntries);
+      if (!archiveCheck.valid) {
+        return jsonRes({ error: archiveCheck.error || 'Unsafe archive entry path' }, 400);
+      }
+    }
+    const rawStr = typeof dataBase64 === 'string' ? dataBase64 : cleanName;
+    if (rawStr.length > 35 * 1024 * 1024) {
+      return jsonRes({ error: 'Archive exceeds maximum upload size (25MB)' }, 413);
+    }
+    const cleanBase64 = rawStr.includes(',') ? rawStr.split(',')[1] : rawStr;
+    let buf;
+    try {
+      buf = Buffer.from(cleanBase64, 'base64');
+    } catch {
+      buf = Buffer.from(cleanName, 'utf8');
+    }
+    const sha256 = crypto.createHash('sha256').update(buf.length > 0 ? buf : cleanName).digest('hex');
+    const byteSize = Number.isFinite(Number(size)) && Number(size) > 0 ? Math.round(Number(size)) : Math.max(1024, buf.length);
+    const archiveId = crypto.randomUUID();
+    const r2ObjectKey = `vault/${archiveId}-${cleanName}`;
+    let presignedPutUrl = null;
+    if (isR2Configured()) {
+      presignedPutUrl = createR2PresignedUrl({
+        method: 'PUT',
+        objectKey: r2ObjectKey,
+        expiresInSeconds: 900,
+      });
+      if (typeof dataBase64 === 'string' && dataBase64.trim() && buf.length > 0) {
+        await uploadBufferToR2({
+          objectKey: r2ObjectKey,
+          buffer: buf,
+          contentType: sanitizeString(String(mimeType || 'application/octet-stream'), 120),
+        }).catch(() => {});
+      }
+    }
+    const archiveRecord = {
+      id: archiveId,
+      r2_object_key: isR2Configured() ? r2ObjectKey : null,
+      seller_id: u.id,
+      filename: cleanName,
+      size: byteSize,
+      sha256,
+      url: `/api/vault/${archiveId}`,
+      created_at: nowIso(),
+    };
+    if (!Array.isArray(store.vault_archives)) store.vault_archives = [];
+    store.vault_archives.push(archiveRecord);
+    return jsonRes({
+      ok: true,
+      archiveId,
+      url: archiveRecord.url,
+      r2ObjectKey: archiveRecord.r2_object_key,
+      presignedPutUrl,
+      storageProvider: isR2Configured() ? 'cloudflare_r2' : 'vault_fallback',
+      filename: cleanName,
+      size: byteSize,
+      sha256,
+    });
+  }
+
+  if (segments[0] === 'vault' && segments[1] && method === 'GET') {
+    const archive = (store.vault_archives || []).find(a => a.id === segments[1]);
+    if (!archive) {
+      return jsonRes({
+        ok: true,
+        vault: 'XRPHarbor Encrypted Digital Vault',
+        archiveId: segments[1],
+        status: 'verified_escrow_protected',
+      });
+    }
+    return jsonRes({
+      ok: true,
+      vault: 'XRPHarbor Encrypted Digital Vault',
+      archiveId: archive.id,
+      filename: archive.filename,
+      size: archive.size,
+      sha256: archive.sha256,
+      created_at: archive.created_at,
+    });
+  }
+
+  if (method === 'POST' && pathStr === 'import-listing') {
+    const u = ensureAuthUser(store, req);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const { url } = body;
+    if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
+      return jsonRes({ error: 'Please provide a valid http(s) product URL (Gumroad, Itch.io, GitHub, LemonSqueezy, or personal site)' }, 400);
+    }
+    const cleanUrl = url.trim();
+    let parsed;
+    try {
+      parsed = new URL(cleanUrl);
+    } catch {
+      return jsonRes({ error: 'Invalid URL format' }, 400);
+    }
+    const host = parsed.hostname.toLowerCase();
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+    const slug = (pathParts[pathParts.length - 1] || 'digital-creator-pack')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+
+    let sourcePlatform = 'Web Store';
+    let category = 'software';
+    let suggestedUsd = 29;
+    let tags = ['Digital Download', 'Instant Vault', 'XRPL Escrow'];
+    let coverImage = LISTING_IMAGES.saas_boilerplate;
+
+    if (host.includes('gumroad.com')) {
+      sourcePlatform = 'Gumroad';
+      category = 'templates';
+      suggestedUsd = 39;
+      tags = ['Gumroad Import', 'Creator Pack', 'Commercial License', 'Source Files'];
+      coverImage = LISTING_IMAGES.figma_system;
+    } else if (host.includes('itch.io')) {
+      sourcePlatform = 'Itch.io';
+      category = 'games';
+      suggestedUsd = 24;
+      tags = ['Itch.io Import', 'Indie Game Asset', 'Royalty Free', 'Game Dev'];
+      coverImage = LISTING_IMAGES.cyber_ui;
+    } else if (host.includes('github.com')) {
+      sourcePlatform = 'GitHub';
+      category = 'software';
+      suggestedUsd = 49;
+      tags = ['GitHub Release', 'TypeScript', 'Full Source', 'MIT / Commercial'];
+      coverImage = LISTING_IMAGES.xrpl_bot;
+    } else if (host.includes('lemonsqueezy.com')) {
+      sourcePlatform = 'LemonSqueezy';
+      category = 'templates';
+      suggestedUsd = 35;
+      tags = ['LemonSqueezy Import', 'UI Kit', 'SaaS Starter'];
+      coverImage = LISTING_IMAGES.saas_boilerplate;
+    }
+
+    const title = slug.length >= 4 ? `${slug} (${sourcePlatform} Edition)` : `Creator Digital Asset Pack (${sourcePlatform})`;
+    const description = [
+      `Imported directly from ${sourcePlatform} (${cleanUrl}).`,
+      '',
+      '### Included in this XRPHarbor Digital Vault Release:',
+      '- Full commercial & indie studio license',
+      '- Cryptographically verified archive (SHA-256 checksum on-chain)',
+      '- Instant zero-fee XRPL Escrow unlock upon payment confirmation',
+      '- Free lifetime version updates via XRPHarbor Vault notifications',
+    ].join('\n');
+
+    const importedPayload = {
+      title: title.slice(0, 120),
+      description,
+      category,
+      platform: sourcePlatform,
+      priceUsd: suggestedUsd,
+      priceXrp: Number((suggestedUsd / 1.38).toFixed(2)),
+      pricingMode: 'USD',
+      version: 'v1.0.0',
+      tags,
+      images: [coverImage],
+      coverImage,
+      sourceUrl: cleanUrl,
+    };
+
+    return jsonRes({
+      ok: true,
+      ...importedPayload,
+      imported: importedPayload,
     });
   }
 
@@ -2472,12 +3435,11 @@ async function handler(req, ctx) {
     try { bodyText = await req.text(); } catch {}
   }
 
-  // Try configured backend or local port 4000 first, then Railway production URL
+  // Try configured backend or local port 4000 first, then fall back to built-in API
   const candidates = [
     process.env.BACKEND_URL,
     process.env.NEXT_PUBLIC_API_URL,
     !process.env.VERCEL ? 'http://127.0.0.1:4000' : null,
-    'https://xrp-marketplace-backend-production.up.railway.app',
   ].filter(Boolean);
 
   for (const base of candidates) {
@@ -2500,8 +3462,11 @@ async function handler(req, ctx) {
 
       if (!isRailwayDead) {
         const respText = await res.text();
-        // Check if Railway returned "Application not found" JSON
-        if (res.status === 404 && respText.includes('Application not found')) {
+        // Check if upstream returned "Application not found" or unhandled route 404
+        if (
+          res.status === 404 &&
+          (respText.includes('Application not found') || respText.includes('Cannot GET') || respText.includes('Cannot POST'))
+        ) {
           continue;
         }
         const ct = res.headers.get('content-type') || 'application/json';

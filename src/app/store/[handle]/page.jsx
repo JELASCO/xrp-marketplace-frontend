@@ -702,8 +702,8 @@ export default function StorefrontPage() {
                       a: `All digital codes, keys, and game transfers are dispatched within our ${responseTime} commitment — and instant-delivery items unlock automatically as soon as your XRPL escrow is locked on-chain.`,
                     },
                     {
-                      q: `How do I claim the ${store.promoCode || 'HARBOR10'} bundle or offer discount?`,
-                      a: `Click "Make Offer" on any listing in this store and include code ${store.promoCode || 'HARBOR10'} (or bundle 2+ items) for ${store.promoDiscount || 10}% off. Offers ≥ ${store.minOfferPct || 85}% of the listing price are prioritized.`,
+                      q: `How do I claim the ${store.promoCode || 'HARBOR10'} promo or bundle discount?`,
+                      a: `Enter code ${store.promoCode || 'HARBOR10'} directly in the Promo Code box at checkout (or click the dashed promo badge above to copy it) for an instant automatic ${store.promoDiscount || 10}% discount on your XRPL escrow order.`,
                     },
                     {
                       q: 'Are my XRP / RLUSD funds protected during delivery?',

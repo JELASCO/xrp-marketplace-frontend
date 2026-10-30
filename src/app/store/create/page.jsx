@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { PRO_LIVE_AVATARS, PRO_FRAME_STYLES, uploadAvatarOrLogoFile } from '../../../lib/avatars';
+import { connectCrossmarkWallet, connectGemWallet } from '../../../lib/xrplWallets';
 
 async function uploadImage(file) {
   if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5MB');
@@ -22,6 +23,13 @@ async function uploadImage(file) {
   });
   const d = await r.json();
   if (!r.ok || !d.url) throw new Error((d && d.error) || 'Upload failed');
+  if (d.presignedPutUrl) {
+    await fetch(d.presignedPutUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || d.mimeType || 'image/png' },
+      body: file,
+    }).catch(() => {});
+  }
   return d.url;
 }
 
@@ -32,10 +40,13 @@ const C = {
 };
 
 const CAT_TREE = {
+  'Graphics & Art': ['3D models','Shaders & materials','UI/UX kits','Logos','Illustrations','Avatars / PFP','Textures & materials','Animation rigs','Motion graphics','Brushes & presets','Font assets','Other'],
+  'Templates & UI': ['Notion templates','Figma UI kits','Framer templates','Next.js / React starters','Webflow templates','Email & pitch decks','Other'],
+  'Software & Tools': ['Indie SaaS & boilerplates','Plugins & extensions','Scripts & CLI tools','Unity / Unreal assets','Licenses & keys','Source code','Other'],
+  'Education': ['Courses & tutorials','eBooks & guides','Engineering playbooks','Mentorship sessions','Design resources','Other'],
+  'Prompts & AI': ['Midjourney & Flux prompts','LLM / Claude system prompts','ComfyUI workflows','AI agent templates','Dataset packs','Other'],
+  'Audio & Music': ['SFX & foley packs','Royalty-free loops','DAW presets & stems','Synth patches','Ambient & game OSTs','Other'],
   'Games': ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','Apex Legends','Roblox','Minecraft','OSRS','Path of Exile','Rust','Genshin Impact','GTA V','Warframe','Other'],
-  'Graphics & Art': ['Logos','Illustrations','3D models','UI/UX kits','Avatars / PFP','Textures & materials','Animation rigs','Motion graphics','Brushes & presets','Font assets','Design templates','Other'],
-  'Education': ['Courses & tutorials','eBooks & guides','Mentorship sessions','Design resources','Other'],
-  'Software & Tools': ['Licenses & keys','Scripts & bots','Plugins','Templates','Source code','Other'],
   'Accounts': ['Game accounts','Social media','Streaming','Subscriptions','Other'],
   'Other': ['Gift cards','Collectibles','Misc','Other'],
 };
@@ -75,7 +86,7 @@ export default function CreateStorePage() {
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
   const [cats, setCats] = useState([]);
-  const [activeCat, setActiveCat] = useState('Games');
+  const [activeCat, setActiveCat] = useState('Graphics & Art');
   const [otherText, setOtherText] = useState({});
   const [tagline, setTagline] = useState('');
   const [announcement, setAnnouncement] = useState('');
@@ -85,11 +96,12 @@ export default function CreateStorePage() {
   const [pinnedListingIds, setPinnedListingIds] = useState([]);
   const [myListings, setMyListings] = useState([]);
   const [autoAccept, setAutoAccept] = useState(true);
-  const [requireShot, setRequireShot] = useState(true);
+  const [requireShot, setRequireShot] = useState(false);
   const [vacation, setVacation] = useState(false);
   const [response, setResponse] = useState(RESPONSES[0]);
   const [wallet, setWallet] = useState('');
   const [destTag, setDestTag] = useState('');
+  const [walletConnectNotice, setWalletConnectNotice] = useState('');
   const [logo, setLogo] = useState(null);
   const [banner, setBanner] = useState(null);
   const [logoUrl, setLogoUrl] = useState(null);
@@ -99,8 +111,8 @@ export default function CreateStorePage() {
   const [promoDiscount, setPromoDiscount] = useState(10);
   const [minOfferPct, setMinOfferPct] = useState(85);
   const [faqs, setFaqs] = useState([
-    { q: 'How fast are digital items delivered after escrow lock?', a: 'All digital codes and game transfers are dispatched within 5–15 minutes of on-chain XRPL escrow lock.' },
-    { q: 'How do I claim the store promo or bundle discount?', a: 'Click "Make Offer" on any listing and mention our store promo code (or bundle 2+ items) for priority discount approval.' },
+    { q: 'How fast are digital items delivered after escrow lock?', a: 'Encrypted Vault archives and digital license keys unlock immediately upon on-chain XRPL escrow lock, or within 5–15 minutes for custom orders.' },
+    { q: 'How do I claim the store promo or bundle discount?', a: 'Enter our store promo code directly at checkout (or click the dashed promo box to copy) for an instant automatic discount on your XRPL escrow order.' },
   ]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -454,7 +466,7 @@ export default function CreateStorePage() {
                 <textarea style={{ ...inputStyle, minHeight: 96, resize: 'vertical', lineHeight: 1.5 }} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell buyers about your store, sourcing, and turnaround." />
               </div>
               <div>
-                <label style={labelStyle}>Verified Social &amp; Portfolio Links <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, marginLeft: 6, padding: '2px 6px', borderRadius: 5 }}>PRO</span></label>
+                <label style={labelStyle}>Verified Social &amp; Portfolio Links <span style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fontWeight: 700, marginLeft: 6, padding: '2px 7px', borderRadius: 5, background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>FREE FOR ALL SELLERS</span></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <input style={inputStyle} type="url" placeholder="Discord invite URL (https://discord.gg/...)" value={socials.discord} onChange={(e) => setSocials(s => ({ ...s, discord: e.target.value }))} />
                   <input style={inputStyle} type="url" placeholder="X / Twitter URL (https://x.com/...)" value={socials.twitter} onChange={(e) => setSocials(s => ({ ...s, twitter: e.target.value }))} />
@@ -618,7 +630,9 @@ export default function CreateStorePage() {
                 <p style={{ fontSize: 13, color: C.muted }}>What buyers can count on. These appear on every listing.</p>
               </div>
               <ToggleRow title="Auto-accept escrow offers" desc="Buyer commits → funds lock in escrow without you confirming first. Recommended for digital items." checked={autoAccept} onChange={() => setAutoAccept((v) => !v)} />
-              <ToggleRow title="Require Steam-profile screenshot on listings" desc="Adds a verified-source badge to your items. Slightly slower to list, materially more trust." checked={requireShot} onChange={() => setRequireShot((v) => !v)} />
+              {(activeCat === 'Games' || activeCat === 'Accounts' || cats.some((c) => (CAT_TREE['Games'] || []).includes(c) || (CAT_TREE['Accounts'] || []).includes(c))) && (
+                <ToggleRow title="Require Steam-profile screenshot on listings" desc="Adds a verified-source badge to your gaming items. Slightly slower to list, materially more trust." checked={requireShot} onChange={() => setRequireShot((v) => !v)} />
+              )}
               <ToggleRow title="Vacation mode" desc="Hide your listings without removing them. Useful when you can't respond for over 24 hours." checked={vacation} onChange={() => setVacation((v) => !v)} last />
               <div style={{ marginTop: 16 }}>
                 <label style={labelStyle}>Response-time commitment</label>
@@ -634,6 +648,63 @@ export default function CreateStorePage() {
                 <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 2, margin: 0, color: C.ink }}>Payout</h2>
                 <p style={{ fontSize: 13, color: C.muted }}>Where escrowed XRP settles when a buyer confirms delivery.</p>
               </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const addr = user?.wallet_address || user?.walletAddress || 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+                    setWallet(addr);
+                    setWalletConnectNotice('✓ Connected Xaman Wallet (' + addr.slice(0, 8) + '…' + addr.slice(-4) + ')');
+                    setTimeout(() => setWalletConnectNotice(''), 4000);
+                  }}
+                  style={{ padding: '8px 13px', borderRadius: 10, border: '1px solid rgba(32,128,245,0.35)', background: 'rgba(32,128,245,0.08)', color: C.blue, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  🔵 Connect Xaman Wallet
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await connectCrossmarkWallet();
+                      const addr = res.address;
+                      setWallet(addr);
+                      setWalletConnectNotice('✓ Connected Crossmark Wallet (' + addr.slice(0, 8) + '…' + addr.slice(-4) + ')');
+                    } catch (err) {
+                      const fallbackAddr = user?.wallet_address || user?.walletAddress || '';
+                      if (fallbackAddr) setWallet(fallbackAddr);
+                      setWalletConnectNotice('⚠ ' + (err.message || 'Crossmark extension not detected — install at https://crossmark.io or enter r-address below.'));
+                    }
+                    setTimeout(() => setWalletConnectNotice(''), 6000);
+                  }}
+                  style={{ padding: '8px 13px', borderRadius: 10, border: '1px solid rgba(139,92,246,0.35)', background: 'rgba(139,92,246,0.08)', color: '#7c3aed', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  🟣 Connect Crossmark
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await connectGemWallet();
+                      const addr = res.address;
+                      setWallet(addr);
+                      setWalletConnectNotice('✓ Connected GemWallet (' + addr.slice(0, 8) + '…' + addr.slice(-4) + ')');
+                    } catch (err) {
+                      const fallbackAddr = user?.wallet_address || user?.walletAddress || '';
+                      if (fallbackAddr) setWallet(fallbackAddr);
+                      setWalletConnectNotice('⚠ ' + (err.message || 'GemWallet extension not detected — install at https://gemwallet.app or enter r-address below.'));
+                    }
+                    setTimeout(() => setWalletConnectNotice(''), 6000);
+                  }}
+                  style={{ padding: '8px 13px', borderRadius: 10, border: '1px solid rgba(14,165,233,0.35)', background: 'rgba(14,165,233,0.08)', color: '#0369a1', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  💎 Connect GemWallet
+                </button>
+              </div>
+              {walletConnectNotice && (
+                <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#059669', fontSize: 12, fontWeight: 700 }}>
+                  {walletConnectNotice}
+                </div>
+              )}
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>XRP Ledger address</label>
                 <input style={{ ...inputStyle, fontFamily: 'monospace', fontSize: 13 }} type="text" placeholder="r..." value={wallet} onChange={(e) => setWallet(e.target.value)} />

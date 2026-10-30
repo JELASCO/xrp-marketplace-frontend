@@ -5,6 +5,7 @@ import { api } from '../../lib/api';
 import { xhConfirm } from '../../lib/confirm';
 import { useAuthStore } from '../../lib/store';
 import { sanitizeExternalUrl, sanitizeImageUrl } from '../../lib/sanitizeUrl';
+import { signAndSubmitWithCrossmark, signAndSubmitWithGemWallet } from '../../lib/xrplWallets';
 
 const STATUS_MAP = {
   pending:       {label:'Pending',   color:'var(--text2)', bg:'var(--border)'},
@@ -36,6 +37,11 @@ export default function OrdersPage() {
   const [attemptedPay, setAttemptedPay] = useState({}); // orderId -> true once user opened the pay flow
   const [syncing, setSyncing] = useState(null); // orderId currently being synced
   const [delivering, setDelivering] = useState(null); // orderId currently being marked delivered
+  const [downloadLog, setDownloadLog] = useState({}); // orderId -> { downloadedAt, sha256, fileName, archiveUrl, content, link }
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [autoReleasingId, setAutoReleasingId] = useState(null);
+  const [extSigning, setExtSigning] = useState(null); // 'crossmark' | 'gemwallet' | null
+  const [extError, setExtError] = useState(null); // { message, installUrl, wallet } | null
 
   useEffect(() => {
     if (!user) return;
@@ -100,6 +106,8 @@ export default function OrdersPage() {
   async function closeXummModal() {
     const m = xummModal;
     setXummModal(null);
+    setExtError(null);
+    setExtSigning(null);
     if (m && m.orderId) {
       // sync on-chain escrow state into the order (covers both create and finish)
       try { await api.orders.escrowStatus(m.orderId); } catch(e) {}
@@ -111,11 +119,54 @@ export default function OrdersPage() {
     api.orders.mine(role).then(setOrders);
   }
 
+  async function handleExtensionSign(walletType) {
+    if (!xummModal || !xummModal.orderId) return;
+    setExtError(null);
+    setExtSigning(walletType);
+    try {
+      const fallbackTxType = xummModal.mode === 'release' ? 'EscrowFinish' : xummModal.mode === 'reclaim' ? 'EscrowCancel' : 'EscrowCreate';
+      const txjson = xummModal.txjson || {
+        TransactionType: fallbackTxType,
+        ...(fallbackTxType === 'EscrowCreate' ? {
+          Amount: String(Math.round(Number(xummModal.sellerNet || 10) * 1e6)),
+        } : {}),
+      };
+      const signedRes = walletType === 'crossmark'
+        ? await signAndSubmitWithCrossmark(txjson)
+        : await signAndSubmitWithGemWallet(txjson);
+      if (signedRes && signedRes.signed && signedRes.txHash) {
+        const token = localStorage.getItem('xrpmarket_token');
+        await fetch(`/api/orders/${xummModal.orderId}/escrow/webhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({
+            signed: true,
+            txHash: signedRes.txHash,
+            sequence: signedRes.sequence,
+            wallet: walletType,
+            txType: txjson.TransactionType,
+          }),
+        }).catch(() => {});
+        await closeXummModal();
+      }
+    } catch (err) {
+      setExtError({
+        message: err.message || `Failed to sign with ${walletType === 'crossmark' ? 'Crossmark' : 'GemWallet'}`,
+        installUrl: err.installUrl || (walletType === 'crossmark' ? 'https://crossmark.io' : 'https://gemwallet.app'),
+        wallet: walletType === 'crossmark' ? 'Crossmark' : 'GemWallet',
+        notInstalled: err.code === 'EXTENSION_NOT_INSTALLED',
+      });
+    } finally {
+      setExtSigning(null);
+    }
+  }
+
   async function handleReclaim(order) {
     try {
       const result = await api.orders.escrowCancel(order.id);
       if (result.xumm) {
-        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'reclaim' });
+        setExtError(null);
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'reclaim' });
       }
     } catch(e) { alert(e.message); }
   }
@@ -124,7 +175,8 @@ export default function OrdersPage() {
     try {
       const result = await api.orders.claim(order.id);
       if (result.xumm) {
-        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'release' });
+        setExtError(null);
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'release' });
       }
     } catch(e) { alert(e.message); }
   }
@@ -144,6 +196,7 @@ export default function OrdersPage() {
     try {
       const result = await api.orders.xummPayload(order.id);
       if (result.uuid || result.qrUrl) {
+        setExtError(null);
         setAttemptedPay(p => ({ ...p, [order.id]: true }));
         const base = {
           orderId: order.id,
@@ -152,13 +205,14 @@ export default function OrdersPage() {
           // keep the escrow payload to show AFTER the fee is paid
           escrowQr: result.qrUrl,
           escrowDeepLink: result.deepLink,
+          escrowTxjson: result.txjson,
         };
         if (result.commission && result.commissionXrp > 0) {
           // Step 1: pay the marketplace fee first (so it can't be skipped), step 2: lock escrow
-          setXummModal({ ...base, qrUrl: result.commission.qrUrl, deepLink: result.commission.deepLink, mode: 'commission', step: 1, hasFee: true });
+          setXummModal({ ...base, qrUrl: result.commission.qrUrl, deepLink: result.commission.deepLink, txjson: result.commission.txjson, mode: 'commission', step: 1, hasFee: true });
         } else {
           // No fee configured — go straight to escrow
-          setXummModal({ ...base, qrUrl: result.qrUrl, deepLink: result.deepLink, mode: 'pay', step: 1, hasFee: false });
+          setXummModal({ ...base, qrUrl: result.qrUrl, deepLink: result.deepLink, txjson: result.txjson, mode: 'pay', step: 1, hasFee: false });
         }
       } else if (result.error) {
         if (/already been created/i.test(result.error)) setAttemptedPay(p => ({ ...p, [order.id]: true }));
@@ -177,9 +231,10 @@ export default function OrdersPage() {
   }
 
   function proceedToEscrow() {
+    setExtError(null);
     setXummModal(m => {
       if (!m || !m.escrowQr) return null;
-      return { ...m, qrUrl: m.escrowQr, deepLink: m.escrowDeepLink, mode: 'pay', step: 2 };
+      return { ...m, qrUrl: m.escrowQr, deepLink: m.escrowDeepLink, txjson: m.escrowTxjson, mode: 'pay', step: 2 };
     });
   }
 
@@ -187,7 +242,8 @@ export default function OrdersPage() {
     try {
       const result = await api.orders.confirm(order.id);
       if (result.xumm) {
-        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, orderId: order.id, mode: 'release' });
+        setExtError(null);
+        setXummModal({ qrUrl: result.xumm.qrUrl, deepLink: result.xumm.deepLink, txjson: result.txjson || result.xumm.txjson, orderId: order.id, mode: 'release' });
       } else {
         api.orders.mine(role).then(setOrders);
       }
@@ -201,6 +257,95 @@ export default function OrdersPage() {
       await api.orders.mine(role).then(setOrders);
     } catch(e) { alert(e.message); }
     finally { setDelivering(null); }
+  }
+
+  async function handleDownloadVault(order) {
+    setDownloadingId(order.id);
+    try {
+      const token = localStorage.getItem('xrpmarket_token');
+      const r = await fetch(`/api/orders/${order.id}/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const d = await r.json().catch(() => ({}));
+      const ts = d.downloadedAt || new Date().toISOString();
+      const sha = d.sha256 || order.digital_archive_sha256 || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+      const fileName = d.fileName || order.digital_archive_name || `${(order.listing_title || 'creator-asset').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.zip`;
+      setDownloadLog(prev => ({
+        ...prev,
+        [order.id]: {
+          downloadedAt: ts,
+          sha256: sha,
+          fileName,
+          archiveUrl: d.archiveUrl || order.digital_archive_url,
+          content: d.content || (delivery[order.id] && delivery[order.id].content),
+          link: d.link || (delivery[order.id] && delivery[order.id].link),
+        },
+      }));
+      if (d.content || d.link || d.unlocked) {
+        setDelivery(prev => ({
+          ...prev,
+          [order.id]: {
+            ...(prev[order.id] || {}),
+            isDigital: true,
+            unlocked: true,
+            content: d.content || (prev[order.id] && prev[order.id].content),
+            link: d.link || (prev[order.id] && prev[order.id].link),
+          },
+        }));
+      }
+      const extLink = sanitizeExternalUrl(d.presignedGetUrl || d.downloadUrl || d.link || (delivery[order.id] && delivery[order.id].link));
+      if (extLink && !extLink.startsWith('/api/vault/')) {
+        window.open(extLink, '_blank', 'noopener,noreferrer');
+      } else {
+        const receiptText = [
+          `XRPHarbor Encrypted Asset Vault — Signed Delivery Package`,
+          `Order ID: ${order.id}`,
+          `Item: ${order.listing_title || 'Creator Asset'}`,
+          `File: ${fileName}`,
+          `SHA-256 Checksum: ${sha}`,
+          `Downloaded At: ${ts}`,
+          d.content ? `\nLicense / Vault Content:\n${d.content}` : '',
+        ].filter(Boolean).join('\n');
+        const blob = new Blob([receiptText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileName.replace(/\.[^.]+$/, '')}-vault-manifest.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      api.orders.mine(role).then(setOrders).catch(() => {});
+    } catch (e) {
+      alert(e.message || 'Could not download asset vault');
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
+  async function handleAutoRelease(order) {
+    setAutoReleasingId(order.id);
+    try {
+      const token = localStorage.getItem('xrpmarket_token');
+      const r = await fetch(`/api/orders/${order.id}/auto-release`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const d = await r.json().catch(() => ({}));
+      if (d && d.xumm) {
+        setXummModal({ qrUrl: d.xumm.qrUrl, deepLink: d.xumm.deepLink, orderId: order.id, mode: 'release' });
+      } else if (r.ok) {
+        await api.orders.mine(role).then(setOrders);
+      } else {
+        await handleClaim(order);
+      }
+    } catch (e) {
+      alert(e.message || 'Auto-release not available yet');
+    } finally {
+      setAutoReleasingId(null);
+    }
   }
 
   async function handleCancel(order) {
@@ -243,10 +388,49 @@ export default function OrdersPage() {
                 </div>
               );
             })()}
-            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Payment in Xaman' : xummModal.mode==='reclaim' ? 'Reclaim Funds in Xaman' : xummModal.mode==='commission' ? 'Pay Marketplace Fee' : 'Lock Payment in Escrow'}</div>
-            <div style={{fontSize:12,color:'var(--text3)',marginBottom:20}}>{xummModal.mode==='release' ? 'Scan to release the escrow to the seller. Your delivery unlocks right after.' : xummModal.mode==='reclaim' ? 'Scan to cancel the escrow and return the funds to your wallet.' : xummModal.mode==='commission' ? `Scan to pay the ${Number(xummModal.commissionXrp).toFixed(2)} XRP marketplace fee. This completes your payment.` : `Scan to lock ${xummModal.sellerNet!=null?Number(xummModal.sellerNet).toFixed(2)+' XRP ':''}in escrow for the seller.`}</div>
-            {sanitizeImageUrl(xummModal.qrUrl) && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:16}}><img src={sanitizeImageUrl(xummModal.qrUrl)} alt="Xaman QR" style={{width:192,height:192,display:'block'}}/></div>}
-            {sanitizeExternalUrl(xummModal.deepLink) && <a href={sanitizeExternalUrl(xummModal.deepLink)} target="_blank" rel="noopener noreferrer" style={{display:'block',background:'var(--accent)',color:'#fff',textAlign:'center',padding:'10px',borderRadius:8,marginBottom:12,fontSize:13,fontWeight:600,textDecoration:'none'}}>Open in Xaman App</a>}
+            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:4}}>{xummModal.mode==='release' ? 'Release Escrow Payment (EscrowFinish)' : xummModal.mode==='reclaim' ? 'Reclaim Escrowed Funds (EscrowCancel)' : xummModal.mode==='commission' ? 'Pay Marketplace Fee' : 'Lock Payment in XRPL Escrow (EscrowCreate)'}</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:16}}>{xummModal.mode==='release' ? 'Sign EscrowFinish via Xaman, Crossmark, or GemWallet to release funds to the seller.' : xummModal.mode==='reclaim' ? 'Sign EscrowCancel to return the escrowed funds to your wallet.' : xummModal.mode==='commission' ? `Scan or sign to pay the ${Number(xummModal.commissionXrp).toFixed(2)} XRP marketplace fee.` : `Sign EscrowCreate via Xaman, Crossmark, or GemWallet to lock ${xummModal.sellerNet!=null?Number(xummModal.sellerNet).toFixed(2)+' XRP ':''}in escrow for the seller.`}</div>
+            <div style={{textAlign:'center'}}>
+              {sanitizeImageUrl(xummModal.qrUrl) && <div style={{background:'#fff',padding:12,borderRadius:12,display:'inline-block',marginBottom:14}}><img src={sanitizeImageUrl(xummModal.qrUrl)} alt="Xaman QR" style={{width:180,height:180,display:'block'}}/></div>}
+            </div>
+            {sanitizeExternalUrl(xummModal.deepLink) && <a href={sanitizeExternalUrl(xummModal.deepLink)} target="_blank" rel="noopener noreferrer" style={{display:'block',background:'var(--accent)',color:'#fff',textAlign:'center',padding:'10px',borderRadius:8,marginBottom:10,fontSize:13,fontWeight:600,textDecoration:'none'}}>📱 Open in Xaman App</a>}
+
+            {/* Browser Extension Signing: Crossmark & GemWallet */}
+            <div style={{borderTop:'1px solid var(--border)',marginTop:10,paddingTop:12,marginBottom:12}}>
+              <div style={{fontSize:10.5,fontWeight:700,color:'var(--text3)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:8,textAlign:'center'}}>
+                Or Sign Directly in Browser ({xummModal.mode==='release' ? 'EscrowFinish' : xummModal.mode==='reclaim' ? 'EscrowCancel' : 'EscrowCreate'})
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <button
+                  type="button"
+                  onClick={() => handleExtensionSign('crossmark')}
+                  disabled={Boolean(extSigning)}
+                  style={{padding:'9px 10px',borderRadius:8,border:'1px solid rgba(139,92,246,0.35)',background:'rgba(139,92,246,0.08)',color:'#6d28d9',fontSize:12,fontWeight:700,cursor:extSigning?'wait':'pointer',fontFamily:'inherit'}}
+                >
+                  {extSigning === 'crossmark' ? 'Signing…' : '🟣 Crossmark'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExtensionSign('gemwallet')}
+                  disabled={Boolean(extSigning)}
+                  style={{padding:'9px 10px',borderRadius:8,border:'1px solid rgba(14,165,233,0.35)',background:'rgba(14,165,233,0.08)',color:'#0369a1',fontSize:12,fontWeight:700,cursor:extSigning?'wait':'pointer',fontFamily:'inherit'}}
+                >
+                  {extSigning === 'gemwallet' ? 'Signing…' : '💎 GemWallet'}
+                </button>
+              </div>
+              {extError && (
+                <div style={{marginTop:10,padding:'9px 11px',borderRadius:8,background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.25)',fontSize:11.5,color:'#b91c1c',lineHeight:1.45}}>
+                  <div style={{fontWeight:700,marginBottom:3}}>⚠ {extError.wallet} Notice</div>
+                  <div>{extError.message}</div>
+                  {extError.notInstalled && extError.installUrl && (
+                    <a href={sanitizeExternalUrl(extError.installUrl)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:5,color:'#1668D6',fontWeight:700,textDecoration:'underline'}}>
+                      Install {extError.wallet} Browser Extension ↗
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
             {xummModal.mode==='commission' ? (
               <button onClick={proceedToEscrow}
                 style={{width:'100%',background:'var(--accent)',border:'none',color:'#fff',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:'pointer'}}>
@@ -262,11 +446,11 @@ export default function OrdersPage() {
         </div>
       )}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24,flexWrap:'wrap',gap:12}}>
-        <h1 style={{fontSize:22,fontWeight:700,color:'var(--text)',letterSpacing:'-0.02em'}}>My Orders</h1>
+        <h1 style={{fontSize:22,fontWeight:700,color:'var(--text)',letterSpacing:'-0.02em'}}>Library &amp; Orders</h1>
         <div style={{display:'flex',background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,overflow:'hidden'}}>
           {['buyer','seller'].map(r => (
             <button key={r} onClick={() => setRole(r)} style={{padding:'7px 16px',fontSize:13,fontWeight:500,cursor:'pointer',border:'none',background:role===r?'var(--accent)':'transparent',color:role===r?'#fff':'var(--text2)',fontFamily:'inherit'}}>
-              {r==='buyer'?'Purchases':'Sales'}
+              {r==='buyer'?'Library / Purchases':'Sales'}
             </button>
           ))}
         </div>
@@ -347,7 +531,7 @@ export default function OrdersPage() {
               ) : (
               <div style={{display:'flex',gap:8,marginBottom:8}}>
                 <button onClick={() => handlePay(order)} style={{flex:1,padding:'11px 16px',borderRadius:9,border:'none',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
-                  ⚡ Pay with Xaman · {Number(order.total_xrp).toFixed(2)} XRP
+                  ⚡ Lock Escrow (Xaman · Crossmark · GemWallet) · {Number(order.total_xrp).toFixed(2)} XRP
                 </button>
                 <button onClick={() => handleCancel(order)} style={{padding:'11px 16px',borderRadius:9,border:'1px solid var(--border2)',background:'transparent',color:'var(--text2)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
                   Cancel
@@ -416,17 +600,29 @@ export default function OrdersPage() {
                       </div>
                     );
                   })()}
-                  {role==='seller' && (order.status==='escrow_locked'||order.status==='delivered') && (
-                    <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--text2)'}}>
-                      <div style={{fontWeight:600,color:'var(--text)',marginBottom:4}}>💰 Buyer paid — funds secured in escrow</div>
+                  {role==='seller' && (order.status==='escrow_locked'||order.status==='in_escrow'||order.status==='delivered') && (
+                    <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:10,padding:'12px 14px',fontSize:13,color:'var(--text2)'}}>
+                      <div style={{fontWeight:700,color:'var(--text)',marginBottom:4}}>💰 Buyer paid — funds secured in XRPL escrow</div>
+                      <div style={{fontSize:12,color:'#10b981',fontWeight:600,marginBottom:8,fontFamily:'monospace'}}>
+                        ⏱️ Auto-Release Protection Window (FinishAfter): Releases automatically after 24h unless disputed
+                        {order.downloaded_at && ` · ✓ Buyer downloaded vault (${new Date(order.downloaded_at).toLocaleTimeString()})`}
+                      </div>
                       {order.status==='delivered' ? (
-                        <div>You marked this delivered. Waiting for the buyer to confirm receipt and release the {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP to your wallet.</div>
+                        <div style={{marginBottom:10}}>You marked this delivered. Waiting for the buyer to confirm receipt or for the FinishAfter window to auto-release {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP to your wallet.</div>
                       ) : (<>
-                        <div style={{marginBottom:10}}>Deliver the item to the buyer now, then mark it delivered. Once they confirm receipt and release, the {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP lands in your wallet.</div>
-                        <button onClick={() => handleDeliver(order)} disabled={delivering===order.id} style={{width:'100%',background:delivering===order.id?'var(--surface2)':'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:delivering===order.id?'default':'pointer',fontFamily:'inherit'}}>
+                        <div style={{marginBottom:10}}>Deliver the item to the buyer now, then mark it delivered. Once they confirm receipt (or after FinishAfter), the {Number(order.seller_receives_xrp||order.total_xrp).toFixed(2)} XRP lands in your wallet.</div>
+                        <button onClick={() => handleDeliver(order)} disabled={delivering===order.id} style={{width:'100%',background:delivering===order.id?'var(--surface2)':'var(--accent)',color:'#fff',border:'none',borderRadius:8,padding:'10px',fontSize:13,fontWeight:600,cursor:delivering===order.id?'default':'pointer',fontFamily:'inherit',marginBottom:8}}>
                           {delivering===order.id ? 'Marking...' : 'Mark as delivered'}
                         </button>
                       </>)}
+                      <button
+                        type="button"
+                        onClick={() => handleAutoRelease(order)}
+                        disabled={autoReleasingId === order.id}
+                        style={{width:'100%',background:'rgba(16,185,129,0.12)',color:'#10b981',border:'1px solid rgba(16,185,129,0.35)',borderRadius:8,padding:'9px 12px',fontSize:12.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}
+                      >
+                        {autoReleasingId === order.id ? 'Triggering FinishAfter…' : '⚡ Trigger Auto-Release (FinishAfter)'}
+                      </button>
                     </div>
                   )}
                   {role==='seller' && order.status==='pending' && (
@@ -434,6 +630,47 @@ export default function OrdersPage() {
                   )}
                   {role==='seller' && order.status==='completed' && (
                     <div style={{fontSize:12,color:'var(--text3)',marginTop:4,textAlign:'center'}}>Funds released to your wallet 🎉</div>
+                  )}
+                  {role==='buyer' && ['escrow_locked','in_escrow','delivered','completed'].includes(order.status) && (
+                    <div style={{marginTop:12,background:'rgba(32,128,245,0.06)',border:'1px solid rgba(32,128,245,0.28)',borderRadius:10,padding:14}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:8}}>
+                        <div style={{fontSize:13,fontWeight:700,color:'var(--text)',display:'flex',alignItems:'center',gap:6}}>
+                          <span>🔐 Encrypted Creator Asset Vault</span>
+                        </div>
+                        <span style={{fontSize:11,fontFamily:'monospace',color:'#10b981',fontWeight:600}}>
+                          ⏱️ Auto-Release Protection Window: Releases automatically after 24h unless disputed
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadVault(order)}
+                        disabled={downloadingId === order.id}
+                        style={{
+                          width:'100%',
+                          background:'#2080F5',
+                          color:'#fff',
+                          border:'1px solid #60a5fa',
+                          borderRadius:9,
+                          padding:'11px 16px',
+                          fontSize:13.5,
+                          fontWeight:700,
+                          cursor:'pointer',
+                          display:'flex',
+                          alignItems:'center',
+                          justifyContent:'center',
+                          gap:8,
+                          marginBottom: (downloadLog[order.id] || order.downloaded_at) ? 10 : 0,
+                        }}
+                      >
+                        {downloadingId === order.id ? '⏳ Verifying SHA-256 & Unlocking Vault…' : '📥 Download Encrypted Asset Vault'}
+                      </button>
+                      {(downloadLog[order.id] || order.downloaded_at) && (
+                        <div style={{background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.35)',borderRadius:8,padding:'8px 12px',fontSize:11.5,color:'#10b981',fontFamily:'monospace',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6}}>
+                          <span>✓ Download Logged &amp; SHA-256 Verified</span>
+                          <span>{new Date((downloadLog[order.id] && downloadLog[order.id].downloadedAt) || order.downloaded_at).toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
                   )}
                   {role==='buyer' && delivery[order.id] && delivery[order.id].isDigital && (
                     <div style={{marginTop:10}}>

@@ -8,15 +8,19 @@ import XummLoginModal from '../../../components/XummLoginModal';
 import { sanitizeExternalUrl, sanitizeImageUrl } from '../../../lib/sanitizeUrl';
 
 const CAT_BG = {
-  games:    'linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05))',
-  graphics: 'linear-gradient(135deg,rgba(139,92,246,0.16),rgba(139,92,246,0.05))',
-  software: 'linear-gradient(135deg,rgba(20,184,166,0.16),rgba(20,184,166,0.05))',
-  accounts: 'linear-gradient(135deg,rgba(148,163,184,0.12),rgba(148,163,184,0.04))',
-  other:    'linear-gradient(135deg,rgba(245,158,11,0.16),rgba(245,158,11,0.05))',
+  graphics:  'linear-gradient(135deg,rgba(139,92,246,0.16),rgba(139,92,246,0.05))',
+  templates: 'linear-gradient(135deg,rgba(99,102,241,0.16),rgba(99,102,241,0.05))',
+  software:  'linear-gradient(135deg,rgba(20,184,166,0.16),rgba(20,184,166,0.05))',
+  education: 'linear-gradient(135deg,rgba(236,72,153,0.16),rgba(236,72,153,0.05))',
+  prompts:   'linear-gradient(135deg,rgba(245,158,11,0.16),rgba(245,158,11,0.05))',
+  audio:     'linear-gradient(135deg,rgba(16,185,129,0.16),rgba(16,185,129,0.05))',
+  games:     'linear-gradient(135deg,rgba(59,130,246,0.16),rgba(59,130,246,0.05))',
+  accounts:  'linear-gradient(135deg,rgba(148,163,184,0.12),rgba(148,163,184,0.04))',
+  other:     'linear-gradient(135deg,rgba(245,158,11,0.16),rgba(245,158,11,0.05))',
 };
-const CAT_LABEL = { games:'GAMES', graphics:'GRAPHICS', software:'SOFTWARE', accounts:'ACCOUNTS', other:'OTHER' };
-const CAT_EMOJI = { games:'🎮', graphics:'🎨', software:'💻', accounts:'👤', other:'📦' };
-const DELIVERY_LABEL = { instant:'Instant', '1h':'Under 1 hour', '24h':'Within 24 hours', '1-3d':'1–3 days' };
+const CAT_LABEL = { graphics:'3D & DESIGN', templates:'TEMPLATES', software:'SOFTWARE & TOOLS', education:'EDUCATION', prompts:'PROMPTS', audio:'AUDIO', games:'GAMES', accounts:'ACCOUNTS', other:'OTHER' };
+const CAT_EMOJI = { graphics:'🎨', templates:'🧩', software:'💻', education:'🎓', prompts:'✨', audio:'🎵', games:'🎮', accounts:'👤', other:'📦' };
+const DELIVERY_LABEL = { instant:'Instant Vault Delivery', '1h':'Under 1 hour', '24h':'Within 24 hours', '1-3d':'1–3 days' };
 
 const CSS = `
 .xh-prod{font-family:var(--xh-body);color:var(--xh-text)}
@@ -72,8 +76,8 @@ const CSS = `
 .xh-btn-ghost{background:var(--xh-surface);border-color:var(--xh-border);color:var(--xh-text)}
 .xh-btn-ghost:hover:not(:disabled){border-color:var(--xh-accent);color:#1668D6}
 
-.xh-mini-line{background:#0b1b33;border-radius:12px;padding:16px;color:rgba(59,130,246,0.14);margin-bottom:16px}
-.xh-mini-line .t{font-family:var(--xh-mono);font-size:10.5px;letter-spacing:0.08em;color:var(--xh-text3);margin-bottom:14px}
+.xh-mini-line{background:#0b1b33;border-radius:12px;padding:16px;color:#e2e8f0;margin-bottom:16px}
+.xh-mini-line .t{font-family:var(--xh-mono);font-size:10.5px;letter-spacing:0.08em;color:#93c5fd;margin-bottom:14px}
 .xh-mini-steps{display:flex;align-items:flex-start;gap:6px}
 .xh-ms{flex:1;text-align:center;font-size:11px;color:#aebfdd;line-height:1.35}
 .xh-ms .ic{width:32px;height:32px;margin:0 auto 6px;border-radius:9px;background:#10264a;border:1px solid #2c4571;display:grid;place-items:center;transition:all 0.25s}
@@ -188,6 +192,10 @@ export default function ListingDetailPage({ params }) {
   const [escrowStep, setEscrowStep] = useState(0);
   const [buyError, setBuyError] = useState('');
   const [xrpUsd, setXrpUsd] = useState(null);
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null); // { code, discountPct }
+  const [promoMsg, setPromoMsg] = useState('');
+  const [settlementCurrency, setSettlementCurrency] = useState('XRP');
 
   // Inject fonts + CSS once
   useEffect(() => {
@@ -287,11 +295,59 @@ export default function ListingDetailPage({ params }) {
     finally { setMsgSending(false); }
   };
 
+  async function applyPromoCode(rawCode) {
+    const code = String(rawCode != null ? rawCode : promoInput).trim().toUpperCase();
+    if (!code) return;
+    setPromoInput(code);
+    setPromoMsg('');
+    try {
+      const token = localStorage.getItem('xrpmarket_token');
+      const r = await fetch('/api/promo/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ code, listingId: id }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d && (d.valid || d.discountPct > 0)) {
+        const pct = Number(d.discountPct || 10);
+        setAppliedPromo({ code: d.code || code, discountPct: pct });
+        setPromoMsg(`✓ Code ${d.code || code} applied (${pct}% OFF)`);
+        return;
+      }
+      if (code === 'HARBOR10' || (listing && listing.promo_code && code === String(listing.promo_code).toUpperCase())) {
+        const pct = Number(listing?.promo_discount || 10);
+        setAppliedPromo({ code, discountPct: pct });
+        setPromoMsg(`✓ Code ${code} applied (${pct}% OFF)`);
+      } else {
+        setAppliedPromo(null);
+        setPromoMsg(d.error || 'Invalid promo code (try HARBOR10)');
+      }
+    } catch {
+      if (code === 'HARBOR10') {
+        setAppliedPromo({ code: 'HARBOR10', discountPct: 10 });
+        setPromoMsg('✓ Code HARBOR10 applied (10% OFF)');
+      } else {
+        setPromoMsg('Could not validate promo code');
+      }
+    }
+  }
+
   async function handleBuy() {
     if (!user) { setShowLogin(true); return; }
     setBuying(true); setBuyError('');
     try {
-      const o = await api.orders.create(id);
+      const token = localStorage.getItem('xrpmarket_token');
+      const r = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          listingId: id,
+          promoCode: appliedPromo ? appliedPromo.code : undefined,
+          settlementCurrency,
+        }),
+      });
+      const o = await r.json();
+      if (!r.ok) throw new Error(o.error || 'Could not create order');
       router.push('/orders?pay=' + o.id);
     } catch (e) { setBuyError(e.message); setBuying(false); }
   }
@@ -395,17 +451,118 @@ export default function ListingDetailPage({ params }) {
           </div>
 
           <div className="xh-buy-card">
-            <div className="xh-price-box">
-              <span className={'xrp' + (soldOut ? ' sold' : '')}>{Number(listing.price_xrp).toLocaleString('en-US')} {listing.currency || 'XRP'}</span>
-              {usdPrice && <span className="usd">≈ ${usdPrice}</span>}
-            </div>
-            <div className="xh-price-live"><span className="lvdot"></span>LIVE · XRP {xrpUsd ? '$' + xrpUsd.toFixed(4) : '…'} · refreshes every 15s</div>
+            {(() => {
+              const liveRate = xrpUsd || 2.25;
+              const isUsdPegged = listing.pricing_mode === 'USD' || Boolean(listing.price_usd);
+              const baseXrp = isUsdPegged && listing.price_usd
+                ? +(Number(listing.price_usd) / liveRate).toFixed(2)
+                : Number(listing.price_xrp || 0);
+              const discountPct = appliedPromo ? Number(appliedPromo.discountPct || 0) : 0;
+              const discountXrp = +(baseXrp * (discountPct / 100)).toFixed(2);
+              const finalXrp = Math.max(0.01, +(baseXrp - discountXrp).toFixed(2));
+              const finalRlusd = usdPrice
+                ? Math.max(0.01, +(Number(usdPrice) * (1 - discountPct / 100)).toFixed(2))
+                : +(finalXrp * liveRate).toFixed(2);
+
+              return (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontFamily: 'var(--xh-mono)', fontSize: 10.5, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: isUsdPegged ? 'rgba(16,185,129,0.12)' : 'rgba(32,128,245,0.10)', color: isUsdPegged ? '#059669' : '#1668D6' }}>
+                      {isUsdPegged ? '💵 USD-PEGGED (LIVE XRP CONVERSION)' : listing.currency === 'RLUSD' ? '🪙 NATIVE RLUSD STABLECOIN' : '💎 STANDARD XRP PRICING'}
+                    </span>
+                    <div style={{ display: 'inline-flex', gap: 4, background: 'var(--xh-surface2)', padding: 3, borderRadius: 8, border: '1px solid var(--xh-border)' }}>
+                      {['XRP', 'RLUSD'].map(cur => (
+                        <button
+                          key={cur}
+                          type="button"
+                          onClick={() => setSettlementCurrency(cur)}
+                          style={{
+                            padding: '3px 9px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontFamily: 'var(--xh-mono)',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: settlementCurrency === cur ? '#2080F5' : 'transparent',
+                            color: settlementCurrency === cur ? '#fff' : 'var(--xh-text2)',
+                          }}
+                        >
+                          Pay {cur}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="xh-price-box">
+                    <span className={'xrp' + (soldOut ? ' sold' : '')}>
+                      {settlementCurrency === 'RLUSD' ? `${finalRlusd.toLocaleString('en-US')} RLUSD` : `${finalXrp.toLocaleString('en-US')} ${listing.currency || 'XRP'}`}
+                    </span>
+                    {usdPrice && <span className="usd">≈ ${(Number(usdPrice) * (1 - discountPct / 100)).toFixed(2)} USD</span>}
+                  </div>
+                  <div className="xh-price-live"><span className="lvdot"></span>LIVE · XRP {xrpUsd ? '$' + xrpUsd.toFixed(4) : '…'} · 0% platform fee</div>
+
+                  {appliedPromo && (
+                    <div style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 10, padding: '9px 12px', marginBottom: 14, fontFamily: 'var(--xh-mono)', fontSize: 11.5, color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                      <span>Original: {baseXrp} XRP · Discount ({appliedPromo.code}): -{discountXrp} XRP · <b>Total Escrow: {finalXrp} XRP</b></span>
+                      <button type="button" onClick={() => { setAppliedPromo(null); setPromoMsg(''); setPromoInput(''); }} style={{ background: 'none', border: 'none', color: '#059669', cursor: 'pointer', fontWeight: 700, fontSize: 11 }}>✕</button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <div className="xh-stock">
               {soldOut
                 ? <><i className="out">● Sold out</i></>
-                : <><i>● In stock</i>{stockLeft != null ? <span>· {stockLeft} of {listing.quantity} available</span> : null}</>}
+                : <><i>● In stock</i>{stockLeft != null ? <span>· {stockLeft} of {listing.quantity} available</span> : <span>· Instant encrypted vault unlock</span>}</>}
             </div>
+
+            {!isSeller && !order && !soldOut && (
+              <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 11, background: 'var(--xh-surface2)', border: '1px solid var(--xh-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--xh-text2)' }}>Have a creator promo code?</span>
+                  <button
+                    type="button"
+                    onClick={() => applyPromoCode('HARBOR10')}
+                    style={{
+                      background: 'rgba(245,158,11,0.14)',
+                      border: '1px dashed rgba(245,158,11,0.65)',
+                      color: '#b45309',
+                      borderRadius: 999,
+                      padding: '3px 10px',
+                      fontSize: 11,
+                      fontFamily: 'var(--xh-mono)',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🎁 Use code HARBOR10 (10% OFF)
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={promoInput}
+                    onChange={e => setPromoInput(e.target.value.toUpperCase())}
+                    placeholder="Promo code (e.g. HARBOR10)"
+                    style={{ flex: 1, padding: '8px 11px', borderRadius: 8, border: '1px solid var(--xh-border)', background: 'var(--xh-surface)', color: 'var(--xh-text)', fontSize: 12.5, fontFamily: 'var(--xh-mono)' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => applyPromoCode(promoInput)}
+                    style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--xh-accent)', background: 'rgba(32,128,245,0.10)', color: '#2080F5', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Apply
+                  </button>
+                </div>
+                {promoMsg && (
+                  <div style={{ fontSize: 11.5, marginTop: 6, fontWeight: 600, color: appliedPromo ? '#10b981' : '#ef4444' }}>
+                    {promoMsg}
+                  </div>
+                )}
+              </div>
+            )}
 
             {isSeller ? (
               <div className="xh-order-pane">
@@ -416,22 +573,27 @@ export default function ListingDetailPage({ params }) {
             ) : order ? (
               <div className="xh-order-pane">
                 <div className="t">You have an order for this item</div>
-                <div className="s">Track payment, release the escrow, confirm receipt, get your delivery and leave a review — all from your Orders page.</div>
-                <Link href="/orders">Manage in Orders →</Link>
+                <div className="s">Track payment, release the escrow, confirm receipt, get your delivery and leave a review — all from your Library / Purchases page.</div>
+                <Link href="/orders">Manage in Library / Purchases →</Link>
               </div>
             ) : soldOut ? (
               <div className="xh-buy-btns single">
                 <button className="xh-btn xh-btn-ghost" disabled>🔴 This item has been sold</button>
               </div>
             ) : (
-              <div className="xh-buy-btns">
-                <button className="xh-btn xh-btn-primary" onClick={handleBuy} disabled={buying}>
-                  {buying ? 'Processing…' : '🛡 Buy with escrow'}
-                </button>
-                <button className="xh-btn xh-btn-ghost" onClick={() => user ? setShowOfferModal(true) : setShowLogin(true)}>
-                  Make an offer
-                </button>
-              </div>
+              <>
+                <div className="xh-buy-btns">
+                  <button className="xh-btn xh-btn-primary" onClick={handleBuy} disabled={buying}>
+                    {buying ? 'Processing…' : '🛡 Buy with escrow'}
+                  </button>
+                  <button className="xh-btn xh-btn-ghost" onClick={() => user ? setShowOfferModal(true) : setShowLogin(true)}>
+                    Make an offer
+                  </button>
+                </div>
+                <div style={{ fontSize: 11, fontFamily: 'var(--xh-mono)', color: 'var(--xh-text2)', textAlign: 'center', marginTop: -4, marginBottom: 10 }}>
+                  Sign <b style={{ color: 'var(--xh-text)' }}>EscrowCreate</b> &amp; <b style={{ color: 'var(--xh-text)' }}>EscrowFinish</b> with <b style={{ color: '#2080F5' }}>Xaman</b> · <b style={{ color: '#7c3aed' }}>Crossmark</b> · <b style={{ color: '#0284c7' }}>GemWallet</b>
+                </div>
+              </>
             )}
 
             {buyError && <div className="xh-buy-error">{buyError}</div>}
@@ -462,9 +624,27 @@ export default function ListingDetailPage({ params }) {
                   {listing.is_verified && <span className="verif" title="Verified seller">✓</span>}
                 </div>
                 <div className="st">
-                  {Number(listing.reputation_score) > 0
-                    ? <><span className="star">★ {Number(listing.reputation_score).toFixed(1)}</span> · ledger-verified seller</>
-                    : <>New seller · escrow-protected</>}
+                  {(() => {
+                    const salesCount = Number(listing.seller_sales || listing.total_sales || 0);
+                    const reviewsCount = Number(listing.seller_reviews || listing.review_count || 0);
+                    const repScore = Number(listing.reputation_score || 0);
+                    return (
+                      <>
+                        {salesCount >= 5 ? (
+                          <span><b>{salesCount}</b> sales</span>
+                        ) : (
+                          <span style={{ color: '#10b981', fontWeight: 700 }}>✨ New creator</span>
+                        )}
+                        {' · '}
+                        {(reviewsCount === 0 && salesCount === 0) || repScore <= 0 ? (
+                          <span style={{ fontStyle: 'italic' }}>★ No ratings yet</span>
+                        ) : (
+                          <span className="star">★ {repScore.toFixed(1)}</span>
+                        )}
+                        {' · escrow-protected'}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="actions">

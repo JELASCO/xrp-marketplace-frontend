@@ -14,12 +14,62 @@ export default function ProPage() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
+  const [foundingStatus, setFoundingStatus] = useState({ total: 100, claimed: 14, remaining: 86 });
+  const [claimingFounding, setClaimingFounding] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
     if (!user) { router.push('/'); return; }
     api.upgrades.pricing().then(setPricing).catch(() => {});
+    const fetchFounding = api.upgrades?.foundingStatus
+      ? api.upgrades.foundingStatus()
+      : fetch('/api/upgrades/founding-status').then((r) => r.json());
+    Promise.resolve(fetchFounding)
+      .then((d) => {
+        if (d && typeof d.remaining === 'number') {
+          setFoundingStatus({
+            total: d.total || 100,
+            claimed: d.claimed ?? (100 - d.remaining),
+            remaining: d.remaining,
+          });
+        }
+      })
+      .catch(() => {});
   }, [user, hydrated, router]);
+
+  async function claimFoundingPro() {
+    setError('');
+    setClaimingFounding(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('xrpmarket_token') : null;
+      const r = api.upgrades?.claimFounding
+        ? await api.upgrades.claimFounding()
+        : await fetch('/api/upgrades/claim-founding', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          }).then(async (res) => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not claim Founding Creator Pro');
+            return data;
+          });
+      setDone(r.message || '🎉 Founding Creator Pro activated! You now have 30 days of free XRPHarbor Pro.');
+      if (r && typeof r.remaining === 'number') {
+        setFoundingStatus((prev) => ({
+          ...prev,
+          remaining: r.remaining,
+          claimed: (prev.total || 100) - r.remaining,
+        }));
+      }
+      if (refreshUser) await refreshUser();
+    } catch (e) {
+      setError(e.message || 'Could not claim Founding Creator Pro');
+    } finally {
+      setClaimingFounding(false);
+    }
+  }
 
   async function buyPro() {
     setError('');
@@ -54,7 +104,35 @@ export default function ProPage() {
         <p style={{ fontSize: 15, color: 'var(--text2)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>Upgrade to Pro for a verified Pro badge, priority placement in search, and storefront perks — or feature a single listing to push it to the top.</p>
       </div>
 
-      {done && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '14px 16px', color: '#34d399', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>{done}</div>}
+      {done && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '14px 16px', color: '#34d399', fontSize: 14, marginBottom: 24, textAlign: 'center', fontWeight: 700 }}>{done}</div>}
+
+      {/* Founding 100 Creators Launch Campaign Card */}
+      <div style={{ background: 'linear-gradient(135deg, #0b192c 0%, #132c4e 55%, #1e3a8a 100%)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 18, padding: '24px 26px', marginBottom: 26, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 18, boxShadow: '0 14px 34px rgba(11,25,44,0.2)' }}>
+        <div style={{ flex: '1 1 380px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.45)', color: '#fbbf24', borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 800, fontFamily: 'DM Mono,monospace', marginBottom: 10 }}>
+            🚀 FOUNDING 100 CREATORS LAUNCH CAMPAIGN · {foundingStatus.remaining} / {foundingStatus.total} SLOTS LEFT
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6, letterSpacing: '-0.02em' }}>
+            First 100 Creators Get 30 Days of Pro Membership FREE
+          </div>
+          <div style={{ fontSize: 13.5, color: '#cbd5e1', lineHeight: 1.55 }}>
+            Claim your Founding Creator slot to unlock a custom <code style={{ color: '#fbbf24' }}>/store/handle</code> storefront, Conversion &amp; Vault Download Analytics, Buyer CSV Export, Product Update Alerts, and 1 free 7-day Featured Boost — with <strong style={{ color: '#fff' }}>0 XRP upfront</strong>.
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+          <button
+            type="button"
+            onClick={claimFoundingPro}
+            disabled={claimingFounding || foundingStatus.remaining <= 0}
+            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#0b192c', border: 'none', borderRadius: 11, padding: '13px 20px', fontSize: 13.5, fontWeight: 800, cursor: claimingFounding ? 'wait' : 'pointer', whiteSpace: 'nowrap', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}
+          >
+            {claimingFounding ? 'Activating Founding Pro…' : proActive ? '🎁 Claim +30 Days Founding Pro Free' : '🎁 Claim Free 30-Day Pro (Founding Creator)'}
+          </button>
+          <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'DM Mono,monospace' }}>
+            Instant activation · No credit card or XRP required
+          </span>
+        </div>
+      </div>
 
       <div id="pricing" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
         {/* Pro subscription */}
@@ -68,8 +146,9 @@ export default function ProPage() {
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Custom Pro Storefront</strong> (<code style={{ fontSize: 12 }}>/store/your-name</code>) with live announcement bar, specialty tags, promo code &amp; FAQ accordion</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Creator CRM &amp; Analytics Suite</strong>: Conversion rate tracking, Vault download metrics, <strong style={{ color: 'var(--text)' }}>Buyer CSV Export</strong> &amp; 1-click <strong style={{ color: 'var(--text)' }}>Product Update Alerts</strong> to past buyers</li>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Animated .GIF &amp; Live Avatars</strong> + <strong style={{ color: 'var(--text)' }}>360° Rotating Glowing Frames</strong> for your profile &amp; store logo</li>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Unlimited active listings</strong> &amp; up to <strong style={{ color: 'var(--text)' }}>6 photos</strong> per listing (Standard: 5 listings / 3 photos)</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Unlimited active listings</strong> &amp; up to <strong style={{ color: 'var(--text)' }}>6 photos</strong> per listing (Standard: 30 listings / 3 photos)</li>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>1 FREE 7-day Featured Listing boost</strong> every 30 days (10 XRP value)</li>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Featured in the Homepage <strong style={{ color: 'var(--text)' }}>Verified Pro Stores</strong> showcase &amp; shimmering <span className="xh-pro" style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '1px 6px', borderRadius: 4 }}>PRO</span> badge</li>
           </ul>
@@ -112,11 +191,15 @@ export default function ProPage() {
 
           {[
             ['Sales Commission Fee', '0% (Keep 100%)', '0% (Keep 100%)'],
-            ['Active Listings Limit', 'Up to 5 items', 'Unlimited'],
+            ['Active Listings Limit', 'Up to 30 active listings', 'Unlimited'],
             ['Photos per Listing', 'Up to 3 photos', 'Up to 6 photos'],
-            ['Custom Storefront (/store/handle)', '—', '✓ Included'],
-            ['Store Live Announcement & Social Links', '—', '✓ Included'],
-            ['In-Store Search & Pinned Showcase', '—', '✓ Included'],
+            ['Creator Social & Portfolio Links', '✓ Included (Free)', '✓ Included (Free)'],
+            ['1-Click Gumroad / itch.io Importer', '✓ Included (Free)', '✓ Included (Free)'],
+            ['Encrypted Asset Vault + SHA-256 Proof', '✓ Included (Free)', '✓ Included (Free)'],
+            ['Conversion Rate & Vault Download Analytics', '—', '✓ Included'],
+            ['Buyer List CSV Export & Product Update Alerts', '—', '✓ Included'],
+            ['Custom Storefront (/store/handle) & Promo Codes', '—', '✓ Included'],
+            ['Store Live Announcement & Pinned Showcase', '—', '✓ Included'],
             ['Homepage "Verified Pro Stores" Showcase', '—', '✓ Included'],
             ['Monthly Free 7-Day Featured Listing Boost', '—', '✓ 1 Free Boost / mo'],
             ['Marketplace Search Ranking', 'Standard', '★ Priority Top Tier'],

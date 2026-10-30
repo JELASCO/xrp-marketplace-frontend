@@ -6,12 +6,16 @@ import { useAuthStore } from '../../lib/store';
 import ListingCard from '../../components/ListingCard';
 
 const CATS = [
-  { key: '',         label: 'All',              emoji: '🌐', mast: { title: 'Open harbor',    sub: 'Browse every dock — game items, accounts, software keys and more. Every trade escrow-locked on the XRP Ledger.', ico: 'compass' } },
-  { key: 'games',    label: 'Games',            emoji: '🎮', mast: { title: 'Games dock',     sub: 'Accounts, keys and in-game currency — every trade escrow-locked on the XRP Ledger.',                                  ico: 'gamepad' } },
-  { key: 'graphics', label: 'Graphics & Art',   emoji: '🎨', mast: { title: 'Graphics bay',   sub: 'Logos, illustrations, design assets and creative files — paid in XRP, locked in escrow.',                              ico: 'palette' } },
-  { key: 'software', label: 'Software & Tools', emoji: '💻', mast: { title: 'Software pier',  sub: 'Licenses, scripts, plugins and digital tools — released only when you confirm delivery.',                              ico: 'code' } },
-  { key: 'accounts', label: 'Accounts',         emoji: '👤', mast: { title: 'Accounts quay',  sub: 'Verified profiles, subscriptions and access — handed over under XRPL escrow protection.',                              ico: 'user' } },
-  { key: 'other',    label: 'Other',            emoji: '📦', mast: { title: 'General cargo',  sub: 'Everything else digital — protected by XRP Ledger escrow from sale to settlement.',                                    ico: 'package' } },
+  { key: '',          label: 'All',              emoji: '🌐', mast: { title: 'Open harbor',    sub: 'Browse every dock — 3D models, shaders, UI kits, software, audio, and game assets. Every trade escrow-locked on the XRP Ledger.', ico: 'compass' } },
+  { key: 'graphics',  label: '3D & Design',      emoji: '🎨', mast: { title: '3D & Design bay', sub: '3D models, Blender/Godot shaders, textures, illustrations and creative assets — locked in XRPL escrow.', ico: 'palette' } },
+  { key: 'templates', label: 'Templates & UI',   emoji: '🧩', mast: { title: 'Templates pier', sub: 'Figma UI kits, Next.js starters, Framer templates, and design systems — instant vault delivery.', ico: 'layout' } },
+  { key: 'software',  label: 'Software & Tools', emoji: '💻', mast: { title: 'Software pier',  sub: 'Plugins, indie tools, scripts, and licenses — released only when you confirm delivery.', ico: 'code' } },
+  { key: 'education', label: 'Education',        emoji: '🎓', mast: { title: 'Academy dock',   sub: 'Courses, eBooks, shader tutorials, and indie creator guides — instant encrypted PDF/ZIP delivery.', ico: 'book' } },
+  { key: 'prompts',   label: 'Prompts & AI',     emoji: '✨', mast: { title: 'Prompts & AI bay', sub: 'Curated AI workflows, ComfyUI nodes, LUTs, and prompt packs — instant vault unlock.', ico: 'sparkle' } },
+  { key: 'audio',     label: 'Audio & Music',    emoji: '🎵', mast: { title: 'Audio dock',     sub: 'Royalty-free SFX, synth presets, game soundtracks, and WAV loops — verified SHA-256 vault delivery.', ico: 'music' } },
+  { key: 'games',     label: 'Games',            emoji: '🎮', mast: { title: 'Games dock',     sub: 'Game assets, keys, accounts and in-game items — every trade escrow-locked on the XRP Ledger.', ico: 'gamepad' } },
+  { key: 'accounts',  label: 'Accounts',         emoji: '👤', mast: { title: 'Accounts quay',  sub: 'Verified profiles, subscriptions and access — handed over under XRPL escrow protection.', ico: 'user' } },
+  { key: 'other',     label: 'Other',            emoji: '📦', mast: { title: 'General cargo',  sub: 'Everything else digital — protected by XRP Ledger escrow from sale to settlement.', ico: 'package' } },
 ];
 
 const SORTS = [
@@ -24,8 +28,12 @@ const SORTS = [
 const GAMES = ['Valorant', 'CS2', 'Fortnite', 'League of Legends', 'Dota 2', 'Apex Legends', 'WoW', 'Minecraft', 'Rocket League', 'Steam (general)', 'Other'];
 const SUBCATS = {
   games: ['CS2','Valorant','Fortnite','Dota 2','Rocket League','League of Legends','World of Warcraft','Apex Legends','Roblox','Minecraft','Call of Duty','Old School RuneScape','RuneScape 3','Path of Exile','Diablo 4','Rust','Team Fortress 2','PUBG','Genshin Impact','Grand Theft Auto V','EA FC 24','Overwatch 2','Escape from Tarkov','ARC Raiders','New World','Lost Ark','Albion Online','Final Fantasy XIV','Warframe','Destiny 2','Other'],
-  graphics: ['Logos','Illustrations','3D & models','UI/UX kits','Avatars / PFP','Textures'],
-  software: ['Licenses & keys','Scripts & bots','Plugins','Templates','Source code'],
+  graphics: ['3D & models','Shaders & materials','Textures','Illustrations','Logos','Avatars / PFP'],
+  templates: ['UI/UX kits','Next.js / React templates','Figma design systems','Notion templates','Webflow / Framer'],
+  software: ['Plugins & extensions','Indie dev tools','Scripts & automation','Source code','Licenses & keys'],
+  education: ['Courses & video tutorials','eBooks & PDF guides','Project files & breakdowns','Mentorship'],
+  prompts: ['ComfyUI / Stable Diffusion','LLM workflows','Midjourney prompt packs','LUTs & presets'],
+  audio: ['Game SFX packs','Synth presets & MIDI','Ambient & OST loops','Voice & Foley'],
   accounts: ['Game accounts','Social media','Streaming','Subscriptions'],
   other: ['Gift cards','eBooks & guides','Collectibles','Misc'],
 };
@@ -34,7 +42,11 @@ const ICON_PATHS = {
   compass: 'M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10ZM16 8l-2 6-6 2 2-6 6-2Z',
   gamepad: 'M6 11h4M8 9v4M15 10h.01M18 12h.01M17.3 5H6.7a4.7 4.7 0 0 0-4.6 5.6l1 5.3A2.6 2.6 0 0 0 7.7 17l1.6-2h5.4l1.6 2a2.6 2.6 0 0 0 4.6-1.1l1-5.3A4.7 4.7 0 0 0 17.3 5Z',
   palette: 'M12 2a10 10 0 1 0 0 20 2 2 0 0 0 1.4-3.4A1.5 1.5 0 0 1 14.5 16H17a5 5 0 0 0 5-5c0-4.97-4.48-9-10-9ZM6.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM10 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM14 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM17.5 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z',
+  layout:  'M3 3h18v18H3zM3 9h18M9 21V9',
   code:    'M8 6L2 12l6 6M16 6l6 6-6 6M14 4l-4 16',
+  book:    'M22 10 12 5 2 10l10 5 10-5ZM6 12v5c3 3 9 3 12 0v-5',
+  sparkle: 'M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3Z',
+  music:   'M9 18V5l12-2v13M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 13a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
   user:    'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0',
   package: 'M3 7l9 4 9-4M3 7v10l9 4M21 7v10l-9 4M12 11v10',
 };
@@ -45,11 +57,11 @@ const CSS = `
 
 .xh-mast{background:#0b1b33;color:#fff;border-radius:14px;position:relative;overflow:hidden;margin:-8px 0 24px}
 .xh-mast-in{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:30px 32px 40px;position:relative;z-index:1}
-.xh-crumb{font-family:var(--xh-mono);font-size:11px;color:var(--xh-text3);margin-bottom:10px;letter-spacing:0.06em}
-.xh-crumb b{color:rgba(59,130,246,0.14);font-weight:500}
+.xh-crumb{font-family:var(--xh-mono);font-size:11px;color:#cbd5e1;margin-bottom:10px;letter-spacing:0.06em}
+.xh-crumb b{color:#60a5fa;font-weight:700}
 .xh-mast h1{font-size:32px;letter-spacing:-0.02em;display:flex;align-items:center;gap:14px;line-height:1.1;margin:0}
 .xh-mast h1 .ico{width:46px;height:46px;border-radius:13px;background:rgba(59,130,246,0.2);border:1px solid rgba(125,160,255,0.3);display:grid;place-items:center;flex-shrink:0}
-.xh-mast h1 .ico svg{width:24px;height:24px;stroke:rgba(59,130,246,0.22);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.xh-mast h1 .ico svg{width:24px;height:24px;stroke:#60a5fa;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .xh-mast p{color:#9db4da;font-size:14px;margin-top:8px;max-width:560px;line-height:1.5}
 .xh-mast-stats{display:flex;gap:24px;font-family:var(--xh-mono);font-size:11px;color:var(--xh-text3);text-align:right;letter-spacing:0.04em;flex-shrink:0;padding-top:6px}
 .xh-mast-stats b{display:block;font-size:20px;color:#fff;font-weight:500;margin-bottom:3px;letter-spacing:0;font-family:var(--xh-display)}
@@ -245,7 +257,7 @@ function ListingsContent() {
   };
 
   const handleSearch = (e) => { e.preventDefault(); setQ(inputQ.trim()); };
-  const [openF, setOpenF] = useState({});
+  const [openF, setOpenF] = useState({ cat: true });
   const toggleF = (k) => setOpenF(s => ({ ...s, [k]: !s[k] }));
   const clearFilters = () => {
     setCat(''); setSort('newest'); setQ(''); setInputQ('');
@@ -327,6 +339,28 @@ function ListingsContent() {
         </aside>
 
         <main>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+            {CATS.map(c => (
+              <button
+                key={c.key || 'all'}
+                type="button"
+                onClick={() => { setCat(c.key); setGame(''); }}
+                style={{
+                  padding: '6px 13px',
+                  borderRadius: 999,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  border: cat === c.key ? '1px solid var(--xh-accent)' : '1px solid var(--xh-border)',
+                  background: cat === c.key ? 'var(--xh-accent)' : 'var(--xh-surface)',
+                  color: cat === c.key ? '#fff' : 'var(--xh-text2)',
+                }}
+              >
+                {c.emoji} {c.label}
+              </button>
+            ))}
+          </div>
           <form onSubmit={handleSearch} className="xh-toolbar">
             <div className="xh-search">
               <input value={inputQ} onChange={e => setInputQ(e.target.value)} placeholder={'Search in ' + activeCat.mast.title + '…'} />
