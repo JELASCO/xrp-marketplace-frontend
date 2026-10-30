@@ -74,6 +74,8 @@ export const api = {
   },
   admin: { stats: () => request('/admin/stats'), disputes: (status) => request('/admin/disputes' + (status ? `?status=${encodeURIComponent(status)}` : '')), inspectVault: (id) => request(`/admin/orders/${id}/inspect-vault`), resolveDispute: (id,d) => request(`/disputes/${id}/resolve`, { method: 'POST', body: d }), banUser: (id,b) => request(`/admin/users/${id}/ban`, { method: 'PATCH', body: { banned: b } }), removeListing: (id) => request(`/admin/listings/${id}/remove`, { method: 'PATCH' }),
     users: () => request('/admin/users'),
+    orders: () => request('/admin/orders'),
+    listings: () => request('/admin/listings'),
     verifyUser: (id, v) => request(`/admin/users/${id}/verify`, { method: 'PATCH', body: { verified: v } }),
     grantPro: (id, days) => request(`/admin/users/${id}/pro`, { method: 'PATCH', body: { days } }),
     featureListing: (id, days) => request(`/admin/listings/${id}/feature`, { method: 'PATCH', body: { days } }), listReports: (status='pending') => request('/admin/reports?status=' + encodeURIComponent(status)), resolveReport: (id, action, note) => request('/admin/reports/' + id + '/resolve', { method: 'PATCH', body: { action, note } }) },

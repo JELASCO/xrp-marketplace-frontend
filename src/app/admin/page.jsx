@@ -158,15 +158,27 @@ export default function AdminPage() {
   const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
   const [users, setUsers] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [listings, setListings] = useState([]);
   const [reports, setReports] = useState([]);
   const [listingFilter, setListingFilter] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
   const [disputeNotes, setDisputeNotes] = useState({});
   const [vaultInspections, setVaultInspections] = useState({});
   const [inspectingId, setInspectingId] = useState(null);
   const [resolvingId, setResolvingId] = useState(null);
   const [actionToast, setActionToast] = useState('');
+
+  function extractArray(payload, key) {
+    if (Array.isArray(payload)) return payload;
+    if (payload && typeof payload === 'object') {
+      if (key && Array.isArray(payload[key])) return payload[key];
+      if (Array.isArray(payload.data)) return payload.data;
+      if (Array.isArray(payload.rows)) return payload.rows;
+    }
+    return [];
+  }
 
   useEffect(() => {
     try {
@@ -180,8 +192,35 @@ export default function AdminPage() {
   async function refreshDisputes() {
     try {
       const d = await api.admin.disputes();
-      setDisputes(Array.isArray(d) ? d : []);
-    } catch {}
+      setDisputes(extractArray(d, 'disputes'));
+    } catch (err) {
+      setApiError(err?.message || 'Failed to load disputes');
+    }
+  }
+
+  async function loadAllAdminData() {
+    if (!user) return;
+    setLoading(true);
+    setApiError('');
+    const errors = [];
+    const [s, d, u, o, l, r] = await Promise.all([
+      api.admin.stats().catch(err => { errors.push(`Stats: ${err.message}`); return null; }),
+      api.admin.disputes().catch(err => { errors.push(`Disputes: ${err.message}`); return []; }),
+      api.admin.users().catch(err => { errors.push(`Users: ${err.message}`); return []; }),
+      (api.admin.orders ? api.admin.orders() : Promise.resolve([])).catch(() => []),
+      (api.admin.listings ? api.admin.listings() : api.listings.list({ limit: 200 })).catch(() => api.listings.list({ limit: 200 }).catch(() => [])),
+      api.admin.listReports('pending').catch(() => []),
+    ]);
+    if (errors.length > 0) {
+      setApiError(errors.join(' · '));
+    }
+    setStats(s);
+    setDisputes(extractArray(d, 'disputes'));
+    setUsers(extractArray(u, 'users'));
+    setOrders(extractArray(o, 'orders'));
+    setListings(extractArray(l, 'listings'));
+    setReports(extractArray(r, 'reports'));
+    setLoading(false);
   }
 
   async function handleInspectVault(d) {
@@ -254,20 +293,7 @@ export default function AdminPage() {
 
   useEffect(()=>{
     if(!user) return;
-    setLoading(true);
-    Promise.all([
-      api.admin.stats().catch(()=>null),
-      api.admin.disputes().catch(()=>[]),
-      api.admin.users().catch(()=>[]),
-      api.listings.list({limit:200}).catch(()=>[]),
-      api.admin.listReports('pending').catch(()=>[]),
-    ]).then(([s,d,u,l,r])=>{
-      setStats(s);
-      setDisputes(Array.isArray(d)?d:[]);
-      setUsers(Array.isArray(u)?u:[]);
-      setListings(Array.isArray(l)?l:[]);
-      setReports(Array.isArray(r)?r:[]);
-    }).finally(()=>setLoading(false));
+    loadAllAdminData();
   },[user]);
 
   if (hydrated && !user) {
@@ -414,9 +440,17 @@ export default function AdminPage() {
     sold: listings.filter(l=>l.status==='sold').length,
     removed: listings.filter(l=>l.status==='removed').length,
   };
-  const completedOrders = listings.filter(l=>l.status==='sold' || (l.quantity_sold && l.quantity_sold>0));
-  const totalOrderVolume = completedOrders.reduce((sum,l)=> sum + (parseFloat(l.price_xrp)||0) * (l.quantity_sold||1), 0);
-  const totalFees = totalOrderVolume * 0.03;
+  const soldListings = listings.filter(l=>l.status==='sold' || (l.quantity_sold && l.quantity_sold>0));
+  const completedOrders = orders.length > 0 ? orders : soldListings;
+  const totalOrderVolume = orders.length > 0
+    ? orders.reduce((sum, o) => sum + (parseFloat(o.total_xrp || o.price_xrp) || 0), 0)
+    : soldListings.reduce((sum,l)=> sum + (parseFloat(l.price_xrp)||0) * (l.quantity_sold||1), 0);
+  const totalFees = orders.length > 0
+    ? orders.reduce((sum, o) => sum + (parseFloat(o.commission_xrp) || ((parseFloat(o.total_xrp) || 0) * (o.seller_is_pro ? 0.015 : 0.03))), 0)
+    : totalOrderVolume * 0.03;
+  const effectiveVolumeXrp = Number(stats?.volume_xrp ?? stats?.totalVolumeXrp ?? totalOrderVolume ?? 0);
+  const effectiveActiveListings = Number(stats?.active_listings ?? stats?.activeListings ?? listingCounts.active ?? 0);
+  const effectiveTotalUsers = Number(stats?.total_users ?? stats?.totalUsers ?? users.length ?? 0);
 
   const trend = period==='24h' ? [3,5,4,7,6,9,8,11,9,12,10,14] : period==='7d' ? [12,18,15,22,19,24,21] : [45,52,48,61,58,65,72,68,75,82,78,85,91,88];
 
@@ -451,10 +485,22 @@ export default function AdminPage() {
         html[data-theme="dark"] .xh-btn-warn{background:rgba(245,158,11,0.15);color:#FCD34D;border-color:rgba(245,158,11,0.3)}
       `}</style>
 
-      <div style={{marginBottom:20}}>
-        <h1 style={{fontSize:24,fontWeight:800,color:'var(--xh-text)',letterSpacing:'-0.02em',margin:'0 0 4px'}}>Admin Console</h1>
-        <div style={{fontSize:13,color:'var(--xh-text3)'}}>Marketplace operations, R2 Vault inspection &amp; escrow dispute arbitration</div>
+      <div style={{marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:12}}>
+        <div>
+          <h1 style={{fontSize:24,fontWeight:800,color:'var(--xh-text)',letterSpacing:'-0.02em',margin:'0 0 4px'}}>Admin Console</h1>
+          <div style={{fontSize:13,color:'var(--xh-text3)'}}>Marketplace operations, R2 Vault inspection &amp; escrow dispute arbitration</div>
+        </div>
+        <button type='button' className='xh-btn-sm' onClick={loadAllAdminData} disabled={loading}>
+          {loading ? 'Refreshing…' : '↻ Refresh Data'}
+        </button>
       </div>
+
+      {apiError && (
+        <div style={{padding:'12px 16px',marginBottom:16,borderRadius:10,background:'rgba(220,38,38,0.1)',border:'1px solid rgba(220,38,38,0.35)',color:'#DC2626',fontSize:13,fontWeight:600,display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+          <span>⚠️ Admin API Notice: {apiError}</span>
+          <button type='button' className='xh-btn-sm' onClick={loadAllAdminData}>Retry</button>
+        </div>
+      )}
 
       {actionToast && (
         <div style={{padding:'12px 16px',marginBottom:16,borderRadius:10,background:'rgba(32,128,245,0.12)',border:'1px solid rgba(32,128,245,0.35)',color:'var(--xh-text)',fontSize:13,fontWeight:700}}>
@@ -468,6 +514,8 @@ export default function AdminPage() {
             <span>{t.icon}</span> {t.label}
             {t.key==='escrows' && openDisputes.length>0 && <span className='xh-badge'>{openDisputes.length}</span>}
             {t.key==='orders' && completedOrders.length>0 && <span style={{marginLeft:4,fontSize:11,color:'var(--xh-text3)'}}>({completedOrders.length})</span>}
+            {t.key==='users' && users.length>0 && <span style={{marginLeft:4,fontSize:11,color:'var(--xh-text3)'}}>({users.length})</span>}
+            {t.key==='listings' && listings.length>0 && <span style={{marginLeft:4,fontSize:11,color:'var(--xh-text3)'}}>({listings.length})</span>}
           </button>
         ))}
       </div>
@@ -479,10 +527,10 @@ export default function AdminPage() {
               <button key={pp} className='xh-pchip' data-active={period===pp} onClick={()=>setPeriod(pp)}>{pp}</button>
             ))}
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12,marginBottom:20}}>
-            <MetricCard label='Volume (XRP)' value={stats ? Math.round(stats.volume_xrp||0).toLocaleString('en-US') : '—'} delta='+12.4%' color='var(--xh-accent)' trend={trend}/>
-            <MetricCard label='Fees collected' value={stats ? (Math.round((stats.volume_xrp||0)*0.03)).toLocaleString('en-US') : '—'} delta='+12.4%' color='#16A34A' trend={trend.map(v=>v*0.6)}/>
-            <MetricCard label='Active listings' value={stats ? (stats.active_listings||0).toString() : '—'} delta='+4' color='#9333EA' trend={trend.map(v=>v*1.2)}/>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:12,marginBottom:20}}>
+            <MetricCard label='Volume (XRP)' value={Math.round(effectiveVolumeXrp).toLocaleString('en-US')} delta='+12.4%' color='var(--xh-accent)' trend={trend}/>
+            <MetricCard label='Registered users' value={effectiveTotalUsers.toLocaleString('en-US')} delta={`${users.length} loaded`} color='#16A34A' trend={trend.map(v=>v*0.8)}/>
+            <MetricCard label='Active listings' value={effectiveActiveListings.toString()} delta={`${listings.length} total`} color='#9333EA' trend={trend.map(v=>v*1.2)}/>
             <MetricCard label='Open disputes' value={openDisputes.length.toString()} delta={openDisputes.length>0?'needs review':'all clear'} color='#DC2626' trend={[1,0,2,1,3,2,openDisputes.length||1]}/>
           </div>
 
@@ -495,17 +543,19 @@ export default function AdminPage() {
           </Section>
 
           <Section title={'Recent orders ('+completedOrders.length+')'} action={<button className='xh-tab' onClick={()=>setTab('orders')} style={{padding:'4px 10px',fontSize:12}}>View all →</button>}>
-            {completedOrders.length===0 ? <Empty icon='🛒' text='No completed orders yet'/> : (
+            {completedOrders.length===0 ? <Empty icon='🛒' text='No orders yet'/> : (
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                {completedOrders.slice(0,5).map(l=>(
-                  <div key={l.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13,gap:8}}>
+                {completedOrders.slice(0,5).map(o=>(
+                  <div key={o.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13,gap:8}}>
                     <div style={{minWidth:0,flex:1}}>
-                      <div style={{fontWeight:600,color:'var(--xh-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</div>
-                      <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>{(l.username||'anon')+' · sold '+(l.quantity_sold||1)+'×'}</div>
+                      <div style={{fontWeight:600,color:'var(--xh-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{o.listing_title || o.title || 'Digital Asset'}</div>
+                      <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>
+                        {o.buyer_username ? `buyer: ${o.buyer_username} → seller: ${o.seller_username || 'seller'}` : `${o.username||'anon'} · sold ${o.quantity_sold||1}×`}
+                      </div>
                     </div>
                     <div style={{textAlign:'right'}}>
-                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:13}}>{(parseFloat(l.price_xrp)*(l.quantity_sold||1)).toFixed(0)} XRP</div>
-                      <Pill color='green'>completed</Pill>
+                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:13}}>{(parseFloat(o.total_xrp ?? (parseFloat(o.price_xrp)*(o.quantity_sold||1))) || 0).toFixed(0)} XRP</div>
+                      <Pill color={o.status==='disputed'?'red':o.status==='completed'||o.status==='sold'?'green':'blue'}>{o.status || 'completed'}</Pill>
                     </div>
                   </div>
                 ))}
@@ -533,17 +583,42 @@ export default function AdminPage() {
                       {l.images && l.images[0] && <img src={l.images[0]} alt='' style={{width:40,height:40,borderRadius:6,objectFit:'cover',flexShrink:0}}/>}
                       <div style={{minWidth:0,flex:1}}>
                         <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-                          <Link href={'/listings/'+l.id} target='_blank' style={{fontWeight:600,color:'var(--xh-text)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</Link>
+                          <Link href={'/listing/'+l.id} target='_blank' style={{fontWeight:600,color:'var(--xh-text)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</Link>
                           <Pill color={l.status==='active'?'green':l.status==='sold'?'blue':'gray'}>{l.status}</Pill>
                           {l.is_featured && <Pill color='yellow'>★ Featured</Pill>}
                           {l.seller_is_pro && <Pill color='yellow'>Pro</Pill>}
                         </div>
-                        <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>{(l.username||'anon')+' · '+l.price_xrp+' XRP · '+l.category+' · stock '+(l.quantity-l.quantity_sold)+'/'+l.quantity}</div>
+                        <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>{(l.username||'anon')+' · '+l.price_xrp+' XRP · '+l.category+' · stock '+((l.quantity||1)-(l.quantity_sold||0))+'/'+(l.quantity||1)}</div>
                       </div>
                     </div>
                     <div style={{display:'flex',gap:6}}>
-                      {!l.is_featured && <button className='xh-btn-sm xh-btn-warn' onClick={()=>{const d=parseInt(prompt('Feature for how many days?','7'));if(d>0)api.admin.featureListing(l.id,d).then(()=>location.reload())}}>★ Feature</button>}
-                      {l.status==='active' && <button className='xh-btn-sm xh-btn-danger' onClick={()=>{xhConfirm('Remove this listing? Seller will lose visibility.',{danger:true,confirmText:'Remove'}).then(ok=>{if(ok)api.admin.removeListing(l.id).then(()=>location.reload())})}}>Remove</button>}
+                      {!l.is_featured ? (
+                        <button className='xh-btn-sm xh-btn-warn' onClick={async()=>{
+                          const d=parseInt(prompt('Feature for how many days?','7'), 10);
+                          if(d>0){
+                            await api.admin.featureListing(l.id,d);
+                            setActionToast(`★ Featured "${l.title}" for ${d} days`);
+                            loadAllAdminData();
+                          }
+                        }}>★ Feature</button>
+                      ) : (
+                        <button className='xh-btn-sm' onClick={async()=>{
+                          await api.admin.featureListing(l.id,0);
+                          setActionToast(`Removed featured status from "${l.title}"`);
+                          loadAllAdminData();
+                        }}>Unfeature</button>
+                      )}
+                      {l.status==='active' && (
+                        <button className='xh-btn-sm xh-btn-danger' onClick={()=>{
+                          xhConfirm('Remove this listing? Seller will lose visibility.',{danger:true,confirmText:'Remove'}).then(async ok=>{
+                            if(ok){
+                              await api.admin.removeListing(l.id);
+                              setActionToast(`Removed listing "${l.title}"`);
+                              loadAllAdminData();
+                            }
+                          });
+                        }}>Remove</button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -565,7 +640,7 @@ export default function AdminPage() {
               <div style={{fontSize:22,fontWeight:800,color:'var(--xh-text)'}}>{totalOrderVolume.toFixed(0)} XRP</div>
             </div>
             <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:10,padding:'14px 16px'}}>
-              <div style={{fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:4}}>Fees (est. 3%)</div>
+              <div style={{fontSize:11,color:'var(--xh-text3)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:4}}>Fees collected</div>
               <div style={{fontSize:22,fontWeight:800,color:'#16A34A'}}>{totalFees.toFixed(1)} XRP</div>
             </div>
             <div style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:10,padding:'14px 16px'}}>
@@ -574,61 +649,111 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <Section title={'Completed orders ('+completedOrders.length+')'} action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Derived from sold listings</span>}>
-            {completedOrders.length===0 ? <Empty icon='🛒' text='No completed orders yet'/> : (
+          <Section title={'All platform orders ('+completedOrders.length+')'} action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Live escrow &amp; order ledger</span>}>
+            {completedOrders.length===0 ? <Empty icon='🛒' text='No orders recorded yet'/> : (
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                {completedOrders.map(l=>(
-                  <div key={l.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13,gap:10,flexWrap:'wrap'}}>
+                {completedOrders.map(o=>(
+                  <div key={o.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13,gap:10,flexWrap:'wrap'}}>
                     <div style={{minWidth:0,flex:1,display:'flex',alignItems:'center',gap:10}}>
-                      {l.images && l.images[0] && <img src={l.images[0]} alt='' style={{width:40,height:40,borderRadius:6,objectFit:'cover',flexShrink:0}}/>}
+                      {o.images && o.images[0] && <img src={o.images[0]} alt='' style={{width:40,height:40,borderRadius:6,objectFit:'cover',flexShrink:0}}/>}
                       <div style={{minWidth:0,flex:1}}>
                         <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-                          <Link href={'/listings/'+l.id} target='_blank' style={{fontWeight:600,color:'var(--xh-text)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.title}</Link>
-                          <Pill color='green'>{l.status==='sold'?'sold out':'completed'}</Pill>
-                          {l.seller_is_pro && <Pill color='yellow'>Pro seller</Pill>}
+                          <Link href={'/listing/'+(o.listing_id||o.id)} target='_blank' style={{fontWeight:600,color:'var(--xh-text)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{o.listing_title||o.title||'Digital Asset'}</Link>
+                          <Pill color={o.status==='disputed'?'red':o.status==='completed'||o.status==='sold'?'green':'blue'}>{o.status||'completed'}</Pill>
+                          {o.seller_is_pro && <Pill color='yellow'>Pro seller</Pill>}
+                          {o.buyer_downloaded_at && <Pill color='green'>Downloaded</Pill>}
                         </div>
-                        <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>{'seller: '+(l.username||'anon')+' · '+l.category+' · '+(l.quantity_sold||1)+' unit'+((l.quantity_sold||1)>1?'s':'')+' sold · '+fmtDate(l.updated_at||l.created_at)}</div>
+                        <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>
+                          {o.buyer_username
+                            ? `Order #${String(o.id).slice(0,8)} · buyer: ${o.buyer_username} (${fmtAddr(o.buyer_wallet_address)}) → seller: ${o.seller_username||'seller'} (${fmtAddr(o.seller_wallet_address)}) · ${fmtDate(o.updated_at||o.created_at)}`
+                            : `seller: ${o.username||'anon'} · ${o.category||'digital'} · ${o.quantity_sold||1} unit(s) sold · ${fmtDate(o.updated_at||o.created_at)}`}
+                        </div>
                       </div>
                     </div>
                     <div style={{textAlign:'right',minWidth:90}}>
-                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:14}}>{(parseFloat(l.price_xrp)*(l.quantity_sold||1)).toFixed(0)} XRP</div>
-                      <div style={{fontSize:10.5,color:'var(--xh-text3)',marginTop:2}}>{'fee: '+(parseFloat(l.price_xrp)*(l.quantity_sold||1)*(l.seller_is_pro?0.015:0.03)).toFixed(2)+' XRP'}</div>
+                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:14}}>{(parseFloat(o.total_xrp ?? (parseFloat(o.price_xrp)*(o.quantity_sold||1))) || 0).toFixed(0)} XRP</div>
+                      <div style={{fontSize:10.5,color:'var(--xh-text3)',marginTop:2}}>
+                        {o.status === 'disputed' ? (
+                          <button type='button' className='xh-btn-sm' style={{padding:'2px 8px',fontSize:10.5}} onClick={()=>setTab('escrows')}>Arbitrate →</button>
+                        ) : (
+                          `fee: ${(parseFloat(o.commission_xrp) || 0).toFixed(2)} XRP`
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </Section>
-          <div style={{fontSize:11.5,color:'var(--xh-text3)',padding:'8px 12px',background:'var(--xh-surface2)',borderRadius:8,marginTop:8,lineHeight:1.55}}>
-            <b style={{color:'var(--xh-text2)'}}>Note:</b> This view is reconstructed from sold listings + quantity_sold. For a proper orders table with buyer addresses, individual order IDs, and CSV export, a dedicated <code>/api/admin/orders</code> endpoint is still needed on the backend.
-          </div>
         </div>
       )}
 
       {tab==='users' && (
-        <Section title={'All users ('+users.length+')'}>
-          {users.length===0 ? <Empty icon='👤' text='No users registered'/> : (
-            <div style={{display:'flex',flexDirection:'column',gap:6}}>
-              {users.map(u=>(
-                <div key={u.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',background:'var(--xh-surface2)',borderRadius:8,fontSize:13,flexWrap:'wrap',gap:8}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10,minWidth:220}}>
-                    <div style={{width:32,height:32,borderRadius:'50%',background:'var(--xh-accent)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700}}>{(u.username||u.address||'?').slice(0,2).toUpperCase()}</div>
-                    <div>
-                      <div style={{fontWeight:600,color:'var(--xh-text)'}}>
-                        {u.username||'anon'}
-                        {u.is_pro && <span style={{fontSize:10,background:'rgba(245,158,11,0.15)',color:'#D97706',padding:'1px 6px',borderRadius:4,marginLeft:4,fontWeight:600}}>PRO</span>}
-                        {u.is_verified && <span style={{fontSize:10,color:'#16A34A',marginLeft:4}}>✓</span>}
+        <Section
+          title={'Registered platform users ('+users.length+')'}
+          action={<button type='button' className='xh-btn-sm' onClick={loadAllAdminData}>↻ Refresh Users</button>}
+        >
+          {users.length===0 ? <Empty icon='👤' text={loading ? 'Loading registered users…' : 'No users found'}/> : (
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {users.map(u=>{
+                const walletAddr = u.wallet_address || u.address || u.walletAddress || '';
+                const isUserAdmin = u.role === 'admin' || u.is_admin || u.isAdmin;
+                const isUserPro = Boolean(u.is_pro || u.isPro || (u.pro_until && new Date(u.pro_until) > new Date()) || u.store_handle);
+                return (
+                  <div key={u.id || walletAddr} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:'var(--xh-surface2)',border:'1px solid var(--xh-border)',borderRadius:10,fontSize:13,flexWrap:'wrap',gap:10}}>
+                    <div style={{display:'flex',alignItems:'center',gap:12,minWidth:240,flex:1}}>
+                      <div style={{width:36,height:36,borderRadius:'50%',background:isUserAdmin?'#2080F5':'var(--xh-accent)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,flexShrink:0}}>
+                        {(u.username||walletAddr||'?').slice(0,2).toUpperCase()}
                       </div>
-                      <div style={{fontSize:11,color:'var(--xh-text3)',fontFamily:'monospace'}}>{u.address}</div>
+                      <div style={{minWidth:0,flex:1}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',fontWeight:700,color:'var(--xh-text)'}}>
+                          <span>{u.username||'anon'}</span>
+                          {isUserAdmin && <Pill color='blue'>ADMIN</Pill>}
+                          {isUserPro && <Pill color='yellow'>PRO</Pill>}
+                          {u.is_verified && <Pill color='green'>✓ Verified</Pill>}
+                          {u.is_banned && <Pill color='red'>BANNED</Pill>}
+                          {u.store_handle && (
+                            <Link href={'/store/'+u.store_handle} target='_blank' style={{fontSize:11,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600}}>
+                              /store/{u.store_handle} ↗
+                            </Link>
+                          )}
+                        </div>
+                        <div style={{fontSize:11.5,color:'var(--xh-text2)',fontFamily:'monospace',marginTop:3,wordBreak:'break-all'}}>
+                          {walletAddr || '—'}
+                        </div>
+                        <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>
+                          {`${u.listing_count ?? 0} listing(s) · ${u.order_count ?? 0} order(s) · rep ${Number(u.reputation_score || 0).toFixed(1)}★ · joined ${fmtDate(u.created_at)}`}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                      <button className='xh-btn-sm' onClick={async()=>{
+                        await api.admin.verifyUser(u.id,!u.is_verified);
+                        setActionToast(`${!u.is_verified ? '✓ Verified' : 'Unverified'} @${u.username}`);
+                        loadAllAdminData();
+                      }}>{u.is_verified?'Unverify':'Verify'}</button>
+                      <button className='xh-btn-sm' onClick={async()=>{
+                        const d=parseInt(prompt('Grant Pro for how many days? (Enter 0 to revoke)','30'), 10);
+                        if(!Number.isNaN(d)){
+                          await api.admin.grantPro(u.id,d);
+                          setActionToast(d > 0 ? `Granted ${d} days Pro to @${u.username}` : `Revoked Pro from @${u.username}`);
+                          loadAllAdminData();
+                        }
+                      }}>Grant Pro</button>
+                      <button className='xh-btn-sm xh-btn-danger' onClick={()=>{
+                        const nextBan = !u.is_banned;
+                        xhConfirm(`${nextBan ? 'Ban' : 'Unban'} user @${u.username}?`,{danger:nextBan,confirmText:nextBan?'Ban':'Unban'}).then(async ok=>{
+                          if(ok){
+                            await api.admin.banUser(u.id,nextBan);
+                            setActionToast(`${nextBan ? 'Banned' : 'Unbanned'} @${u.username}`);
+                            loadAllAdminData();
+                          }
+                        });
+                      }}>{u.is_banned ? 'Unban' : 'Ban'}</button>
                     </div>
                   </div>
-                  <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                    <button className='xh-btn-sm' onClick={()=>api.admin.verifyUser(u.id,!u.is_verified).then(()=>location.reload())}>{u.is_verified?'Unverify':'Verify'}</button>
-                    <button className='xh-btn-sm' onClick={()=>{const d=parseInt(prompt('Grant Pro for how many days?','30'));if(d>0)api.admin.grantPro(u.id,d).then(()=>location.reload())}}>Grant Pro</button>
-                    <button className='xh-btn-sm xh-btn-danger' onClick={()=>{xhConfirm('Ban this user?',{danger:true,confirmText:'Ban'}).then(ok=>{if(ok)api.admin.banUser(u.id,true).then(()=>location.reload())})}}>Ban</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Section>
