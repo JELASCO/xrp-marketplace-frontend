@@ -1641,6 +1641,10 @@ const ADMIN_ENV_KEYS = [
   'NEXT_PUBLIC_PLATFORM_WALLET',
 ];
 
+const DEFAULT_PLATFORM_ADMIN_WALLETS = [
+  'racFQtRj1FAL8opvuPwXRFR3ZY2sMaya69',
+];
+
 function getConfiguredAdminWallets() {
   const wallets = [];
   const seen = new Set();
@@ -1653,6 +1657,12 @@ function getConfiguredAdminWallets() {
         seen.add(addr);
         wallets.push(addr);
       }
+    }
+  }
+  for (const defAddr of DEFAULT_PLATFORM_ADMIN_WALLETS) {
+    if (!seen.has(defAddr)) {
+      seen.add(defAddr);
+      wallets.push(defAddr);
     }
   }
   return wallets;
