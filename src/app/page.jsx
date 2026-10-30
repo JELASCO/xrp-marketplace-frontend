@@ -451,7 +451,11 @@ export default function HomePage() {
                     {storeTagline}
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',background:'var(--xh-bg2)',borderRadius:10,overflow:'hidden'}}>
-                    <div style={{padding:'10px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:14.5,color:'var(--xh-text)',lineHeight:1,marginBottom:4}}>{trades}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>TRADES</div></div>
+                    {Number(trades) >= 5 ? (
+                      <div style={{padding:'10px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:14.5,color:'var(--xh-text)',lineHeight:1,marginBottom:4}}>{trades}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>TRADES</div></div>
+                    ) : (
+                      <div style={{padding:'10px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:12.5,color:'#10b981',lineHeight:1,marginBottom:4}}>✨ NEW</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>STORE</div></div>
+                    )}
                     <div style={{padding:'10px 6px',textAlign:'center',borderRight:'1px solid var(--xh-border)'}}><div style={{fontWeight:700,fontSize:14.5,color:'#f59e0b',lineHeight:1,marginBottom:4}}>★ {rating}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>RATING</div></div>
                     <div style={{padding:'10px 6px',textAlign:'center'}}><div style={{fontWeight:700,fontSize:14.5,color:'#10b981',lineHeight:1,marginBottom:4}}>{itemsCount}</div><div className="xh-mono" style={{fontSize:9,letterSpacing:'0.04em',color:'var(--xh-text3)'}}>ITEMS</div></div>
                   </div>
