@@ -105,7 +105,7 @@ const CSS = `
 .xh-chip i:hover{opacity:1}
 .xh-chip-clear{background:transparent;border:0;color:var(--xh-text2);font-size:12.5px;cursor:pointer;padding:5px 8px;text-decoration:underline}
 
-.xh-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.xh-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch}
 .xh-main-col{min-width:0;max-width:100%}
 
 .xh-empty{text-align:center;padding:64px 24px;background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:14px;color:var(--xh-text2)}
@@ -203,6 +203,7 @@ function ListingsContent() {
     if (p.get('game')) setGame(p.get('game'));
     if (p.get('min'))  setMinPrice(p.get('min'));
     if (p.get('max'))  setMaxPrice(p.get('max'));
+    if (p.get('tab') === 'stores' || p.get('pro') === '1') setProOnly(true);
   }, []);
 
   // Fetch listings whenever filters change

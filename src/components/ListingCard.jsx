@@ -43,7 +43,9 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
       className="xh-listing-card-link"
       style={{
         textDecoration: 'none',
-        display: 'block',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
         color: 'inherit',
         width: '100%',
         maxWidth: '100%',
@@ -59,6 +61,10 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           width: '100%',
           maxWidth: '100%',
           minWidth: 0,
+          height: '100%',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
           boxSizing: 'border-box',
           background: 'var(--xh-surface)',
           border: '1px solid ' + (is_featured ? '#bfdbfe' : 'var(--xh-border)'),
@@ -76,6 +82,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         <div style={{
           width: '100%',
           aspectRatio: '16 / 10',
+          flexShrink: 0,
           background: CAT_BG[catKey] || CAT_BG.other,
           display: 'grid',
           placeItems: 'center',
@@ -153,14 +160,15 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         </div>
 
         {/* Body */}
-        <div style={{ padding: '14px 16px', minWidth: 0 }}>
+        <div style={{ padding: '14px 16px', minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
           {/* Title — 2-line clamp */}
           <div style={{
             fontWeight: 600, fontSize: 14.5,
-            lineHeight: 1.35, minHeight: '2.7em',
+            lineHeight: 1.35, minHeight: '2.7em', maxHeight: '2.7em',
             marginBottom: 6, color: 'var(--xh-text)',
             display: '-webkit-box',
             WebkitLineClamp: 2,
+            lineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             overflowWrap: 'anywhere',
@@ -170,8 +178,9 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           {/* Seller row */}
           <div style={{
             fontSize: 12, color: 'var(--xh-text2)', marginBottom: 10,
-            display: 'flex', alignItems: 'center', gap: 6,
-            minWidth: 0, flexWrap: 'wrap',
+            height: 18, lineHeight: '18px',
+            display: 'flex', alignItems: 'center', gap: 4,
+            whiteSpace: 'nowrap', overflow: 'hidden', minWidth: 0, flexWrap: 'nowrap',
           }}>
             <span
               onClick={store_handle ? goToStore : undefined}
@@ -188,7 +197,7 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               style={{
                 cursor: store_handle ? 'pointer' : 'default',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                maxWidth: 110, minWidth: 0,
+                maxWidth: 105, flexShrink: 0,
               }}
             >{username || 'unknown'}</span>
             {reputation_score > 0 && (Number(listing.review_count || listing.seller_reviews || 0) > 0 || Number(listing.total_sales || listing.seller_sales || 0) > 0) && (
@@ -201,12 +210,12 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               <span title="Verified seller" style={{ color: '#10b981', fontWeight: 600, flexShrink: 0 }}>✓</span>
             )}
             {game && (
-              <span style={{ color: '#a8b0bc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: '100%' }}>· {game}</span>
+              <span style={{ color: '#a8b0bc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: '1 1 0%' }}>· {game}</span>
             )}
           </div>
 
           {/* Price + escrow row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+          <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'nowrap', minWidth: 0 }}>
             <span style={{
               fontFamily: MONO, fontWeight: 600, fontSize: 14.5,
               color: '#1668D6', whiteSpace: 'nowrap',

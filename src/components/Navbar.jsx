@@ -30,6 +30,7 @@ export default function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [unread, setUnread] = useState(0);
+  const [myStoreHandle, setMyStoreHandle] = useState('');
   const [dark, setDark] = useState(false);
   const router = useRouter();
   const notifRef = useRef(null);
@@ -55,8 +56,20 @@ export default function Navbar() {
   }, [showNotifs, showMenu]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setMyStoreHandle('');
+      return;
+    }
     let active = true;
+    if (user.store_handle || user.storeHandle) {
+      setMyStoreHandle(user.store_handle || user.storeHandle);
+    } else if (api.stores && typeof api.stores.mine === 'function') {
+      api.stores.mine().then(d => {
+        if (!active || !d) return;
+        const h = d.handle || (d.store && d.store.handle) || '';
+        if (h) setMyStoreHandle(h);
+      }).catch(() => {});
+    }
     const load = () => api.notifications.list().then(d => { if (active) { setNotifs(d.notifications || []); setUnread(d.unread || 0); } }).catch(() => {});
     load();
     const iv = setInterval(load, 30000);
@@ -78,6 +91,16 @@ export default function Navbar() {
 
   const { price: xrpPrice, dir: priceDir } = useXrpPrice();
   const isAdmin = Boolean(user && (user.role === 'admin' || user.is_admin || user.isAdmin));
+  const isPro = Boolean(
+    user && (
+      (user.proUntil && new Date(user.proUntil).getTime() > Date.now()) ||
+      (user.pro_until && new Date(user.pro_until).getTime() > Date.now()) ||
+      user.is_pro ||
+      user.isPro ||
+      user.seller_is_pro
+    )
+  );
+  const storeHandle = (user && (user.store_handle || user.storeHandle)) || myStoreHandle || '';
 
   return (
     <>
@@ -111,7 +134,7 @@ export default function Navbar() {
               XRP<span style={{color:'#2080F5'}}>Harbor</span>
             </span>
           </Link>
-          {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative',minWidth:0}}>
+          {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:420,position:'relative',minWidth:0}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'var(--surface)',border:'1px solid var(--border2)',color:'var(--text)',borderRadius:8}}
               placeholder="Search the harbor…" value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,14 +144,13 @@ export default function Navbar() {
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[
               {href:'/listings',label:'Marketplace'},
-              ...(user?[{href:'/dashboard',label:'Dashboard'}]:[]),
-              ...(isAdmin?[{href:'/admin',label:'🛡 Admin',admin:true}]:[]),
+              {href:'/#stores',label:'Stores'},
+              {href:'/pro',label:'Pro'},
               {href:'/listings/new',label:'+ List an item',accent:true},
-              {href:'/orders',label:'Library / Purchases'}
             ].map(l=>(
-              <Link key={l.href} href={l.href} style={l.admin ? {fontSize:13,fontWeight:700,color:'#f59e0b',padding:'7px 13px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(245,158,11,0.4)',background:'rgba(245,158,11,0.12)',whiteSpace:'nowrap'} : l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)',whiteSpace:'nowrap'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent',whiteSpace:'nowrap'}}
-                onMouseEnter={e=>{ if(l.admin){ e.currentTarget.style.background='#f59e0b'; e.currentTarget.style.color='#0b1b33'; } else if(l.accent){ e.currentTarget.style.background='#2080F5'; e.currentTarget.style.color='#fff'; } else { e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'; } }}
-                onMouseLeave={e=>{ if(l.admin){ e.currentTarget.style.background='rgba(245,158,11,0.12)'; e.currentTarget.style.color='#f59e0b'; } else if(l.accent){ e.currentTarget.style.background='rgba(32,128,245,0.10)'; e.currentTarget.style.color='#2080F5'; } else { e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'; } }}>
+              <Link key={l.href} href={l.href} style={l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)',whiteSpace:'nowrap'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent',whiteSpace:'nowrap'}}
+                onMouseEnter={e=>{ if(l.accent){ e.currentTarget.style.background='#2080F5'; e.currentTarget.style.color='#fff'; } else { e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'; } }}
+                onMouseLeave={e=>{ if(l.accent){ e.currentTarget.style.background='rgba(32,128,245,0.10)'; e.currentTarget.style.color='#2080F5'; } else { e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'; } }}>
                 {l.label}
               </Link>
             ))}
@@ -180,17 +202,32 @@ export default function Navbar() {
                   {user.username?.slice(0,2).toUpperCase()}
                 </div>
                 <span className="xrp-user-name" style={{maxWidth:110,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{user.username}</span>
-                {((user.proUntil && new Date(user.proUntil).getTime() > Date.now()) || user.role === 'admin') && (
+                {(isPro || isAdmin) && (
                   <span className="xh-pro xrp-connect-extra" style={{fontSize:9.5,fontFamily:'DM Mono,monospace',fontWeight:800,letterSpacing:'0.04em',padding:'2px 6px',borderRadius:5}}>PRO</span>
                 )}
               </button>
               {showMenu && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:'min(185px, calc(100vw - 24px))',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 0',boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
-                  {!(user.proUntil && new Date(user.proUntil).getTime() > Date.now()) && (<>
-                    <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#2080F5',fontWeight:600,textDecoration:'none'}}>⭐ Upgrade to Pro</Link>
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:'min(196px, calc(100vw - 24px))',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 0',boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
+                  {!isPro && (
+                    <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#2080F5',fontWeight:600,textDecoration:'none'}}>Upgrade to Pro</Link>
+                  )}
+                  {isAdmin && (
+                    <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,fontWeight:700,color:'#f59e0b',textDecoration:'none'}}>Admin Panel</Link>
+                  )}
+                  {(!isPro || isAdmin) && (
                     <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
-                  </>)}
-                  {[{href:'/listings/new',label:'List an Item'},{href:'/store/create',label:'Create store'},{href:'/dashboard',label:'Dashboard'},{href:'/orders',label:'Library / Purchases'},{href:'/messages',label:'Messages'},{href:'/favorites',label:'Favorites'},{href:'/profile/'+user.id,label:'My Profile'},{href:'/settings',label:'Settings'}].map(i=>(
+                  )}
+                  {[
+                    {href:'/dashboard',label:'Dashboard'},
+                    {href:'/orders',label:'Library / Purchases'},
+                    storeHandle
+                      ? {href:'/store/'+storeHandle,label:'My Store'}
+                      : {href:'/store/create',label:'Create store'},
+                    {href:'/messages',label:'Messages'},
+                    {href:'/favorites',label:'Favorites'},
+                    {href:'/profile/'+user.id,label:'My Profile'},
+                    {href:'/settings',label:'Settings'},
+                  ].map(i=>(
                     <Link key={i.href} href={i.href} onClick={()=>setShowMenu(false)}
                       style={{display:'block',padding:'9px 16px',fontSize:13,color:'var(--text2)',textDecoration:'none',transition:'all 0.15s'}}
                       onMouseEnter={e=>{e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'}}
@@ -198,7 +235,6 @@ export default function Navbar() {
                       {i.label}
                     </Link>
                   ))}
-                  {isAdmin && <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,fontWeight:700,color:'#f59e0b',textDecoration:'none'}}>🛡 Admin Panel</Link>}
                   <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
                   <button onClick={()=>{logout();setShowMenu(false);}} style={{width:'100%',textAlign:'left',padding:'9px 16px',fontSize:13,color:'#ef4444',background:'none',border:'none',cursor:'pointer'}}>
                     Sign out
@@ -240,9 +276,10 @@ export default function Navbar() {
           <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)', padding: '10px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
             {[
               { href: '/listings', label: '🛍️ Marketplace' },
+              { href: '/#stores', label: '🏬 Stores' },
               { href: '/listings/new', label: '➕ List an Item' },
               { href: '/orders', label: '📦 Library / Purchases' },
-              ...(user ? [{ href: '/dashboard', label: '📊 Seller Dashboard' }] : []),
+              ...(user ? [{ href: '/dashboard', label: '📊 Dashboard' }] : []),
               ...(isAdmin ? [{ href: '/admin', label: '🛡 Admin Panel' }] : []),
               { href: '/pro', label: '⭐ XRPHarbor Pro' },
             ].map(l => (

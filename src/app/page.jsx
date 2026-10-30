@@ -404,7 +404,7 @@ export default function HomePage() {
       </div>
 
       {/* VERIFIED PRO STORES & TRUSTED CAPTAINS */}
-      <div style={{marginBottom:36}}>
+      <div id="stores" style={{marginBottom:36,scrollMarginTop:76}}>
         <div className="xh-mono" style={{fontSize:11,letterSpacing:'0.08em',color:'#f59e0b',fontWeight:700,marginBottom:8,display:'flex',alignItems:'center',gap:7}}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.3 2.6 5.4 5.9.8-4.3 4.2 1 5.9L12 17l-5.2 2.6 1-5.9L3.5 9.5l5.9-.8z"/></svg>
           VERIFIED PRO STORES · OFFICIAL DOCKS
