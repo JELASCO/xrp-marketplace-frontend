@@ -51,6 +51,15 @@ const SECURITY_HEADERS = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        source: '/upgrade',
+        destination: '/pro',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -122,15 +122,11 @@ export default function SettingsPage() {
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Profile Settings</h1>
-        {isPro ? (
+        {isPro && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', padding: '5px 12px', borderRadius: 999 }}>
             <span className="xh-pro" style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>PRO</span>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>Animated GIFs & Orbit Frames Unlocked</span>
           </div>
-        ) : (
-          <Link href="/upgrade" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', color: '#b45309', padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
-            ★ Upgrade to PRO for Animated .GIF Avatars & Glowing Frames →
-          </Link>
         )}
       </div>
 
@@ -243,7 +239,7 @@ export default function SettingsPage() {
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Animated Live Avatars & .GIF Support</span>
             </div>
             {!isPro && (
-              <Link href="/upgrade" style={{ fontSize: 11, fontWeight: 700, color: '#b45309', textDecoration: 'none' }}>
+              <Link href="/pro" style={{ fontSize: 11, fontWeight: 700, color: '#b45309', textDecoration: 'none' }}>
                 Unlock with Pro →
               </Link>
             )}

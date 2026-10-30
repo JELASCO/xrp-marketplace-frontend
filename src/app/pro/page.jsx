@@ -67,11 +67,11 @@ export default function ProPage() {
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>/ {pricing ? pricing.pro.days : 30} days</span>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Custom Pro Storefront</strong> (<code style={{ fontSize: 12 }}>/store/your-name</code>) with live announcement bar, social links &amp; in-store search</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Custom Pro Storefront</strong> (<code style={{ fontSize: 12 }}>/store/your-name</code>) with live announcement bar, specialty tags, promo code &amp; FAQ accordion</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Animated .GIF &amp; Live Avatars</strong> + <strong style={{ color: 'var(--text)' }}>360° Rotating Glowing Frames</strong> for your profile &amp; store logo</li>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>Unlimited active listings</strong> &amp; up to <strong style={{ color: 'var(--text)' }}>6 photos</strong> per listing (Standard: 5 listings / 3 photos)</li>
             <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ <strong style={{ color: 'var(--text)' }}>1 FREE 7-day Featured Listing boost</strong> every 30 days (10 XRP value)</li>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Featured in the Homepage <strong style={{ color: 'var(--text)' }}>Verified Pro Stores</strong> showcase</li>
-            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Gold <strong style={{ color: '#f59e0b' }}>★ PRO</strong> badge &amp; automatic priority placement in search</li>
+            <li style={{ fontSize: 13, color: 'var(--text2)' }}>✓ Featured in the Homepage <strong style={{ color: 'var(--text)' }}>Verified Pro Stores</strong> showcase &amp; shimmering <span className="xh-pro" style={{ fontSize: 10, fontFamily: 'DM Mono,monospace', fontWeight: 800, padding: '1px 6px', borderRadius: 4 }}>PRO</span> badge</li>
           </ul>
           {proActive
             ? <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>Active until {new Date(user.proUntil).toLocaleDateString('en-US')}. Buying again extends it.</div>
