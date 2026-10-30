@@ -197,8 +197,9 @@ export default function HomePage() {
         @keyframes xhsail{0%,12%{left:24px;transform:translateY(0) rotate(-3deg)}26%{transform:translateY(-2px) rotate(3deg)}40%,55%{left:calc(50% - 9px);transform:translateY(-1px) rotate(-2deg)}70%{transform:translateY(-2px) rotate(3deg)}85%,100%{left:calc(100% - 44px);transform:translateY(0) rotate(0deg)}}
         @keyframes xhdrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
         .xh-hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:48px 0 44px}
-        .xh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-        .xh-chips a{font-size:12.5px;font-weight:500;color:var(--xh-text2);border:1px solid var(--xh-border);border-radius:999px;padding:6px 13px;background:var(--xh-surface);text-decoration:none;transition:all .15s}
+        .xh-hero-grid > *{min-width:0;max-width:100%}
+        .xh-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;max-width:100%}
+        .xh-chips a{font-size:12.5px;font-weight:500;color:var(--xh-text2);border:1px solid var(--xh-border);border-radius:999px;padding:6px 13px;background:var(--xh-surface);text-decoration:none;transition:all .15s;white-space:nowrap;flex-shrink:0}
         .xh-chips a:hover{color:var(--xh-accent);border-color:var(--xh-accent)}
         .xh-escrow{--ec-bg:#fff;--ec-fg:#3D5A80;--ec-ink:#0A1628;--ec-sub:#3D5A80;--ec-mut:#7C92B2;--ec-line:rgba(10,35,66,.18);--ec-border:1px solid rgba(10,35,66,.12);--ec-shadow:0 1px 2px rgba(10,35,66,.05),0 24px 50px -24px rgba(10,35,66,.25);--ec-tile-bg:#EAF1FB;--ec-tile-bd:rgba(10,35,66,.12);--ec-tile-fg:#2080F5;--ec-done-bg:rgba(22,163,74,.12);--ec-done-bd:rgba(22,163,74,.30);--ec-done-fg:#16a34a;--ec-lbl:#7C92B2;--ec-lbl-b:#0A1628;--ec-sail:#000000;--ec-wave1:#d9e8fb;--ec-wave2:#c4dbf7;--ec-foot-bg:#F8FBFF;--ec-foot-bd:rgba(10,35,66,.12);--ec-foot-fg:#7C92B2;--ec-foot-link:#2080F5}
         html[data-theme="dark"] .xh-escrow{--ec-bg:#0b1b33;--ec-fg:#cfe0ff;--ec-ink:#fff;--ec-sub:#8fa6cc;--ec-mut:#7e96bf;--ec-line:#33507e;--ec-border:1px solid transparent;--ec-shadow:0 30px 60px -20px rgba(11,27,51,.45);--ec-tile-bg:#10264a;--ec-tile-bd:#2c4571;--ec-tile-fg:#7eb0ff;--ec-done-bg:rgba(16,185,129,.16);--ec-done-bd:rgba(16,185,129,.45);--ec-done-fg:#34d399;--ec-lbl:#aebfdd;--ec-lbl-b:#fff;--ec-sail:#bcd4ff;--ec-wave1:#10264a;--ec-wave2:#16335f;--ec-foot-bg:#091628;--ec-foot-bd:#21385f;--ec-foot-fg:#7e96bf;--ec-foot-link:#7e96bf}
@@ -210,15 +211,34 @@ export default function HomePage() {
         .xh-node.done svg{stroke:var(--ec-done-fg)}
         .xh-node-label{position:absolute;top:70px;font-size:11.5px;color:var(--ec-lbl);width:120px;text-align:center;line-height:1.4}
         .xh-node-label b{display:block;color:var(--ec-lbl-b);font-weight:600;font-size:12px;margin-bottom:2px}
-        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}.xh-feat{grid-column:span 2}.xh-promo{grid-column:span 2;background:linear-gradient(135deg,#0A2342,#173A86);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}.xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(10,35,66,.45)}@media(max-width:860px){.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xh-feat,.xh-promo{grid-column:span 2}}@media(max-width:520px){.xh-cat-grid{grid-template-columns:1fr}.xh-feat,.xh-promo{grid-column:span 1}}
-        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)}
+        .xh-cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;margin-bottom:40px}
+        .xh-feat{grid-column:span 2}
+        .xh-promo{grid-column:span 2;background:linear-gradient(135deg,#0A2342,#173A86);border-radius:14px;padding:20px;text-decoration:none;display:flex;flex-direction:column;justify-content:center;transition:all .18s ease;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17);min-width:0}
+        .xh-promo:hover{transform:translateY(-3px);box-shadow:0 18px 34px -16px rgba(10,35,66,.45)}
+        .xh-cat{background:var(--xh-surface);border:1px solid var(--xh-border);border-radius:14px;padding:20px 16px;text-decoration:none;transition:all .18s ease;display:block;box-shadow:0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17);min-width:0}
         .xh-cat:hover{transform:translateY(-3px);border-color:var(--xh-accent);box-shadow:0 14px 28px -12px rgba(21,114,232,.25)}
         .xh-cat .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;background:rgba(21,114,232,.10);color:var(--xh-accent);transition:all .18s}
         .xh-cat .ico svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
         .xh-cat:hover .ico{background:var(--xh-accent);color:#fff;transform:scale(1.06)}
         .xh-ticker-in{animation:xhscroll 50s linear infinite}
         @keyframes xhscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-        @media (max-width:860px){.xh-hero-grid{grid-template-columns:1fr;gap:28px;padding:32px 0 36px}.xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media (max-width:960px){
+          .xh-hero-grid{grid-template-columns:minmax(0,1fr);gap:28px;padding:28px 0 32px}
+          .xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+          .xh-feat,.xh-promo{grid-column:span 2}
+        }
+        @media (max-width:768px){
+          .xh-cat-grid{grid-template-columns:minmax(0,1fr);grid-auto-rows:auto;gap:12px}
+          .xh-feat,.xh-promo{grid-column:span 1}
+          .xh-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+          .xh-chips::-webkit-scrollbar{display:none}
+          .xh-escrow{padding:14px 16px 0 !important}
+          .xh-node-label{width:92px;font-size:10.5px}
+          .xh-node-label b{font-size:11px}
+          .xh-node-label.lbl-left{left:0 !important;text-align:left}
+          .xh-node-label.lbl-mid{left:calc(50% - 46px) !important}
+          .xh-node-label.lbl-right{right:0 !important;text-align:right}
+        }
         @media (prefers-reduced-motion:reduce){.xh-sail,.xh-wave-svg,.xh-ticker-in{animation:none !important}}
       `}
 </style>
@@ -226,19 +246,19 @@ export default function HomePage() {
       {/* HERO — split: copy left, escrow waterline right */}
       <div className="xh-hero-grid">
         <div>
-          <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:8,padding:'7px 15px',borderRadius:99,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',fontSize:12,letterSpacing:'0.05em',fontWeight:600,color:'var(--xh-accent)',marginBottom:22}}>
+          <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:8,padding:'7px 14px',borderRadius:99,background:'var(--xh-tint)',border:'1px solid var(--xh-border)',fontSize:11.5,letterSpacing:'0.04em',fontWeight:600,color:'var(--xh-accent)',marginBottom:20,maxWidth:'100%',flexWrap:'wrap'}}>
             ⚓ 0% FEE · ON-CHAIN XRPL ESCROW
           </div>
-          <h1 className="xh-display" style={{fontSize:'clamp(32px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.1,color:'var(--xh-text)',marginBottom:16}}>
+          <h1 className="xh-display" style={{fontSize:'clamp(28px,4.6vw,50px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.12,color:'var(--xh-text)',marginBottom:16}}>
             The creator marketplace on the{' '}
             <span style={{background:'linear-gradient(90deg, var(--xh-accent) 0%, #38BDF8 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>XRP Ledger</span>
           </h1>
-          <p style={{fontSize:16.5,color:'var(--xh-text2)',maxWidth:520,marginBottom:24,lineHeight:1.55}}>
+          <p style={{fontSize:16,color:'var(--xh-text2)',maxWidth:520,marginBottom:24,lineHeight:1.55}}>
             3D models, shaders, UI templates, indie developer tools, audio packs, and digital goods — built for digital creators, 3D artists, UI designers, and indie builders. Every purchase is protected by non-custodial XRPL escrow with 0% platform fees.
           </p>
-          <form onSubmit={(e)=>{e.preventDefault(); const t=heroQ.trim(); window.location.href='/listings'+(t?('?q='+encodeURIComponent(t)):'');}} style={{maxWidth:520,display:'flex',gap:8}}>
-            <input value={heroQ} onChange={e=>setHeroQ(e.target.value)} placeholder="Search 3D shaders, UI kits, Blender assets, tools…" aria-label="Search listings" style={{flex:1,height:48,borderRadius:12,border:'1px solid var(--xh-border)',background:'var(--xh-surface)',color:'var(--xh-text)',padding:'0 16px',fontSize:15,outline:'none'}} />
-            <button type="submit" className="xh-btn-primary" style={{height:48,borderRadius:12,whiteSpace:'nowrap'}}>Search</button>
+          <form onSubmit={(e)=>{e.preventDefault(); const t=heroQ.trim(); window.location.href='/listings'+(t?('?q='+encodeURIComponent(t)):'');}} style={{maxWidth:520,width:'100%',display:'flex',gap:8}}>
+            <input value={heroQ} onChange={e=>setHeroQ(e.target.value)} placeholder="Search 3D shaders, UI kits, Blender assets, tools…" aria-label="Search listings" style={{flex:1,minWidth:0,height:48,borderRadius:12,border:'1px solid var(--xh-border)',background:'var(--xh-surface)',color:'var(--xh-text)',padding:'0 14px',fontSize:14.5,outline:'none'}} />
+            <button type="submit" className="xh-btn-primary" style={{height:48,borderRadius:12,whiteSpace:'nowrap',padding:'0 20px'}}>Search</button>
           </form>
           <div className="xh-chips">
             <Link href="/listings">All</Link>
@@ -246,12 +266,12 @@ export default function HomePage() {
               <Link key={c.key} href={'/listings?category='+c.key}>{c.emoji} {c.label}</Link>
             ))}
           </div>
-          <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:24}}>
-            <Link href="/listings" className="xh-btn-primary">Browse marketplace</Link>
+          <div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:22}}>
+            <Link href="/listings" className="xh-btn-primary" style={{flex:'1 1 160px',padding:'13px 20px'}}>Browse marketplace</Link>
             {user ? (
-              <Link href="/listings/new" style={{background:'#2080F5',color:'#fff',border:'1px solid #60a5fa',boxShadow:'0 4px 14px rgba(32,128,245,0.35)',borderRadius:10,padding:'13px 28px',fontSize:14,fontWeight:700,textDecoration:'none',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6}}>+ List an item</Link>
+              <Link href="/listings/new" style={{flex:'1 1 160px',background:'#2080F5',color:'#fff',border:'1px solid #60a5fa',boxShadow:'0 4px 14px rgba(32,128,245,0.35)',borderRadius:10,padding:'13px 20px',fontSize:14,fontWeight:700,textDecoration:'none',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6}}>+ List an item</Link>
             ) : (
-              <button onClick={()=>setShowLogin(true)} style={{background:'#2080F5',color:'#fff',border:'1px solid #60a5fa',boxShadow:'0 4px 14px rgba(32,128,245,0.35)',borderRadius:10,padding:'13px 28px',fontSize:14,fontWeight:700,cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6}}>+ List an item</button>
+              <button onClick={()=>setShowLogin(true)} style={{flex:'1 1 160px',background:'#2080F5',color:'#fff',border:'1px solid #60a5fa',boxShadow:'0 4px 14px rgba(32,128,245,0.35)',borderRadius:10,padding:'13px 20px',fontSize:14,fontWeight:700,cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6}}>+ List an item</button>
             )}
           </div>
         </div>
@@ -269,9 +289,9 @@ export default function HomePage() {
             <div className="xh-node" style={{left:'calc(50% - 23px)'}} title="Delivery"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8ZM3 8l9 5m0 0 9-5m-9 5v8"/></svg></div>
             <div className="xh-node done" style={{right:6}} title="EscrowFinish"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
             <span className="xh-sail" aria-hidden="true" style={{position:'absolute',top:18,left:18,color:'var(--ec-sail)',filter:'drop-shadow(0 2px 4px rgba(11,27,51,.35))',animation:'xhsail 9s ease-in-out infinite'}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span>
-            <div className="xh-node-label" style={{left:-22}}><b>Payment locked</b>EscrowCreate on XRPL</div>
-            <div className="xh-node-label" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
-            <div className="xh-node-label" style={{right:-22}}><b>Escrow releases</b>seller paid automatically</div>
+            <div className="xh-node-label lbl-left" style={{left:-22}}><b>Payment locked</b>EscrowCreate on XRPL</div>
+            <div className="xh-node-label lbl-mid" style={{left:'calc(50% - 60px)'}}><b>Item delivered</b>buyer confirms receipt</div>
+            <div className="xh-node-label lbl-right" style={{right:-22}}><b>Escrow releases</b>seller paid automatically</div>
           </div>
           <div style={{position:'relative',height:38,margin:'0 -26px'}}>
             <svg className="xh-wave-svg" style={{position:'absolute',bottom:0,left:0,width:'200%',height:38,animation:'xhdrift 12s linear infinite'}} viewBox="0 0 1200 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -279,7 +299,7 @@ export default function HomePage() {
               <path className="xh-wave-2" d="M0 38 Q 75 22 150 38 T 300 38 T 450 38 T 600 38 T 750 38 T 900 38 T 1050 38 T 1200 38 V54 H0 Z" opacity=".8"/>
             </svg>
           </div>
-          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'var(--ec-foot-fg)',borderTop:'1px solid var(--ec-foot-bd)',margin:'0 -26px',padding:'9px 26px',background:'var(--ec-foot-bg)'}}>
+          <div className="xh-mono" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:'var(--ec-foot-fg)',borderTop:'1px solid var(--ec-foot-bd)',margin:'0 -26px',padding:'9px 26px',background:'var(--ec-foot-bg)',flexWrap:'wrap',gap:6}}>
             <span>XRPL ESCROW · <span style={{color:'#10b981'}}>NON-CUSTODIAL</span></span>
             <a href="#how-it-works" style={{color:'var(--ec-foot-link)',textDecoration:'none'}}>how it works ↓</a>
           </div>
@@ -287,21 +307,21 @@ export default function HomePage() {
       </div>
 
       {/* LIVE TICKER */}
-      <div style={{background:'#0b1b33',overflow:'hidden',marginBottom:36,width:'100vw',marginLeft:'calc(50% - 50vw)'}} aria-hidden="true">
+      <div style={{background:'#0b1b33',overflow:'hidden',marginBottom:36,width:'100vw',maxWidth:'100vw',marginLeft:'calc(50% - 50vw)'}} aria-hidden="true">
         <div className="xh-mono xh-ticker-in" style={{display:'flex',gap:36,whiteSpace:'nowrap',padding:'11px 0 11px 24px',fontSize:12,letterSpacing:'.02em',color:'#9db4da',width:'max-content'}}>
           {(() => { const it = tickerItems(); const all=[...it,...it]; const kids=[]; all.forEach((node,i)=>{ kids.push(<span key={'i'+i} style={{display:'inline-flex',alignItems:'center'}}>{node}</span>); kids.push(<span key={'s'+i} style={{color:'#33507e'}}>·</span>); }); return kids; })()}
         </div>
       </div>
 
       {/* STATS BAR */}
-      <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:12}}>
+      <div style={{background:'var(--xh-bg2)',border:'1px solid var(--xh-border)',borderRadius:14,padding:'22px 16px',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',marginBottom:36,display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:12}}>
         {[
           ...((!stats || (stats.active_listings || 0) < 4) ? [ {v:'0%', l:'Listing fees'}, {v:'3–5s', l:'Settlement'}, {v:'XRPL', l:'Built on-chain'} ] : [ {v: fmtNum(stats.active_listings), l:'Active listings'}, {v: fmtNum(stats.items_traded), l:'Trades settled'}, {v: fmtNum(stats.total_users), l:'Traders'} ]),
           {v: '100%', l:'Escrow-protected', green:true},
         ].map((s,i)=>(
-          <div key={i} style={{textAlign:'center'}}>
-            <div style={{fontSize:26,fontWeight:800,letterSpacing:'-0.02em',color: s.green ? '#16A34A' : 'var(--xh-text)'}}>{s.v}</div>
-            <div style={{fontSize:12.5,color:'var(--xh-text3)',marginTop:3}}>{s.l}</div>
+          <div key={i} style={{textAlign:'center',minWidth:0}}>
+            <div style={{fontSize:24,fontWeight:800,letterSpacing:'-0.02em',color: s.green ? '#16A34A' : 'var(--xh-text)'}}>{s.v}</div>
+            <div style={{fontSize:12,color:'var(--xh-text3)',marginTop:3}}>{s.l}</div>
           </div>
         ))}
       </div>
@@ -311,7 +331,7 @@ export default function HomePage() {
         {CATS.map((c,i)=>(
           <Link key={c.key} href={'/listings?category='+c.key} className={i===0?'xh-cat xh-feat':'xh-cat'}>
             <span className="ico">{CAT_ICONS[c.key]}</span>
-            <span style={{display:'block',fontSize:i===0?22:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
+            <span style={{display:'block',fontSize:i===0?20:14.5,fontWeight:600,color:'var(--xh-text)',marginBottom:3}}>{c.label}</span>
             <span className="xh-mono" style={{fontSize:11,color:'var(--xh-text3)'}}>{c.sub}</span>
           </Link>
         ))}
@@ -324,14 +344,14 @@ export default function HomePage() {
       {/* FEATURED */}
       {featured.length > 0 && (
         <div style={{marginBottom:40}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap',marginBottom:16}}>
             <div>
               <div className="xh-mono" style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:11,letterSpacing:'0.07em',color:'#f59e0b',fontWeight:600,marginBottom:5}}><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3.3 2.6 5.4 5.9.8-4.3 4.2 1 5.9L12 17l-5.2 2.6 1-5.9L3.5 9.5l5.9-.8z"/></svg> FEATURED · PINNED BY SELLERS</div>
               <span style={{display:'block',fontSize:22,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em'}}>Today&rsquo;s catch</span>
             </div>
-            <Link href="/listings" style={{fontSize:13,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600}}>View all →</Link>
+            <Link href="/listings" style={{fontSize:13,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600,whiteSpace:'nowrap'}}>View all →</Link>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
+          <div className="xh-catch-grid">
             {featured.map(l => <ListingCard key={l.id} listing={l}/>)}
           </div>
         </div>
@@ -343,12 +363,12 @@ export default function HomePage() {
         const freshListings = listings.filter(l => !featuredIds.has(l.id));
         return (
           <div style={{marginBottom:48}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap',marginBottom:16}}>
               <span style={{fontSize:18,fontWeight:700,color:'var(--xh-text)'}}>Fresh off the boat</span>
-              <Link href="/listings" style={{fontSize:13,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600}}>Browse all →</Link>
+              <Link href="/listings" style={{fontSize:13,color:'var(--xh-accent)',textDecoration:'none',fontWeight:600,whiteSpace:'nowrap'}}>Browse all →</Link>
             </div>
             {loading ? (
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12}}>
+              <div className="xh-fresh-grid">
                 {Array.from({length:8}).map((_,i)=><SkeletonCard key={i}/>)}
               </div>
             ) : freshListings.length===0 ? (
@@ -359,7 +379,7 @@ export default function HomePage() {
                 {user ? (<Link href="/listings/new" className="xh-btn-primary" style={{padding:'10px 22px',fontSize:13.5}}>+ List an item</Link>) : (<button onClick={()=>setShowLogin(true)} className="xh-btn-primary" style={{padding:'10px 22px',fontSize:13.5,border:'none',cursor:'pointer'}}>+ List an item</button>)}
               </div>
             ) : (
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12}}>
+              <div className="xh-fresh-grid">
                 {freshListings.slice(0,8).map(l => <ListingCard key={l.id} listing={l}/>)}{freshListings.length < 4 && (user ? <Link href="/listings/new" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',gap:8,padding:'18px 14px',minHeight:215,border:'1.5px dashed var(--xh-border2, rgba(0,0,0,0.10))',borderRadius:14,background:'var(--xh-bg2, #fafbfc)',textDecoration:'none',cursor:'pointer'}}><div style={{width:40,height:40,borderRadius:12,background:'rgba(32,128,245,0.1)',color:'var(--xh-accent)',display:'grid',placeItems:'center',fontSize:22,fontWeight:300,lineHeight:1}}>+</div><div style={{fontSize:13.5,fontWeight:600,color:'var(--xh-text)'}}>List your item here</div><div style={{fontSize:11.5,color:'var(--xh-text3)',lineHeight:1.4}}>Few listings so far — be one of the first. 0 fees.</div></Link> : <div onClick={()=>setShowLogin(true)} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',gap:8,padding:'18px 14px',minHeight:215,border:'1.5px dashed var(--xh-border2, rgba(0,0,0,0.10))',borderRadius:14,background:'var(--xh-bg2, #fafbfc)',textDecoration:'none',cursor:'pointer'}}><div style={{width:40,height:40,borderRadius:12,background:'rgba(32,128,245,0.1)',color:'var(--xh-accent)',display:'grid',placeItems:'center',fontSize:22,fontWeight:300,lineHeight:1}}>+</div><div style={{fontSize:13.5,fontWeight:600,color:'var(--xh-text)'}}>List your item here</div><div style={{fontSize:11.5,color:'var(--xh-text3)',lineHeight:1.4}}>Few listings so far — be one of the first. 0 fees.</div></div>)}
               </div>
             )}
@@ -368,17 +388,17 @@ export default function HomePage() {
       })()}
 
       {/* FOUNDING CREATOR LAUNCH CAMPAIGN BANNER */}
-      <div style={{background:'linear-gradient(135deg, #0b1b33 0%, #1e3a8a 60%, #b45309 100%)',border:'1.5px solid rgba(245,158,11,0.55)',borderRadius:16,padding:'18px 24px',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap',boxShadow:'0 12px 30px -12px rgba(11,27,51,0.35)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:14,flex:'1 1 420px'}}>
-          <span style={{fontSize:28,lineHeight:1}}>🚀</span>
-          <div>
-            <div className="xh-mono" style={{fontSize:10.5,fontWeight:800,letterSpacing:'0.08em',color:'#fbbf24',textTransform:'uppercase',marginBottom:3}}>FOUNDING 100 CREATORS LAUNCH CAMPAIGN</div>
-            <div style={{fontSize:15,fontWeight:700,color:'#ffffff',lineHeight:1.4}}>
-              🚀 Founding 100 Creators Promo: First 100 verified creators get 30 days of Pro + Featured Storefront placement for 0 XRP
+      <div style={{background:'linear-gradient(135deg, #0b1b33 0%, #1e3a8a 60%, #b45309 100%)',border:'1.5px solid rgba(245,158,11,0.55)',borderRadius:16,padding:'18px 20px',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap',boxShadow:'0 12px 30px -12px rgba(11,27,51,0.35)',minWidth:0}}>
+        <div style={{display:'flex',alignItems:'flex-start',gap:12,flex:'1 1 240px',minWidth:0}}>
+          <span style={{fontSize:26,lineHeight:1,flexShrink:0}}>🚀</span>
+          <div style={{minWidth:0}}>
+            <div className="xh-mono" style={{fontSize:10.5,fontWeight:800,letterSpacing:'0.06em',color:'#fbbf24',textTransform:'uppercase',marginBottom:3,overflowWrap:'anywhere'}}>FOUNDING 100 CREATORS LAUNCH CAMPAIGN</div>
+            <div style={{fontSize:14.5,fontWeight:700,color:'#ffffff',lineHeight:1.4,overflowWrap:'anywhere'}}>
+              Founding 100 Creators Promo: First 100 verified creators get 30 days of Pro + Featured Storefront placement for 0 XRP
             </div>
           </div>
         </div>
-        <Link href="/pro" style={{background:'#f59e0b',color:'#0b1b33',padding:'10px 20px',borderRadius:10,fontSize:13.5,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap',boxShadow:'0 4px 12px rgba(245,158,11,0.35)'}}>
+        <Link href="/pro" style={{background:'#f59e0b',color:'#0b1b33',padding:'10px 18px',borderRadius:10,fontSize:13.5,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap',boxShadow:'0 4px 12px rgba(245,158,11,0.35)'}}>
           Claim Free Pro →
         </Link>
       </div>
@@ -396,7 +416,7 @@ export default function HomePage() {
           </div>
           <Link href="/pro" style={{fontSize:13.5,fontWeight:600,color:'var(--xh-accent)',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>Open your Pro Store <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:16}}>
+        <div className="xh-stores-grid">
           {(proStores.length > 0 ? proStores : [
             {
               handle: 'dockmaster',
@@ -505,16 +525,16 @@ export default function HomePage() {
       </div>
 
       {/* HOW ESCROW KEEPS YOU SAFE */}
-      <div id="how-it-works" style={{background:'var(--xh-bg2)',borderRadius:18,padding:'40px 28px',marginBottom:36}}>
+      <div id="how-it-works" style={{background:'var(--xh-bg2)',borderRadius:18,padding:'36px 20px',marginBottom:36}}>
         <h2 className="xh-display" style={{fontSize:23,fontWeight:700,color:'var(--xh-text)',textAlign:'center',marginBottom:6,letterSpacing:'-0.02em'}}>Verified by the ledger</h2>
-        <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:32,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Every step is a real XRPL transaction you can verify yourself.</p>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:16}}>
+        <p style={{fontSize:14,color:'var(--xh-text3)',textAlign:'center',marginBottom:28,maxWidth:540,marginLeft:'auto',marginRight:'auto'}}>Every step is a real XRPL transaction you can verify yourself.</p>
+        <div className="xh-steps-grid">
           {[
             {k:'STEP 1 · ESCROWCREATE',title:'Buyer locks payment',desc:'XRP is held in an on-chain XRPL escrow — neither the platform nor the seller can touch it.'},
             {k:'STEP 2 · DELIVERY',title:'Seller delivers',desc:'Digital files, 3D assets, UI templates, software, or creative goods are delivered via the encrypted vault or direct handover, then the buyer confirms receipt.'},
             {k:'STEP 3 · ESCROWFINISH',title:'Escrow releases',desc:'On confirmation, the escrow pays out to the seller automatically.'},
           ].map(s=>(
-            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:'22px 22px'}}>
+            <div key={s.k} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:'22px 22px',minWidth:0}}>
               <div className="xh-mono" style={{fontSize:10.5,letterSpacing:'0.08em',color:'var(--xh-accent)',marginBottom:11}}>{s.k}</div>
               <div className="xh-display" style={{fontSize:16,fontWeight:700,color:'var(--xh-text)',marginBottom:8}}>{s.title}</div>
               <div style={{fontSize:13.5,color:'var(--xh-text2)',lineHeight:1.6}}>{s.desc}</div>
@@ -533,14 +553,14 @@ export default function HomePage() {
           <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',lineHeight:1.15}}>Built differently for digital goods</h2>
           <p style={{fontSize:14,color:'var(--xh-text2)',marginTop:6,maxWidth:520}}>Why solo developers, traders and digital artists are docking here.</p>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14}}>
+        <div className="xh-why-grid">
           {[
             {bg:'rgba(21,114,232,.09)',fg:'var(--xh-accent)',t:'On-chain escrow',p:'Every trade locked in the XRP Ledger’s native escrow. No intermediary holding funds — verifiable on-chain forever.',ic:'lock'},
             {bg:'rgba(16,185,129,.1)',fg:'#10b981',t:'Instant settlement',p:'XRP settles in 3–5 seconds for a fraction of a cent. No card chargebacks, no fourteen-day holds.',ic:'bolt'},
             {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'0% fee — keep 100%',p:'Zero sales commission, no payment-processor cuts. Most platforms stack 13–20% in fees — here sellers keep 100%.',ic:'coin'},
             {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP settles the same everywhere — no conversion fees, no regional account limits.',ic:'globe'}
           ].map(w => (
-            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:22}}>
+            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:22,minWidth:0}}>
               <div style={{width:44,height:44,borderRadius:12,display:'grid',placeItems:'center',marginBottom:14,background:w.bg,color:w.fg}}>
                 {w.ic==='lock' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>}
                 {w.ic==='bolt' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z"/></svg>}
@@ -577,22 +597,22 @@ export default function HomePage() {
       </div>
 
       {/* CTA */}
-      <div style={{background:'linear-gradient(135deg, #0b1b33 0%, #142b52 55%, #1d4ed8 100%)',borderRadius:18,padding:'48px 28px 56px',textAlign:'center',marginBottom:24,color:'#fff',position:'relative',overflow:'hidden'}}>
-        <h2 className="xh-display" style={{fontSize:30,fontWeight:800,letterSpacing:'-0.02em',marginBottom:12,position:'relative',zIndex:1}}>Ready to drop anchor?</h2>
+      <div style={{background:'linear-gradient(135deg, #0b1b33 0%, #142b52 55%, #1d4ed8 100%)',borderRadius:18,padding:'40px 20px 48px',textAlign:'center',marginBottom:24,color:'#fff',position:'relative',overflow:'hidden'}}>
+        <h2 className="xh-display" style={{fontSize:28,fontWeight:800,letterSpacing:'-0.02em',marginBottom:12,position:'relative',zIndex:1}}>Ready to drop anchor?</h2>
         <p style={{fontSize:15,color:'#bcd2f7',maxWidth:520,margin:'0 auto 24px',lineHeight:1.55,position:'relative',zIndex:1}}>{user ? 'List your first item and start trading in under a minute.' : 'Connect your Xaman wallet and start trading in under a minute.'}</p>
         <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap',position:'relative',zIndex:1}}>
           {!user && (
-            <button onClick={()=>setShowLogin(true)} style={{background:'#fff',color:'#0b1b33',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,border:'none',cursor:'pointer'}}>Connect wallet</button>
+            <button onClick={()=>setShowLogin(true)} style={{background:'#fff',color:'#0b1b33',padding:'13px 24px',borderRadius:10,fontSize:14,fontWeight:700,border:'none',cursor:'pointer'}}>Connect wallet</button>
           )}
-          <Link href="/listings/new" style={{background:'#2080F5',color:'#fff',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none',border:'1px solid #60a5fa',boxShadow:'0 4px 14px rgba(32,128,245,0.35)'}}>+ List an item</Link>
-          {!user && (<Link href="/listings" style={{background:'rgba(255,255,255,0.12)',color:'#fff',padding:'13px 28px',borderRadius:10,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>Browse first</Link>)}
+          <Link href="/listings/new" style={{background:'#2080F5',color:'#fff',padding:'13px 24px',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none',border:'1px solid #60a5fa',boxShadow:'0 4px 14px rgba(32,128,245,0.35)'}}>+ List an item</Link>
+          {!user && (<Link href="/listings" style={{background:'rgba(255,255,255,0.12)',color:'#fff',padding:'13px 24px',borderRadius:10,fontSize:14,fontWeight:600,textDecoration:'none',border:'1px solid rgba(255,255,255,0.2)'}}>Browse first</Link>)}
         </div>
         <svg style={{position:'absolute',left:0,right:0,bottom:-2,width:'100%',height:44,opacity:.16}} viewBox="0 0 1200 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 30 Q 100 5 200 30 T 400 30 T 600 30 T 800 30 T 1000 30 T 1200 30 V60 H0 Z" fill="#fff"/></svg>
       </div>
 
       {/* FOOTER */}
-      <footer style={{marginTop:40,paddingTop:28,background:'var(--bg)',borderTop:'1px solid var(--border)',width:'100vw',marginLeft:'calc(50% - 50vw)'}}>
-        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:32,maxWidth:1200,margin:'0 auto',padding:'0 16px',fontSize:14}}>
+      <footer style={{marginTop:40,paddingTop:28,background:'var(--bg)',borderTop:'1px solid var(--border)',width:'100vw',maxWidth:'100vw',marginLeft:'calc(50% - 50vw)'}}>
+        <div className="xh-footer-grid" style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',fontSize:14}}>
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,fontWeight:700,fontSize:16}}><svg width="22" height="22" viewBox="0 0 34 34" fill="none" style={{color:'#2080F5',flexShrink:0}} aria-hidden="true"><circle className="xh-logo-ring" cx="17" cy="17" r="15.5" stroke="#0A1628" strokeWidth="1.6"/><circle cx="17" cy="9.4" r="2.6" stroke="currentColor" strokeWidth="1.6"/><path d="M17 12v13.4M12.4 15.2h9.2M9.2 20.2c.6 3.6 3.8 6 7.8 6s7.2-2.4 7.8-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M9.2 20.2l-1.9-1.4M9.2 20.2l2.3-.4M24.8 20.2l1.9-1.4M24.8 20.2l-2.3-.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg><span>XRP<span style={{color:'#2080F5'}}>Harbor</span></span></div>
             <p style={{color:'var(--xh-text3, #6b7280)',lineHeight:1.6,margin:0,maxWidth:320}}>The creator marketplace on the XRP Ledger. Buy and sell 3D models, shaders, UI kits, indie tools, and digital assets with 0% fees and XRPL escrow protection.</p>

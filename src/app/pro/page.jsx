@@ -107,9 +107,9 @@ export default function ProPage() {
       {done && <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: '14px 16px', color: '#34d399', fontSize: 14, marginBottom: 24, textAlign: 'center', fontWeight: 700 }}>{done}</div>}
 
       {/* Founding 100 Creators Launch Campaign Card */}
-      <div style={{ background: 'linear-gradient(135deg, #0b192c 0%, #132c4e 55%, #1e3a8a 100%)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 18, padding: '24px 26px', marginBottom: 26, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 18, boxShadow: '0 14px 34px rgba(11,25,44,0.2)' }}>
-        <div style={{ flex: '1 1 380px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.45)', color: '#fbbf24', borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 800, fontFamily: 'DM Mono,monospace', marginBottom: 10 }}>
+      <div style={{ background: 'linear-gradient(135deg, #0b192c 0%, #132c4e 55%, #1e3a8a 100%)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 18, padding: '22px 20px', marginBottom: 26, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 18, boxShadow: '0 14px 34px rgba(11,25,44,0.2)', minWidth: 0 }}>
+        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.45)', color: '#fbbf24', borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 800, fontFamily: 'DM Mono,monospace', marginBottom: 10, maxWidth: '100%', flexWrap: 'wrap' }}>
             🚀 FOUNDING 100 CREATORS LAUNCH CAMPAIGN · {foundingStatus.remaining} / {foundingStatus.total} SLOTS LEFT
           </div>
           <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6, letterSpacing: '-0.02em' }}>
@@ -119,16 +119,16 @@ export default function ProPage() {
             Claim your Founding Creator slot to unlock a custom <code style={{ color: '#fbbf24' }}>/store/handle</code> storefront, Conversion &amp; Vault Download Analytics, Buyer CSV Export, Product Update Alerts, and 1 free 7-day Featured Boost — with <strong style={{ color: '#fff' }}>0 XRP upfront</strong>.
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8, flex: '1 1 220px', minWidth: 0 }}>
           <button
             type="button"
             onClick={claimFoundingPro}
             disabled={claimingFounding || foundingStatus.remaining <= 0}
-            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#0b192c', border: 'none', borderRadius: 11, padding: '13px 20px', fontSize: 13.5, fontWeight: 800, cursor: claimingFounding ? 'wait' : 'pointer', whiteSpace: 'nowrap', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}
+            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#0b192c', border: 'none', borderRadius: 11, padding: '13px 16px', fontSize: 13.5, fontWeight: 800, cursor: claimingFounding ? 'wait' : 'pointer', boxShadow: '0 6px 18px rgba(245,158,11,0.3)', width: '100%' }}
           >
             {claimingFounding ? 'Activating Founding Pro…' : proActive ? '🎁 Claim +30 Days Founding Pro Free' : '🎁 Claim Free 30-Day Pro (Founding Creator)'}
           </button>
-          <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'DM Mono,monospace' }}>
+          <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'DM Mono,monospace', textAlign: 'center' }}>
             Instant activation · No credit card or XRP required
           </span>
         </div>
@@ -182,9 +182,9 @@ export default function ProPage() {
       </div>
 
       {/* Standard vs Pro Comparison Table */}
-      <div style={{ marginTop: 32, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '24px 28px' }}>
+      <div style={{ marginTop: 32, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 18px', overflowX: 'auto' }}>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginBottom: 16 }}>Standard vs. Pro Comparison</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 10, fontSize: 13, alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(130px, 1.5fr) minmax(90px, 1fr) minmax(100px, 1fr)', gap: 8, fontSize: 12.5, alignItems: 'center' }}>
           <div style={{ fontWeight: 700, color: 'var(--text3)', paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>Feature</div>
           <div style={{ fontWeight: 700, color: 'var(--text3)', paddingBottom: 8, borderBottom: `1px solid ${C.border}`, textAlign: 'center' }}>Standard (Free)</div>
           <div style={{ fontWeight: 800, color: '#f59e0b', paddingBottom: 8, borderBottom: `1px solid ${C.border}`, textAlign: 'center' }}>★ Pro (50 XRP / 30d)</div>

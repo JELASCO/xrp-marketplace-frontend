@@ -32,12 +32,22 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body {
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 100%;
+  min-width: 0;
 }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -92,23 +102,91 @@ body {
 }
 
 
+/* === Responsive Grid & Layout System === */
+.xh-catch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.xh-fresh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.xh-stores-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.xh-steps-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.xh-why-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.xh-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; }
+.xh-store-catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.xh-store-spotlight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.xh-store-metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.xh-store-reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.xh-dash-metrics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.xh-dash-main-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+
+.xh-scroll-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+.xh-scroll-pills::-webkit-scrollbar { display: none; }
+
+@media (max-width: 960px) {
+  .xh-catch-grid,
+  .xh-stores-grid,
+  .xh-steps-grid,
+  .xh-why-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .xh-footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .store-create-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 24px !important; }
+  .store-create-preview { position: static !important; }
+}
+
 /* === Mobile responsive overrides === */
 @media (max-width: 768px) {
+  main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .xh-catch-grid,
+  .xh-fresh-grid,
+  .xh-stores-grid,
+  .xh-steps-grid,
+  .xh-why-grid,
+  .xh-footer-grid,
+  .xh-store-catalog-grid,
+  .xh-store-spotlight-grid,
+  .xh-store-metrics-grid,
+  .xh-store-reviews-grid,
+  .xh-dash-main-grid,
+  .store-create-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  .xh-dash-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
   /* Grid layouts - collapse multi-column grids on mobile */
   [style*="grid-template-columns: repeat(4"],
-  [style*="gridTemplateColumns: repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  [style*="gridTemplateColumns: repeat(4"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
   [style*="grid-template-columns: repeat(3"],
-  [style*="gridTemplateColumns: repeat(3"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+  [style*="gridTemplateColumns: repeat(3"] { grid-template-columns: minmax(0, 1fr) !important; gap: 14px !important; }
   [style*="grid-template-columns: repeat(2"],
   [style*="gridTemplateColumns: repeat(2"] { gap: 12px !important; }
 
   /* Dashboard main/sidebar 2-col + homepage 4-col footer */
   [style*="grid-template-columns: minmax(0, 1.25fr)"],
-  [style*="grid-template-columns: 2fr 1fr 1fr 1fr"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+  [style*="grid-template-columns: 2fr 1fr 1fr 1fr"] { grid-template-columns: minmax(0, 1fr) !important; gap: 14px !important; }
 
-  /* Listing/card grids that use autofill/minmax */
-  [style*="minmax(280px"] { grid-template-columns: 1fr !important; }
-  [style*="minmax(200px"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  /* Listing/card grids that use autofill/minmax — stack 1-column on mobile so cards are never crushed */
+  [style*="minmax(200px"],
+  [style*="minmax(220px"],
+  [style*="minmax(240px"],
+  [style*="minmax(280px"],
+  [style*="minmax(300px"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
 
   /* Hero / big headings */
   h1[style*="font-size: 42px"], h1[style*="fontSize: 42px"], h1[style*="fontSize:42"] { font-size: 28px !important; line-height: 1.2 !important; }
@@ -127,18 +205,20 @@ body {
   [style*="justify-content: space-between"][style*="display: flex"] { flex-wrap: wrap !important; gap: 12px !important; }
 
   /* Modals - full width on mobile */
-  [style*="width: 400px"] { width: 95vw !important; max-width: 95vw !important; }
-  [style*="width: 500px"] { width: 95vw !important; max-width: 95vw !important; }
-  [style*="width: 600px"] { width: 95vw !important; max-width: 95vw !important; }
+  [style*="width: 400px"] { width: calc(100vw - 24px) !important; max-width: calc(100vw - 24px) !important; }
+  [style*="width: 500px"] { width: calc(100vw - 24px) !important; max-width: calc(100vw - 24px) !important; }
+  [style*="width: 600px"] { width: calc(100vw - 24px) !important; max-width: calc(100vw - 24px) !important; }
 
   /* Tables / horizontal flex rows wrap */
   [style*="display: flex"][style*="gap: 24"] { flex-wrap: wrap !important; }
 }
 
 @media (max-width: 480px) {
-  /* Smaller mobile - even tighter */
+  .xh-dash-metrics-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
   [style*="grid-template-columns: repeat(4"],
-  [style*="gridTemplateColumns: repeat(4"] { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  [style*="gridTemplateColumns: repeat(4"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
   [style*="font-size: 22px"], [style*="fontSize: 22px"] { font-size: 18px !important; }
   [style*="padding: 20px"], [style*="padding:20px"] { padding: 12px !important; }
 }

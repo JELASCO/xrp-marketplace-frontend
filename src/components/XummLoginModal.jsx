@@ -98,9 +98,12 @@ export default function XummLoginModal({ onClose }) {
           background: 'var(--surface, #151B2C)',
           border: '1px solid var(--border2, rgba(255,255,255,0.12))',
           borderRadius: 16,
-          padding: '28px',
+          padding: '24px 20px',
           width: '100%',
-          maxWidth: 380,
+          maxWidth: 'min(380px, calc(100vw - 24px))',
+          maxHeight: 'calc(100vh - 32px)',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
           boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
         }}
       >

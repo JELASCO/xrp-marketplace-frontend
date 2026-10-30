@@ -198,24 +198,41 @@ export default function StorefrontPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 16px 60px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '12px 0 60px', minWidth: 0, maxWidth: '100%' }}>
+      <style>{`
+        .xh-sf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 0 12px; margin-top: -34px; margin-bottom: 22px; flex-wrap: wrap; position: relative; z-index: 2; }
+        .xh-sf-identity { display: flex; align-items: flex-start; gap: 18px; flex: 1 1 480px; min-width: 0; flex-wrap: wrap; }
+        .xh-sf-info { flex: 1 1 240px; min-width: 0; padding-top: 38px; }
+        .xh-sf-actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding-top: 38px; min-width: 250px; max-width: 100%; }
+        .xh-sf-filterbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .xh-sf-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: 1 1 280px; justify-content: flex-end; min-width: 0; }
+        @media (max-width: 768px) {
+          .xh-sf-header { flex-direction: column; align-items: stretch; gap: 14px; padding: 0 4px; margin-top: -28px; }
+          .xh-sf-identity { flex-direction: column; align-items: flex-start; gap: 10px; flex: 1 1 auto; width: 100%; }
+          .xh-sf-info { padding-top: 0 !important; width: 100%; flex: 1 1 auto; }
+          .xh-sf-actions { padding-top: 0 !important; min-width: 0 !important; width: 100%; }
+          .xh-sf-filterbar { flex-direction: column; align-items: stretch; gap: 10px; }
+          .xh-sf-controls { width: 100%; flex: 1 1 auto; justify-content: stretch; }
+          .xh-sf-controls input, .xh-sf-controls select { flex: 1 1 100%; width: 100%; min-width: 0 !important; }
+        }
+      `}</style>
       {/* Live Store Announcement or Vacation Banner */}
       {onVacation ? (
-        <div style={{ background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.4)', color: '#d97706', borderRadius: 12, padding: '11px 18px', marginBottom: 14, fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ background: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.4)', color: '#d97706', borderRadius: 12, padding: '11px 16px', marginBottom: 14, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span>🏖️</span>
           <span>This store is currently in Vacation Mode — order delivery times may be slower than usual.</span>
         </div>
       ) : store.announcement ? (
-        <div style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.14), rgba(32,128,245,0.12))', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--text)', borderRadius: 12, padding: '11px 18px', marginBottom: 14, fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.14), rgba(32,128,245,0.12))', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--text)', borderRadius: 12, padding: '11px 16px', marginBottom: 14, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', display: 'inline-block', flexShrink: 0 }} />
-          <span>{store.announcement}</span>
+          <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{store.announcement}</span>
         </div>
       ) : null}
 
       {/* Clean Hero Banner (without top-right badge inflation) */}
       <div style={{
         aspectRatio: '3.4 / 1',
-        minHeight: 180,
+        minHeight: 150,
         maxHeight: 320,
         width: '100%',
         background: safeBanner ? `center/cover no-repeat url(${safeBanner})` : 'linear-gradient(135deg, #0b1b33 0%, #1d4ed8 55%, #0ea5e9 100%)',
@@ -229,8 +246,8 @@ export default function StorefrontPage() {
       </div>
 
       {/* Store Header Info */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, padding: '0 16px', marginTop: -34, marginBottom: 22, flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, flex: '1 1 520px', flexWrap: 'wrap' }}>
+      <div className="xh-sf-header">
+        <div className="xh-sf-identity">
           <div
             className={isProStore && store.frameStyle !== 'none' ? `xh-pro-ring frame-${store.frameStyle || 'gold'}` : ''}
             style={{
@@ -242,14 +259,14 @@ export default function StorefrontPage() {
             }}
           >
             <div style={{
-              width: 96,
-              height: 96,
+              width: 88,
+              height: 88,
               borderRadius: 20,
               background: safeLogo ? 'var(--surface2)' : 'linear-gradient(135deg, #2080F5, #f59e0b)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 32,
+              fontSize: 30,
               fontWeight: 800,
               color: '#fff',
               overflow: 'hidden',
@@ -262,9 +279,9 @@ export default function StorefrontPage() {
             </div>
           </div>
 
-          <div style={{ flex: 1, minWidth: 240, paddingTop: 40 }}>
+          <div className="xh-sf-info">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0 }}>{store.name}</h1>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', margin: 0, overflowWrap: 'anywhere' }}>{store.name}</h1>
               {isProStore && (
                 <span className="xh-pro" style={{ fontSize: 10.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, letterSpacing: '0.05em', borderRadius: 6, padding: '3px 9px', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}>
                   PRO
@@ -280,7 +297,7 @@ export default function StorefrontPage() {
               )}
             </div>
 
-            {store.tagline && <p style={{ color: 'var(--text2)', fontSize: 15, marginTop: 5, marginBottom: 0 }}>{store.tagline}</p>}
+            {store.tagline && <p style={{ color: 'var(--text2)', fontSize: 14.5, marginTop: 5, marginBottom: 0, lineHeight: 1.45 }}>{store.tagline}</p>}
 
             {/* Store Specialty / Category Pill Tags */}
             {storeTags.length > 0 && (
@@ -305,7 +322,7 @@ export default function StorefrontPage() {
             )}
 
             {/* Metrics & Rating Hierarchy (No "0 sales" barrier; < 5 sales shows "New store") */}
-            <div style={{ display: 'flex', gap: 14, marginTop: 10, fontSize: 13, color: 'var(--text3)', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 12.5, color: 'var(--text3)', flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontWeight: 600, color: 'var(--text2)' }}>@{seller.username}</span>
               {totalSales >= 5 ? (
                 <span><strong style={{ color: 'var(--text)', fontWeight: 700 }}>{totalSales}</strong> sales</span>
@@ -358,15 +375,16 @@ export default function StorefrontPage() {
         </div>
 
         {/* Right Column: Balanced Primary (Follow) & Secondary (Message) Buttons + Interactive Dashed Promo Box */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10, paddingTop: 40, minWidth: 260 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div className="xh-sf-actions">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%' }}>
             {/* Primary Button: Follow */}
             <button
               type="button"
               onClick={handleToggleFollow}
               style={{
-                minHeight: 40,
-                padding: '9px 14px',
+                minHeight: 42,
+                minWidth: 0,
+                padding: '9px 12px',
                 background: following ? 'rgba(16,185,129,0.14)' : 'var(--text)',
                 border: following ? '1.5px solid #10b981' : '1.5px solid var(--text)',
                 borderRadius: 10,
@@ -379,6 +397,7 @@ export default function StorefrontPage() {
                 justifyContent: 'center',
                 gap: 6,
                 fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
               }}
             >
               <span>{following ? '✓ Following' : '🔔 Follow'}</span>
@@ -391,8 +410,9 @@ export default function StorefrontPage() {
             <Link
               href={seller.id ? `/profile/${seller.id}` : '/messages'}
               style={{
-                minHeight: 40,
-                padding: '9px 14px',
+                minHeight: 42,
+                minWidth: 0,
+                padding: '9px 12px',
                 background: 'var(--surface)',
                 border: '1.5px solid var(--border2)',
                 borderRadius: 10,
@@ -404,6 +424,7 @@ export default function StorefrontPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
+                whiteSpace: 'nowrap',
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -428,6 +449,8 @@ export default function StorefrontPage() {
                 }}
                 title="Click to copy promo code"
                 style={{
+                  width: '100%',
+                  minWidth: 0,
                   background: copiedPromo ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.10)',
                   border: copiedPromo ? '1.5px dashed #10b981' : '1.5px dashed rgba(245,158,11,0.65)',
                   borderRadius: 10,
@@ -435,13 +458,14 @@ export default function StorefrontPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 10,
+                  flexWrap: 'wrap',
+                  gap: 8,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   textAlign: 'left',
                 }}
               >
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', minWidth: 0 }}>
                   🎁 Code:{' '}
                   <code style={{ fontFamily: 'DM Mono,monospace', fontWeight: 800, background: 'rgba(245,158,11,0.18)', color: '#d97706', padding: '1px 6px', borderRadius: 5 }}>
                     {code}
@@ -458,7 +482,7 @@ export default function StorefrontPage() {
       </div>
 
       {/* Pro Trust & Metrics Strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div className="xh-store-metrics-grid" style={{ marginBottom: 20 }}>
         {[
           { icon: '⚡', label: 'Response Time', value: responseTime },
           { icon: '🛡️', label: 'Buyer Protection', value: '100% On-Chain XRPL Escrow' },
@@ -469,9 +493,9 @@ export default function StorefrontPage() {
             value: totalSales >= 5 ? `${listings.length} Active · ${totalSales} Sold` : `${listings.length} Active Listings`,
           },
         ].map((m, idx) => (
-          <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 20 }}>{m.icon}</span>
-            <div>
+          <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>{m.icon}</span>
+            <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{m.label}</div>
               <div style={{ fontSize: 13.5, color: 'var(--text)', fontWeight: 700, marginTop: 2 }}>{m.value}</div>
             </div>
@@ -481,16 +505,18 @@ export default function StorefrontPage() {
 
       {/* Storefront Main Navigation Tabs (Catalog / Reviews) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid var(--border)', marginBottom: 24, flexWrap: 'wrap', paddingBottom: 12 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div className="xh-scroll-pills" style={{ gap: 8 }}>
           <button
             type="button"
             onClick={() => setStoreTab('catalog')}
             style={{
-              padding: '10px 18px',
+              padding: '10px 16px',
               borderRadius: 11,
               fontSize: 13.5,
               fontWeight: 700,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               border: storeTab === 'catalog' ? '1px solid var(--accent)' : '1px solid var(--border)',
               background: storeTab === 'catalog' ? 'var(--accent)' : 'var(--surface)',
               color: storeTab === 'catalog' ? '#fff' : 'var(--text2)',
@@ -506,11 +532,13 @@ export default function StorefrontPage() {
             type="button"
             onClick={() => setStoreTab('reviews')}
             style={{
-              padding: '10px 18px',
+              padding: '10px 16px',
               borderRadius: 11,
               fontSize: 13.5,
               fontWeight: 700,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               border: storeTab === 'reviews' ? '1px solid var(--accent)' : '1px solid var(--border)',
               background: storeTab === 'reviews' ? 'var(--accent)' : 'var(--surface)',
               color: storeTab === 'reviews' ? '#fff' : 'var(--text2)',
@@ -547,11 +575,11 @@ export default function StorefrontPage() {
       {/* TAB 2: VERIFIED BUYER REVIEWS */}
       {storeTab === 'reviews' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
               <div style={{ fontSize: 12, fontFamily: 'DM Mono, monospace', color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase' }}>VERIFIED ESCROW FEEDBACK</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>
-                ★ {seller.reputation_score ? Number(seller.reputation_score).toFixed(2) : '5.00'} <span style={{ fontSize: 15, color: 'var(--text3)', fontWeight: 500 }}>/ 5.00 ({seller.total_sales || displayReviews.length} verified trades)</span>
+              <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>
+                ★ {seller.reputation_score ? Number(seller.reputation_score).toFixed(2) : '5.00'} <span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 500 }}>/ 5.00 ({seller.total_sales || displayReviews.length} verified trades)</span>
               </div>
             </div>
             <span className="xh-pro" style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', fontWeight: 800, padding: '6px 12px', borderRadius: 8 }}>
@@ -559,12 +587,12 @@ export default function StorefrontPage() {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14 }}>
+          <div className="xh-store-reviews-grid">
             {displayReviews.map((rev, i) => (
-              <div key={rev.id || i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>@{rev.reviewer_username || 'verified_buyer'}</span>
-                  <span style={{ color: '#f59e0b', fontWeight: 800, fontSize: 13 }}>{'★'.repeat(Math.max(1, Math.min(5, Number(rev.rating || 5))))}</span>
+              <div key={rev.id || i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{rev.reviewer_username || 'verified_buyer'}</span>
+                  <span style={{ color: '#f59e0b', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>{'★'.repeat(Math.max(1, Math.min(5, Number(rev.rating || 5))))}</span>
                 </div>
                 <p style={{ fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.55, margin: 0 }}>{rev.comment}</p>
                 <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: '#10b981', marginTop: 'auto' }}>
@@ -591,24 +619,24 @@ export default function StorefrontPage() {
 
           {/* Pinned / Featured Store Showcase */}
           {pinnedListings.length > 0 && !search.trim() && activeCat === 'all' && (
-            <div style={{ marginBottom: 32, background: 'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(32,128,245,0.06))', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 16, padding: '18px 20px' }}>
+            <div style={{ marginBottom: 28, background: 'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(32,128,245,0.06))', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 16, padding: '16px', minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <span style={{ fontSize: 16 }}>📌</span>
-                  <h2 style={{ fontSize: 16.5, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Store Spotlight &amp; Featured Items</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Store Spotlight &amp; Featured Items</h2>
                 </div>
                 <span className="xh-pro" style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fontWeight: 800, padding: '3px 8px', borderRadius: 6 }}>PRO SHOWCASE</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+              <div className="xh-store-spotlight-grid">
                 {pinnedListings.map(l => <ListingCard key={'pin-' + l.id} listing={l} />)}
               </div>
             </div>
           )}
 
           {/* In-Store Search, Category Tabs & Sort */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="xh-sf-filterbar">
+              <div className="xh-scroll-pills" style={{ gap: 8, paddingBottom: 2 }}>
                 <button
                   type="button"
                   onClick={() => setActiveCat('all')}
@@ -618,6 +646,8 @@ export default function StorefrontPage() {
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                     border: activeCat === 'all' ? '1px solid var(--accent)' : '1px solid var(--border)',
                     background: activeCat === 'all' ? 'var(--accent)' : 'var(--surface)',
                     color: activeCat === 'all' ? '#fff' : 'var(--text2)',
@@ -635,6 +665,8 @@ export default function StorefrontPage() {
                       fontSize: 13,
                       fontWeight: 600,
                       cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                       textTransform: 'capitalize',
                       border: activeCat === c ? '1px solid var(--accent)' : '1px solid var(--border)',
                       background: activeCat === c ? 'var(--accent)' : 'var(--surface)',
@@ -645,20 +677,21 @@ export default function StorefrontPage() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', flex: '1 1 300px', justifyContent: 'flex-end' }}>
+              <div className="xh-sf-controls">
                 <input
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder={`Search inside ${store.name || 'store'}…`}
                   style={{
-                    padding: '8px 14px',
+                    padding: '9px 14px',
                     borderRadius: 10,
                     border: '1px solid var(--border2)',
                     background: 'var(--surface)',
                     color: 'var(--text)',
                     fontSize: 13,
-                    minWidth: 210,
+                    minWidth: 0,
+                    flex: '1 1 180px',
                     outline: 'none',
                   }}
                 />
@@ -666,12 +699,13 @@ export default function StorefrontPage() {
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value)}
                   style={{
-                    padding: '8px 12px',
+                    padding: '9px 12px',
                     borderRadius: 10,
                     border: '1px solid var(--border2)',
                     background: 'var(--surface)',
                     color: 'var(--text)',
                     fontSize: 13,
+                    minWidth: 0,
                     outline: 'none',
                   }}>
                   <option value="featured">Sort: Featured First</option>
@@ -687,7 +721,7 @@ export default function StorefrontPage() {
                 No listings match your filter in this store.
               </div>
             ) : (
-              <div className="listing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+              <div className="xh-store-catalog-grid">
                 {filteredListings.map((l) => <ListingCard key={l.id} listing={l} />)}
               </div>
             )}

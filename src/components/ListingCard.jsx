@@ -38,11 +38,28 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
   const avInitial = (username || '?').slice(0, 1).toUpperCase();
 
   return (
-    <Link href={'/listing/' + id} style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
+    <Link
+      href={'/listing/' + id}
+      className="xh-listing-card-link"
+      style={{
+        textDecoration: 'none',
+        display: 'block',
+        color: 'inherit',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
+      }}
+    >
       <div
+        className="xh-listing-card"
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box',
           background: 'var(--xh-surface)',
           border: '1px solid ' + (is_featured ? '#bfdbfe' : 'var(--xh-border)'),
           borderRadius: 14,
@@ -52,13 +69,13 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
           position: 'relative',
           transform: hover ? 'translateY(-3px)' : 'translateY(0)',
           boxShadow: hover ? '0 16px 32px -14px rgba(20,22,26,0.18)' : '0 1px 2px rgba(10,35,66,0.06), 0 9px 24px -8px rgba(10,35,66,0.17)',
-          minWidth: 0,
           fontFamily: BODY,
         }}
       >
         {/* Thumb */}
         <div style={{
-          aspectRatio: '4 / 3',
+          width: '100%',
+          aspectRatio: '16 / 10',
           background: CAT_BG[catKey] || CAT_BG.other,
           display: 'grid',
           placeItems: 'center',
@@ -76,6 +93,8 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
             background: 'rgba(11,27,51,0.85)', color: '#fff',
             padding: '4px 9px', borderRadius: 6,
             letterSpacing: '0.04em',
+            maxWidth: 'calc(100% - 90px)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{CAT_LABEL[catKey] || 'ITEM'}</span>
 
           {/* pro / featured — top right */}
@@ -134,19 +153,25 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
         </div>
 
         {/* Body */}
-        <div style={{ padding: '14px 16px' }}>
-          {/* Title */}
+        <div style={{ padding: '14px 16px', minWidth: 0 }}>
+          {/* Title — 2-line clamp */}
           <div style={{
             fontWeight: 600, fontSize: 14.5,
-            marginBottom: 5, color: 'var(--xh-text)',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            lineHeight: 1.35, minHeight: '2.7em',
+            marginBottom: 6, color: 'var(--xh-text)',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word',
           }}>{title}</div>
 
           {/* Seller row */}
           <div style={{
             fontSize: 12, color: 'var(--xh-text2)', marginBottom: 10,
             display: 'flex', alignItems: 'center', gap: 6,
-            minWidth: 0,
+            minWidth: 0, flexWrap: 'wrap',
           }}>
             <span
               onClick={store_handle ? goToStore : undefined}
@@ -163,34 +188,34 @@ export default function ListingCard({ listing, isFavorited, onToggleFavorite }) 
               style={{
                 cursor: store_handle ? 'pointer' : 'default',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                maxWidth: 110,
+                maxWidth: 110, minWidth: 0,
               }}
             >{username || 'unknown'}</span>
             {reputation_score > 0 && (Number(listing.review_count || listing.seller_reviews || 0) > 0 || Number(listing.total_sales || listing.seller_sales || 0) > 0) && (
-              <span style={{ color: '#f59e0b', flexShrink: 0 }}>★ {Number(reputation_score).toFixed(1)}</span>
+              <span style={{ color: '#f59e0b', flexShrink: 0, whiteSpace: 'nowrap' }}>★ {Number(reputation_score).toFixed(1)}</span>
             )}
             {Number(listing.total_sales || listing.seller_sales || 0) >= 5 && (
-              <span style={{ color: 'var(--xh-text2)', fontSize: 11, flexShrink: 0 }}>· {Number(listing.total_sales || listing.seller_sales)} sales</span>
+              <span style={{ color: 'var(--xh-text2)', fontSize: 11, flexShrink: 0, whiteSpace: 'nowrap' }}>· {Number(listing.total_sales || listing.seller_sales)} sales</span>
             )}
             {is_verified && (
               <span title="Verified seller" style={{ color: '#10b981', fontWeight: 600, flexShrink: 0 }}>✓</span>
             )}
             {game && (
-              <span style={{ color: '#a8b0bc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>· {game}</span>
+              <span style={{ color: '#a8b0bc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: '100%' }}>· {game}</span>
             )}
           </div>
 
           {/* Price + escrow row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
             <span style={{
-              fontFamily: MONO, fontWeight: 500, fontSize: 14.5,
-              color: '#1668D6',
+              fontFamily: MONO, fontWeight: 600, fontSize: 14.5,
+              color: '#1668D6', whiteSpace: 'nowrap',
             }}>{Number(price_xrp).toLocaleString('en-US')} {currency || 'XRP'}</span>
             <span style={{
               fontSize: 11, fontWeight: 600, color: '#10b981',
               background: 'rgba(16,185,129,0.1)',
               padding: '3px 8px', borderRadius: 6,
-              whiteSpace: 'nowrap',
+              whiteSpace: 'nowrap', flexShrink: 0,
             }}>🛡 escrow</span>
           </div>
         </div>

@@ -147,18 +147,22 @@ const CSS = `
 .xh-modal .xumm-block a{background:var(--xh-accent);color:#fff;text-decoration:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;display:inline-block;margin-top:4px}
 
 @media (max-width:920px){
-  .xh-prod-grid{grid-template-columns:1fr;gap:28px;padding:18px 0 40px}
-  .xh-grid4{grid-template-columns:repeat(2,1fr)}
-  .xh-spec-grid{grid-template-columns:repeat(2,1fr)}
-  .xh-prod h1{font-size:24px}
+  .xh-prod-grid{grid-template-columns:minmax(0,1fr);gap:24px;padding:16px 0 36px}
+  .xh-prod-grid > *{min-width:0;max-width:100%}
+  .xh-grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .xh-spec-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .xh-prod h1{font-size:24px;overflow-wrap:anywhere}
   .xh-price-box .xrp{font-size:28px}
 }
-@media (max-width:560px){
-  .xh-grid4{grid-template-columns:1fr}
-  .xh-buy-btns{grid-template-columns:1fr}
-  .xh-thumbs{grid-template-columns:repeat(4,1fr)}
+@media (max-width:768px){
+  .xh-grid4{grid-template-columns:minmax(0,1fr)}
+  .xh-spec-grid{grid-template-columns:minmax(0,1fr)}
+  .xh-buy-btns{grid-template-columns:minmax(0,1fr)}
+  .xh-btn{min-height:44px}
+  .xh-thumbs{grid-template-columns:repeat(4,minmax(0,1fr))}
   .xh-seller-card{flex-wrap:wrap}
-  .xh-seller-card .actions{flex-direction:row;align-items:flex-start;width:100%;justify-content:flex-end}
+  .xh-seller-card .actions{flex-direction:row;align-items:flex-start;width:100%;justify-content:flex-end;flex-wrap:wrap}
+  .xh-modal{max-width:calc(100vw - 24px);max-height:calc(100vh - 32px);overflow-y:auto;padding:20px 18px}
 }
 `;
 
@@ -207,12 +211,13 @@ export default function ListingDetailPage({ params }) {
       link.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
       document.head.appendChild(link);
     }
-    if (!document.getElementById('xh-prod-css')) {
-      const style = document.createElement('style');
+    let style = document.getElementById('xh-prod-css');
+    if (!style) {
+      style = document.createElement('style');
       style.id = 'xh-prod-css';
-      style.textContent = ':root{--xh-display:"Bricolage Grotesque","Inter",system-ui,sans-serif;--xh-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--xh-mono:"JetBrains Mono",ui-monospace,monospace}\n' + CSS;
       document.head.appendChild(style);
     }
+    style.textContent = ':root{--xh-display:"Bricolage Grotesque","Inter",system-ui,sans-serif;--xh-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--xh-mono:"JetBrains Mono",ui-monospace,monospace}\n' + CSS;
   }, []);
 
   // Fetch listing + similar

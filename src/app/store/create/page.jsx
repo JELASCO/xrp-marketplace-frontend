@@ -301,9 +301,9 @@ export default function CreateStorePage() {
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label style={labelStyle}>Store URL</label>
-                <div style={{ display: 'flex', alignItems: 'stretch', border: `1px solid ${C.lineStrong}`, borderRadius: 12, overflow: 'hidden' }}>
-                  <span style={{ padding: '0 12px', fontSize: 13, color: C.muted, background: C.bgSoft, borderRight: `1px solid ${C.lineStrong}`, display: 'flex', alignItems: 'center', fontFamily: 'monospace' }}>xrpharbor.com/store/</span>
-                  <input style={{ border: 'none', flex: 1, padding: '10px 12px', minHeight: 44, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.ink, background: C.bg }} type="text" placeholder="ripple-vault" value={handle} onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} />
+                <div style={{ display: 'flex', alignItems: 'stretch', border: `1px solid ${C.lineStrong}`, borderRadius: 12, overflow: 'hidden', minWidth: 0 }}>
+                  <span style={{ padding: '0 10px', fontSize: 12, color: C.muted, background: C.bgSoft, borderRight: `1px solid ${C.lineStrong}`, display: 'flex', alignItems: 'center', fontFamily: 'monospace', whiteSpace: 'nowrap', flexShrink: 0 }}>xrpharbor.com/store/</span>
+                  <input style={{ border: 'none', flex: 1, minWidth: 0, padding: '10px 12px', minHeight: 44, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.ink, background: C.bg }} type="text" placeholder="ripple-vault" value={handle} onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} />
                 </div>
                 <div style={hintStyle}>Lowercase letters, numbers, and dashes. You can change this once after publishing.</div>
               </div>
@@ -467,7 +467,7 @@ export default function CreateStorePage() {
               </div>
               <div>
                 <label style={labelStyle}>Verified Social &amp; Portfolio Links <span style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fontWeight: 700, marginLeft: 6, padding: '2px 7px', borderRadius: 5, background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>FREE FOR ALL SELLERS</span></label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
                   <input style={inputStyle} type="url" placeholder="Discord invite URL (https://discord.gg/...)" value={socials.discord} onChange={(e) => setSocials(s => ({ ...s, discord: e.target.value }))} />
                   <input style={inputStyle} type="url" placeholder="X / Twitter URL (https://x.com/...)" value={socials.twitter} onChange={(e) => setSocials(s => ({ ...s, twitter: e.target.value }))} />
                   <input style={inputStyle} type="url" placeholder="GitHub / ArtStation URL (https://github.com/...)" value={socials.github} onChange={(e) => setSocials(s => ({ ...s, github: e.target.value }))} />

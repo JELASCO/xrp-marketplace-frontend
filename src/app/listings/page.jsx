@@ -88,12 +88,13 @@ const CSS = `
 .xh-escrow-note{font-size:12.5px;color:var(--xh-text2);background:var(--xh-surface2);border:1px solid var(--xh-border);border-left:3px solid #10b981;border-radius:10px;padding:12px 14px;line-height:1.45}
 
 .xh-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.xh-search{flex:1;display:flex;gap:8px;min-width:240px}
-.xh-search input{flex:1;font:inherit;font-size:14px;padding:10px 16px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface2);color:var(--xh-text);min-width:0}
+.xh-search{flex:1 1 220px;display:flex;gap:8px;min-width:0;width:100%}
+.xh-search input{flex:1;font:inherit;font-size:14px;padding:10px 14px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface2);color:var(--xh-text);min-width:0}
 .xh-search input:focus{outline:2px solid var(--xh-accent);background:var(--xh-surface)}
-.xh-search button{background:var(--xh-accent);color:#fff;border:none;padding:0 18px;border-radius:10px;font-weight:500;cursor:pointer;font-size:14px}
+.xh-search button{background:var(--xh-accent);color:#fff;border:none;padding:0 16px;border-radius:10px;font-weight:500;cursor:pointer;font-size:14px;white-space:nowrap;flex-shrink:0}
 .xh-search button:hover{background:#1668D6}
-.xh-sort{font:inherit;font-size:13.5px;font-weight:500;padding:10px 14px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface);color:var(--xh-text);cursor:pointer}
+.xh-sort{font:inherit;font-size:13.5px;font-weight:500;padding:10px 14px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface);color:var(--xh-text);cursor:pointer;min-width:0}
+.xh-mob-filter-btn{display:none;align-items:center;justify-content:center;gap:6px;font:inherit;font-size:13.5px;font-weight:600;padding:10px 14px;border:1px solid var(--xh-border);border-radius:10px;background:var(--xh-surface);color:var(--xh-text);cursor:pointer;white-space:nowrap}
 
 .xh-rline{font-family:var(--xh-mono);font-size:12px;color:var(--xh-text2);margin-bottom:14px}
 .xh-rline b{color:var(--xh-text);font-weight:500}
@@ -105,6 +106,7 @@ const CSS = `
 .xh-chip-clear{background:transparent;border:0;color:var(--xh-text2);font-size:12.5px;cursor:pointer;padding:5px 8px;text-decoration:underline}
 
 .xh-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.xh-main-col{min-width:0;max-width:100%}
 
 .xh-empty{text-align:center;padding:64px 24px;background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:14px;color:var(--xh-text2)}
 .xh-empty .ico{font-size:38px;margin-bottom:12px;opacity:0.55}
@@ -120,18 +122,23 @@ const CSS = `
 .xh-skel{background:var(--xh-surface2);border:1px solid var(--xh-border);border-radius:14px;height:280px;animation:xhSkel 1.4s ease-in-out infinite}
 @keyframes xhSkel{0%,100%{opacity:1}50%{opacity:0.5}}
 
-@media (max-width:920px){
-  .xh-page{grid-template-columns:1fr}
+@media (max-width:960px){
+  .xh-page{grid-template-columns:minmax(0,1fr);gap:18px}
   .xh-side{position:static;flex-direction:row;flex-wrap:wrap;max-height:none;overflow:visible;padding-right:0}
   .xh-fg{flex:1 1 calc(50% - 8px);min-width:200px}
-  .xh-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .xh-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
   .xh-mast-in{flex-direction:column;align-items:flex-start;gap:18px;padding:24px 20px 36px}
   .xh-mast h1{font-size:24px}
   .xh-mast-stats{text-align:left;gap:18px;flex-wrap:wrap}
 }
-@media (max-width:560px){
-  .xh-grid{grid-template-columns:1fr}
-  .xh-mast-in{padding:20px 18px 32px}
+@media (max-width:768px){
+  .xh-grid{grid-template-columns:minmax(0,1fr);gap:14px}
+  .xh-mob-filter-btn{display:inline-flex;flex:1 1 auto}
+  .xh-sort{flex:1 1 auto}
+  .xh-side{display:none}
+  .xh-side.mob-open{display:flex;flex-direction:column}
+  .xh-fg{flex:1 1 100%;min-width:0}
+  .xh-mast-in{padding:20px 16px 32px}
 }
 `;
 
@@ -175,12 +182,13 @@ function ListingsContent() {
       link.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
       document.head.appendChild(link);
     }
-    if (!document.getElementById('xh-listings-css')) {
-      const style = document.createElement('style');
+    let style = document.getElementById('xh-listings-css');
+    if (!style) {
+      style = document.createElement('style');
       style.id = 'xh-listings-css';
-      style.textContent = ':root{--xh-display:"Bricolage Grotesque","Inter",system-ui,sans-serif;--xh-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--xh-mono:"JetBrains Mono",ui-monospace,monospace}\n' + CSS;
       document.head.appendChild(style);
     }
+    style.textContent = ':root{--xh-display:"Bricolage Grotesque","Inter",system-ui,sans-serif;--xh-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--xh-mono:"JetBrains Mono",ui-monospace,monospace}\n' + CSS;
   }, []);
 
   useEffect(() => {
@@ -258,6 +266,7 @@ function ListingsContent() {
 
   const handleSearch = (e) => { e.preventDefault(); setQ(inputQ.trim()); };
   const [openF, setOpenF] = useState({ cat: true });
+  const [mobFiltersOpen, setMobFiltersOpen] = useState(false);
   const toggleF = (k) => setOpenF(s => ({ ...s, [k]: !s[k] }));
   const clearFilters = () => {
     setCat(''); setSort('newest'); setQ(''); setInputQ('');
@@ -299,7 +308,7 @@ function ListingsContent() {
       </header>
 
       <div className="xh-page">
-        <aside className="xh-side">
+        <aside className={'xh-side' + (mobFiltersOpen ? ' mob-open' : '')}>
           <div className="xh-fg">
             <h4 onClick={() => toggleF('cat')} style={{cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>CATEGORY<span style={{fontSize:10,opacity:0.55,transition:'transform .2s',transform:openF.cat?'rotate(180deg)':'none'}}>▾</span></h4>
             {openF.cat && CATS.filter(c => c.key).map(c => (
@@ -338,8 +347,8 @@ function ListingsContent() {
           <div className="xh-escrow-note">🛡 Every listing here is escrow-protected — your XRP is locked on-chain until you confirm delivery.</div>
         </aside>
 
-        <main>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div className="xh-main-col">
+          <div className="xh-scroll-pills" style={{ marginBottom: 14, paddingBottom: 4 }}>
             {CATS.map(c => (
               <button
                 key={c.key || 'all'}
@@ -352,6 +361,8 @@ function ListingsContent() {
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                   border: cat === c.key ? '1px solid var(--xh-accent)' : '1px solid var(--xh-border)',
                   background: cat === c.key ? 'var(--xh-accent)' : 'var(--xh-surface)',
                   color: cat === c.key ? '#fff' : 'var(--xh-text2)',
@@ -366,6 +377,13 @@ function ListingsContent() {
               <input value={inputQ} onChange={e => setInputQ(e.target.value)} placeholder={'Search in ' + activeCat.mast.title + '…'} />
               <button type="submit">Search</button>
             </div>
+            <button
+              type="button"
+              className="xh-mob-filter-btn"
+              onClick={() => setMobFiltersOpen(v => !v)}
+            >
+              ⚙ {mobFiltersOpen ? 'Hide Filters' : 'Filters'} {activeChips.length > 0 ? `(${activeChips.length})` : ''}
+            </button>
             <select className="xh-sort" value={sort} onChange={e => setSort(e.target.value)}>
               {SORTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
@@ -416,7 +434,7 @@ function ListingsContent() {
               )}
             </>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );

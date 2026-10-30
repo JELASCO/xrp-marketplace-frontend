@@ -24,6 +24,7 @@ export default function Navbar() {
   const { user, logout } = useAuthStore();
   const [showLogin, setShowLogin] = useState(false);
   const [showMenu,  setShowMenu]  = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
   const [search,    setSearch]    = useState('');
   const pathname = usePathname();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -80,23 +81,36 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        @media(max-width:640px){.xrp-nav-links{display:none!important}.xrp-price{display:none!important}}
+        .xrp-mob-btn{display:none}
+        @media(max-width:768px){
+          .xrp-nav-inner{padding:0 12px!important;gap:6px!important}
+          .xrp-nav-links{display:none!important}
+          .xrp-price{display:none!important}
+          .xrp-search{display:none!important}
+          .xrp-theme-btn{margin-left:auto!important}
+          .xrp-mob-btn{display:flex!important}
+        }
+        @media(max-width:440px){
+          .xrp-user-name{display:none!important}
+          .xrp-connect-extra{display:none!important}
+          .xrp-logo-text{font-size:15.5px!important}
+        }
         html[data-theme="dark"] .xh-logo-ring{stroke:#fff}
       `}</style>
-      <nav style={{background:'color-mix(in srgb, var(--bg) 86%, transparent)',backdropFilter:'blur(12px)',borderBottom:'1px solid var(--border)',position:'sticky',top:0,zIndex:50}}>
-        <div style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:58,display:'flex',alignItems:'center',gap:12}}>
-          <Link href="/" style={{textDecoration:'none',color:'var(--text)',flexShrink:0,display:'flex',alignItems:'center',gap:9}}>
-            <svg width="30" height="30" viewBox="0 0 34 34" fill="none" style={{color:'#2080F5',flexShrink:0}} aria-hidden="true">
+      <nav style={{background:'color-mix(in srgb, var(--bg) 86%, transparent)',backdropFilter:'blur(12px)',borderBottom:'1px solid var(--border)',position:'sticky',top:0,zIndex:50,maxWidth:'100vw'}}>
+        <div className="xrp-nav-inner" style={{maxWidth:1200,margin:'0 auto',padding:'0 16px',height:58,display:'flex',alignItems:'center',gap:10,minWidth:0}}>
+          <Link href="/" style={{textDecoration:'none',color:'var(--text)',flexShrink:0,display:'flex',alignItems:'center',gap:7}}>
+            <svg width="26" height="26" viewBox="0 0 34 34" fill="none" style={{color:'#2080F5',flexShrink:0}} aria-hidden="true">
               <circle className="xh-logo-ring" cx="17" cy="17" r="15.5" stroke="#0A1628" strokeWidth="1.6"/>
               <circle cx="17" cy="9.4" r="2.6" stroke="currentColor" strokeWidth="1.6"/>
               <path d="M17 12v13.4M12.4 15.2h9.2M9.2 20.2c.6 3.6 3.8 6 7.8 6s7.2-2.4 7.8-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
               <path d="M9.2 20.2l-1.9-1.4M9.2 20.2l2.3-.4M24.8 20.2l1.9-1.4M24.8 20.2l-2.3-.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
             </svg>
-            <span style={{fontSize:18,fontWeight:700,letterSpacing:'-.01em'}}>
+            <span className="xrp-logo-text" style={{fontSize:17.5,fontWeight:700,letterSpacing:'-.01em'}}>
               XRP<span style={{color:'#2080F5'}}>Harbor</span>
             </span>
           </Link>
-          {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative'}}>
+          {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:360,position:'relative',minWidth:0}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'var(--surface)',border:'1px solid var(--border2)',color:'var(--text)',borderRadius:8}}
               placeholder="Search the harbor…" value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,7 +119,7 @@ export default function Navbar() {
           </form>)}
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[{href:'/listings',label:'Marketplace'},...(user?[{href:'/dashboard',label:'Dashboard'}]:[]),{href:'/listings/new',label:'+ List an item',accent:true},{href:'/orders',label:'Library / Purchases'}].map(l=>(
-              <Link key={l.href} href={l.href} style={l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent'}}
+              <Link key={l.href} href={l.href} style={l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)',whiteSpace:'nowrap'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent',whiteSpace:'nowrap'}}
                 onMouseEnter={e=>{ if(l.accent){ e.currentTarget.style.background='#2080F5'; e.currentTarget.style.color='#fff'; } else { e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'; } }}
                 onMouseLeave={e=>{ if(l.accent){ e.currentTarget.style.background='rgba(32,128,245,0.10)'; e.currentTarget.style.color='#2080F5'; } else { e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'; } }}>
                 {l.label}
@@ -117,8 +131,8 @@ export default function Navbar() {
             <span>XRP</span>
             <span style={{color: priceDir==='up' ? '#16A34A' : priceDir==='down' ? '#ef4444' : 'var(--text)', fontWeight:600, transition:'color 0.25s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(4) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
           </div>
-          <button onClick={toggleTheme} aria-label="Toggle theme"
-            style={{display:'flex',alignItems:'center',justifyContent:'center',width:36,height:36,background:'transparent',border:'1px solid var(--border2)',borderRadius:'50%',cursor:'pointer',color:'var(--text2)',flexShrink:0,padding:0}}>
+          <button onClick={toggleTheme} aria-label="Toggle theme" className="xrp-theme-btn"
+            style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'transparent',border:'1px solid var(--border2)',borderRadius:'50%',cursor:'pointer',color:'var(--text2)',flexShrink:0,padding:0}}>
             {dark ? (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
             ) : (
@@ -134,7 +148,7 @@ export default function Navbar() {
                 {unread > 0 && <span style={{position:'absolute',top:-4,right:-4,minWidth:16,height:16,padding:'0 4px',background:'#ef4444',color:'#fff',fontSize:10,fontWeight:700,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>{unread>9?'9+':unread}</span>}
               </button>
               {showNotifs && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:300,maxHeight:380,overflowY:'auto',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:'min(300px, calc(100vw - 24px))',maxHeight:380,overflowY:'auto',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
                   <div style={{padding:'10px 14px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:700,color:'var(--text)'}}>Notifications</div>
                   {notifs.length === 0 ? (
                     <div style={{padding:'24px 14px',textAlign:'center',fontSize:12,color:'var(--text3)'}}>No notifications yet</div>
@@ -154,17 +168,17 @@ export default function Navbar() {
             </div>
             <div ref={menuRef} style={{position:'relative'}}>
               <button onClick={()=>setShowMenu(v=>!v)}
-                style={{display:'flex',alignItems:'center',gap:8,background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'var(--text)',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
+                style={{display:'flex',alignItems:'center',gap:6,background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,padding:'6px 8px',cursor:'pointer',color:'var(--text)',fontSize:13,fontWeight:500,minWidth:'fit-content'}}>
                 <div style={{width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#2080F5,#38BDF8)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#fff',flexShrink:0}}>
                   {user.username?.slice(0,2).toUpperCase()}
                 </div>
-                <span style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{user.username}</span>
+                <span className="xrp-user-name" style={{maxWidth:110,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{user.username}</span>
                 {((user.proUntil && new Date(user.proUntil).getTime() > Date.now()) || user.role === 'admin') && (
-                  <span className="xh-pro" style={{fontSize:9.5,fontFamily:'DM Mono,monospace',fontWeight:800,letterSpacing:'0.04em',padding:'2px 6px',borderRadius:5}}>PRO</span>
+                  <span className="xh-pro xrp-connect-extra" style={{fontSize:9.5,fontFamily:'DM Mono,monospace',fontWeight:800,letterSpacing:'0.04em',padding:'2px 6px',borderRadius:5}}>PRO</span>
                 )}
               </button>
               {showMenu && (
-                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 0',boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
+                <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:'min(185px, calc(100vw - 24px))',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 0',boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
                   {!(user.proUntil && new Date(user.proUntil).getTime() > Date.now()) && (<>
                     <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#2080F5',fontWeight:600,textDecoration:'none'}}>⭐ Upgrade to Pro</Link>
                     <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
@@ -188,12 +202,61 @@ export default function Navbar() {
             </>
           ) : (
             <button onClick={()=>setShowLogin(true)}
-              style={{display:'flex',alignItems:'center',gap:7,background:'#2080F5',color:'#fff',border:'none',borderRadius:999,padding:'8px 16px',fontSize:13,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M16.5 14.5h.01"/></svg>
-              Connect Xaman
+              style={{display:'flex',alignItems:'center',gap:6,background:'#2080F5',color:'#fff',border:'none',borderRadius:999,padding:'8px 12px',fontSize:12.5,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M16.5 14.5h.01"/></svg>
+              <span>Connect<span className="xrp-connect-extra"> Xaman</span></span>
             </button>
           )}
+          <button
+            type="button"
+            aria-label="Toggle mobile navigation"
+            className="xrp-mob-btn"
+            onClick={() => setShowMobileNav(v => !v)}
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              background: 'var(--surface)',
+              border: '1px solid var(--border2)',
+              borderRadius: 8,
+              cursor: 'pointer',
+              color: 'var(--text)',
+              flexShrink: 0,
+              padding: 0,
+            }}
+          >
+            {showMobileNav ? '✕' : '☰'}
+          </button>
         </div>
+        {showMobileNav && (
+          <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)', padding: '10px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { href: '/listings', label: '🛍️ Marketplace' },
+              { href: '/listings/new', label: '➕ List an Item' },
+              { href: '/orders', label: '📦 Library / Purchases' },
+              ...(user ? [{ href: '/dashboard', label: '📊 Seller Dashboard' }] : []),
+              { href: '/pro', label: '⭐ XRPHarbor Pro' },
+            ].map(l => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setShowMobileNav(false)}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  color: 'var(--text)',
+                  textDecoration: 'none',
+                  background: pathname === l.href ? 'var(--surface2)' : 'transparent',
+                }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </nav>
       {showLogin && <XummLoginModal onClose={()=>setShowLogin(false)}/>}
     </>

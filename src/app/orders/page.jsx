@@ -366,9 +366,9 @@ export default function OrdersPage() {
   return (
     <div style={{maxWidth:680,margin:'0 auto'}}>
       {xummModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:20,backdropFilter:'blur(4px)'}}
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:12,backdropFilter:'blur(4px)'}}
           onClick={e => { if(e.target===e.currentTarget){ closeXummModal(); } }}>
-          <div style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border2)',borderRadius:16,padding:28,maxWidth:380,width:'100%'}}>
+          <div style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border2)',borderRadius:16,padding:'22px 18px',maxWidth:'min(380px, calc(100vw - 24px))',width:'100%',maxHeight:'calc(100vh - 32px)',overflowY:'auto',boxSizing:'border-box'}}>
             {xummModal.hasFee && (xummModal.mode==='commission'||xummModal.mode==='pay') && (() => {
               const curIdx = xummModal.mode==='commission' ? 0 : 1;
               return (
@@ -470,37 +470,37 @@ export default function OrdersPage() {
           const stepIdx = STEP_IDX[order.status] || 0;
           return (
             <div key={order.id} style={{background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
-              <button onClick={() => toggleOpen(order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'16px 18px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
+              <button onClick={() => toggleOpen(order.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'14px 16px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',flexWrap:'wrap'}}>
                 {order.images && sanitizeImageUrl(order.images[0]) ? (
-                  <img src={sanitizeImageUrl(order.images[0])} alt='' style={{width:48,height:48,borderRadius:8,objectFit:'cover',flexShrink:0,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}/>
+                  <img src={sanitizeImageUrl(order.images[0])} alt='' style={{width:44,height:44,borderRadius:8,objectFit:'cover',flexShrink:0,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)'}}/>
                 ) : (
-                  <div style={{width:48,height:48,borderRadius:8,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>📦</div>
+                  <div style={{width:44,height:44,borderRadius:8,background:'var(--surface)',boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📦</div>
                 )}
-                <div style={{flex:1,minWidth:0}}>
+                <div style={{flex:'1 1 130px',minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{order.listing_title||'Item'}</div>
                   <div style={{fontSize:11,color:'var(--text3)'}}>{new Date(order.created_at).toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'})}</div>
                 </div>
-                <div style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-                  <span style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{Number(order.total_xrp).toLocaleString('en-US')} XRP</span>
-                  <span style={{fontSize:11,fontWeight:500,padding:'3px 8px',borderRadius:20,background:st.bg,color:st.color}}>{st.label}</span>
+                <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                  <span style={{fontSize:13.5,fontWeight:700,color:'var(--text)',whiteSpace:'nowrap'}}>{Number(order.total_xrp).toLocaleString('en-US')} XRP</span>
+                  <span style={{fontSize:11,fontWeight:500,padding:'3px 8px',borderRadius:20,background:st.bg,color:st.color,whiteSpace:'nowrap'}}>{st.label}</span>
                   <span style={{color:'var(--text3)',fontSize:10}}>{exp?'▲':'▼'}</span>
                 </div>
               </button>
               {exp && (
-                <div style={{padding:'0 18px 18px',borderTop:'1px solid rgba(255,255,255,0.04)'}}>
-                  <div style={{display:'flex',alignItems:'flex-start',marginBottom:8,paddingTop:16}}>
+                <div style={{padding:'0 16px 16px',borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+                  <div style={{display:'flex',alignItems:'flex-start',marginBottom:8,paddingTop:16,minWidth:0}}>
                     {STEPS.map((s,i) => (
-                      <div key={s} style={{display:'flex',alignItems:'flex-start',flex:i<STEPS.length-1?1:'none'}}>
-                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,width:62}}>
-                          <div style={{width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,border:'2px solid',
+                      <div key={s} style={{display:'flex',alignItems:'flex-start',flex:i<STEPS.length-1?1:'none',minWidth:0}}>
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,width:54,minWidth:0}}>
+                          <div style={{width:26,height:26,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,border:'2px solid',
                             background:i<stepIdx?'var(--green)':i===stepIdx?'var(--accent)':'var(--surface2)',
                             borderColor:i<stepIdx?'var(--green)':i===stepIdx?'var(--accent)':'var(--border2)',
                             color:i<=stepIdx?'#fff':'var(--text3)'}}>
                             {i<stepIdx?'✓':i+1}
                           </div>
-                          <div style={{fontSize:10,fontWeight:500,textAlign:'center',lineHeight:1.2,color:i<=stepIdx?'var(--text2)':'var(--text3)'}}>{s}</div>
+                          <div style={{fontSize:9.5,fontWeight:500,textAlign:'center',lineHeight:1.2,color:i<=stepIdx?'var(--text2)':'var(--text3)'}}>{s}</div>
                         </div>
-                        {i<STEPS.length-1 && <div style={{flex:1,height:2,margin:'0 2px',marginTop:13,background:i<stepIdx?'var(--green)':'var(--border)'}}/>}
+                        {i<STEPS.length-1 && <div style={{flex:1,height:2,margin:'0 2px',marginTop:12,background:i<stepIdx?'var(--green)':'var(--border)'}}/>}
                       </div>
                     ))}
                   </div>

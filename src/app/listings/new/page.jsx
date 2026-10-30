@@ -257,15 +257,17 @@ const CSS = `
 .xh-prev .foot{margin-top:14px;padding-top:12px;border-top:1px dashed var(--xh-border);font-family:var(--xh-mono);font-size:10px;color:var(--xh-text2);text-align:center;letter-spacing:0.04em;text-transform:uppercase}
 
 @media (max-width:960px){
-  .xh-grid{grid-template-columns:1fr;gap:22px;padding-bottom:40px}
+  .xh-grid{grid-template-columns:minmax(0,1fr);gap:22px;padding-bottom:40px}
+  .xh-col,.xh-prev-col{min-width:0;max-width:100%}
   .xh-prev-col{position:static}
-  .xh-row2{grid-template-columns:1fr}
-  .xh-cat-grid{grid-template-columns:repeat(2,1fr)}
+  .xh-row2{grid-template-columns:minmax(0,1fr)}
+  .xh-cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .xh-form-mast h1{font-size:22px}
 }
 @media (max-width:560px){
-  .xh-media-grid{grid-template-columns:repeat(2,1fr)}
-  .xh-form-mast{padding:22px 20px 30px}
+  .xh-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .xh-form-mast{padding:20px 16px 28px}
+  .xh-card{padding:16px}
 }
 `;
 
@@ -603,8 +605,8 @@ export default function NewListingPage() {
 
       {/* GUMROAD / ITCH.IO IMPORTER MODAL */}
       {showImportModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,27,51,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backdropFilter: 'blur(4px)' }} onClick={e => { if (e.target === e.currentTarget) setShowImportModal(false); }}>
-          <div style={{ background: 'var(--xh-surface, #fff)', border: '1px solid var(--xh-border)', borderRadius: 16, padding: 26, maxWidth: 480, width: '100%', boxShadow: '0 24px 60px -12px rgba(10,22,40,0.45)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,27,51,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, backdropFilter: 'blur(4px)' }} onClick={e => { if (e.target === e.currentTarget) setShowImportModal(false); }}>
+          <div style={{ background: 'var(--xh-surface, #fff)', border: '1px solid var(--xh-border)', borderRadius: 16, padding: '22px 18px', maxWidth: 'min(480px, calc(100vw - 24px))', width: '100%', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 24px 60px -12px rgba(10,22,40,0.45)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--xh-text)' }}>⚡ Import from Gumroad or itch.io</h3>
               <button type="button" onClick={() => setShowImportModal(false)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--xh-text2)' }}>✕</button>

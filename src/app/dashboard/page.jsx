@@ -378,7 +378,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:11,marginBottom:16}}>
+      <div className="xh-dash-metrics-grid" style={{marginBottom:16}}>
         <Metric icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>} label="In escrow" value={fmt(inEscrow)} unit="XRP" sub={active.length+' active trades'} subColor="#1d6fd6"/>
         <Metric icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M14.2 9.3a2.5 2.5 0 0 0-2.2-1.1c-1.4 0-2.3.8-2.3 1.8 0 2.5 4.6 1.4 4.6 3.9 0 1-1 1.8-2.4 1.8a2.7 2.7 0 0 1-2.3-1.1M12 6.6v10.8"/></svg>} label="Earned" value={fmt(earned)} unit="XRP" sub="as seller"/>
         <Metric icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h7.8a1 1 0 0 0 1-.8L20 8H6"/></svg>} label="Spent" value={fmt(spent)} unit="XRP" sub="as buyer"/>
@@ -486,7 +486,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Store Analytics KPI Cards */}
-        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(185px, 1fr))', gap:12, marginBottom:16}}>
+        <div className="xh-dash-metrics-grid" style={{marginBottom:16}}>
           <div style={{background:'var(--bg)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px'}}>
             <div style={{fontSize:11, color:'var(--text3)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em'}}>
               {chartRange === '7d' ? '7-Day' : chartRange === 'all' ? 'All-Time' : '30-Day'} Escrow Volume
@@ -614,7 +614,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Category Mix + Recent Verified Escrow Settlements */}
-        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:14}}>
+        <div className="xh-dash-main-grid" style={{gap:14}}>
           <div style={{background:'var(--bg)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 16px'}}>
             <div style={{fontSize:13.5, fontWeight:700, color:'var(--text)', marginBottom:12}}>Category Inventory Mix</div>
             {catBreakdown.length === 0 ? (
@@ -663,7 +663,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1.25fr) minmax(0,1fr)',gap:12,alignItems:'start',marginBottom:14}}>
+      <div className="xh-dash-main-grid" style={{gap:12,alignItems:'start',marginBottom:14}}>
 
         <div style={card}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:2}}>
@@ -750,8 +750,8 @@ export default function DashboardPage() {
 
       {/* GUMROAD / ITCH.IO IMPORTER MODAL */}
       {showImportModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(11,27,51,0.65)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={e => { if (e.target === e.currentTarget) setShowImportModal(false); }}>
-          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:24,maxWidth:460,width:'100%',boxShadow:'0 24px 60px -12px rgba(10,22,40,0.45)'}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(11,27,51,0.65)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:12,backdropFilter:'blur(4px)'}} onClick={e => { if (e.target === e.currentTarget) setShowImportModal(false); }}>
+          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:'22px 18px',maxWidth:'min(460px, calc(100vw - 24px))',width:'100%',maxHeight:'calc(100vh - 32px)',overflowY:'auto',boxSizing:'border-box',boxShadow:'0 24px 60px -12px rgba(10,22,40,0.45)'}}>
             <h3 style={{margin:'0 0 6px',fontSize:18,fontWeight:800,color:'var(--text)'}}>⚡ Import from Gumroad or itch.io</h3>
             <p style={{margin:'0 0 14px',fontSize:13,color:'var(--text2)',lineHeight:1.5}}>
               Paste your Gumroad or itch.io product link to import title, description, tags, price, and cover images into a new XRPHarbor listing draft.
@@ -778,8 +778,8 @@ export default function DashboardPage() {
 
       {/* PRODUCT UPDATE ALERT MODAL */}
       {updateModalListing && (
-        <div style={{position:'fixed',inset:0,background:'rgba(11,27,51,0.65)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={e => { if (e.target === e.currentTarget) setUpdateModalListing(null); }}>
-          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:24,maxWidth:440,width:'100%'}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(11,27,51,0.65)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:12,backdropFilter:'blur(4px)'}} onClick={e => { if (e.target === e.currentTarget) setUpdateModalListing(null); }}>
+          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:'22px 18px',maxWidth:'min(440px, calc(100vw - 24px))',width:'100%',maxHeight:'calc(100vh - 32px)',overflowY:'auto',boxSizing:'border-box'}}>
             <h3 style={{margin:'0 0 4px',fontSize:17,fontWeight:800,color:'var(--text)'}}>🔔 Send Product Update Alert</h3>
             <p style={{margin:'0 0 14px',fontSize:12.5,color:'var(--text2)'}}>
               Notify all past buyers of <strong>{updateModalListing.title}</strong> that a new file version is ready in their Library.
