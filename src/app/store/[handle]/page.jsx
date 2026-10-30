@@ -3,19 +3,18 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
+import { useAuthStore } from '../../../lib/store';
 import ListingCard from '../../../components/ListingCard';
 import { sanitizeExternalUrl, sanitizeImageUrl } from '../../../lib/sanitizeUrl';
-import { useXrpPrice } from '../../../lib/xrpPrice';
 
 export default function StorefrontPage() {
   const { handle } = useParams();
-  const { price: xrpUsd } = useXrpPrice();
+  const currentUser = useAuthStore((s) => s.user);
   const [data, setData] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [storeTab, setStoreTab] = useState('catalog'); // 'catalog' | 'analytics' | 'reviews'
-  const [chartRange, setChartRange] = useState('30d'); // '7d' | '30d' | 'all'
+  const [storeTab, setStoreTab] = useState('catalog'); // 'catalog' | 'reviews'
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
@@ -123,76 +122,9 @@ export default function StorefrontPage() {
     { key: 'website', label: 'Website', icon: '🌐', url: sanitizeExternalUrl(socials.website) },
   ].filter(s => s.url);
 
-  // Deterministic & real store analytics computation
-  const totalSalesCount = Number(seller.total_sales || 0);
-  const avgListingPrice = listings.length > 0
-    ? listings.reduce((acc, l) => acc + Number(l.price_xrp || 0), 0) / listings.length
-    : 85;
-  const seedHash = String(handle || 'store').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const fullSeries30 = Array.from({ length: 30 }, (_, idx) => {
-    const base = Math.max(12, Math.round(avgListingPrice * (0.45 + ((seedHash + idx * 17) % 100) / 85)));
-    const wave = Math.round(Math.sin((idx + seedHash) * 0.45) * (avgListingPrice * 0.28));
-    const trend = Math.round((idx / 30) * (avgListingPrice * 0.35));
-    return Math.max(8, base + wave + trend);
-  });
-  const chartPoints = chartRange === '7d' ? fullSeries30.slice(-7) : fullSeries30;
-  const totalVolume30d = fullSeries30.reduce((a, b) => a + b, 0);
-  const displayVolumeXrp = chartRange === '7d'
-    ? chartPoints.reduce((a, b) => a + b, 0)
-    : chartRange === 'all'
-      ? Math.max(totalVolume30d, Math.round(totalSalesCount * avgListingPrice))
-      : totalVolume30d;
-  const maxPt = Math.max(1, ...chartPoints);
-  const minPt = Math.min(...chartPoints);
-  const peakDayXrp = maxPt;
-  const avgTradeXrp = Math.round(avgListingPrice);
-  const storeViews30d = totalSalesCount * 28 + listings.length * 64 + (seedHash % 90);
-  const repeatBuyerPct = Math.min(68, 24 + (seedHash % 25));
-
-  // SVG coordinates for 30-day / 7-day sales chart
-  const CW = 720, CH = 190, PADX = 16, PADY = 18;
-  const svgCoords = chartPoints.map((v, i) => {
-    const x = PADX + (i / Math.max(1, chartPoints.length - 1)) * (CW - PADX * 2);
-    const y = CH - PADY - ((v - minPt * 0.7) / Math.max(1, maxPt - minPt * 0.7)) * (CH - PADY * 2);
-    return [Math.round(x * 10) / 10, Math.round(y * 10) / 10, v];
-  });
-  const linePath = svgCoords.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
-  const areaPath = svgCoords.length
-    ? `${linePath} L${svgCoords[svgCoords.length - 1][0]},${CH - PADY} L${svgCoords[0][0]},${CH - PADY} Z`
-    : '';
-
-  // Category distribution breakdown
-  const catBreakdown = (() => {
-    const counts = {};
-    listings.forEach(l => {
-      const c = (l.category || 'other').toUpperCase();
-      counts[c] = (counts[c] || 0) + 1;
-    });
-    const entries = Object.entries(counts);
-    if (entries.length === 0) {
-      return [
-        { label: 'GAMES & COLLECTIBLES', pct: 65, count: 2 },
-        { label: 'DIGITAL ACCOUNTS & KEYS', pct: 35, count: 1 },
-      ];
-    }
-    const tot = listings.length || 1;
-    return entries.map(([label, count]) => ({
-      label,
-      count,
-      pct: Math.round((count / tot) * 100),
-    }));
-  })();
-
-  // Recent verified escrow settlements
-  const recentSettlements = (listings.length > 0 ? listings.slice(0, 4) : [
-    { title: 'Verified Escrow Order #1', price_xrp: avgTradeXrp, category: 'games' },
-  ]).map((item, i) => ({
-    id: `tx-${i}`,
-    title: item.title,
-    amountXrp: Number(item.price_xrp || avgTradeXrp),
-    ago: ['18m ago', '2h ago', '6h ago', '1d ago'][i] || '2d ago',
-    txShort: `${(seedHash * (i + 3)).toString(16).toUpperCase().padStart(4, 'A')}…${((seedHash + 79) * (i + 7)).toString(16).toUpperCase().slice(-4)}`,
-  }));
+  const isStoreOwner = Boolean(
+    currentUser && (String(currentUser.id) === String(seller.id) || currentUser.role === 'admin')
+  );
 
   const displayReviews = reviews.length > 0 ? reviews : [
     {
@@ -227,12 +159,9 @@ export default function StorefrontPage() {
           <span>This store is currently in Vacation Mode — order delivery times may be slower than usual.</span>
         </div>
       ) : store.announcement ? (
-        <div style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.14), rgba(32,128,245,0.12))', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--text)', borderRadius: 12, padding: '11px 18px', marginBottom: 14, fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', display: 'inline-block', flexShrink: 0 }} />
-            <span>{store.announcement}</span>
-          </div>
-          <span style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRO STORE BROADCAST</span>
+        <div style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.14), rgba(32,128,245,0.12))', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--text)', borderRadius: 12, padding: '11px 18px', marginBottom: 14, fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', display: 'inline-block', flexShrink: 0 }} />
+          <span>{store.announcement}</span>
         </div>
       ) : null}
 
@@ -427,7 +356,7 @@ export default function StorefrontPage() {
         );
       })()}
 
-      {/* Storefront Main Navigation Tabs (Catalog / Pro Analytics & Sales Chart / Reviews) */}
+      {/* Storefront Main Navigation Tabs (Catalog / Reviews) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid var(--border)', marginBottom: 24, flexWrap: 'wrap', paddingBottom: 12 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
@@ -452,26 +381,6 @@ export default function StorefrontPage() {
 
           <button
             type="button"
-            onClick={() => setStoreTab('analytics')}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 11,
-              fontSize: 13.5,
-              fontWeight: 700,
-              cursor: 'pointer',
-              border: storeTab === 'analytics' ? '1.5px solid #f59e0b' : '1px solid var(--border)',
-              background: storeTab === 'analytics' ? 'rgba(245,158,11,0.14)' : 'var(--surface)',
-              color: storeTab === 'analytics' ? 'var(--text)' : 'var(--text2)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-            }}>
-            <span>📊 Analytics &amp; Sales Chart</span>
-            <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, padding: '2px 6px', borderRadius: 5 }}>PRO</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => setStoreTab('reviews')}
             style={{
               padding: '10px 18px',
@@ -491,188 +400,28 @@ export default function StorefrontPage() {
           </button>
         </div>
 
-        {storeTab === 'catalog' && (
-          <button
-            type="button"
-            onClick={() => setStoreTab('analytics')}
+        {isStoreOwner && (
+          <Link
+            href="/dashboard"
             style={{
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(32,128,245,0.10))',
-              border: '1px solid rgba(16,185,129,0.35)',
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.14), rgba(32,128,245,0.10))',
+              border: '1px solid rgba(245,158,11,0.45)',
               borderRadius: 10,
               padding: '8px 14px',
-              cursor: 'pointer',
+              textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 10,
+              gap: 8,
               color: 'var(--text)',
               fontSize: 12.5,
-              fontWeight: 600,
+              fontWeight: 700,
             }}>
-            <span style={{ color: '#10b981', fontFamily: 'DM Mono, monospace', fontWeight: 700 }}>
-              📈 30d Volume: {totalVolume30d.toLocaleString('en-US')} XRP
-            </span>
-            <span style={{ color: 'var(--accent)', fontWeight: 700 }}>View Sales Chart →</span>
-          </button>
+            <span>🔒 Store Analytics in Seller Dashboard →</span>
+          </Link>
         )}
       </div>
 
-      {/* TAB 2: PRO STORE ANALYTICS & ON-CHAIN SALES CHART */}
-      {storeTab === 'analytics' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 32 }}>
-          {/* 4 Analytics KPI Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px' }}>
-              <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {chartRange === '7d' ? '7-Day' : chartRange === 'all' ? 'All-Time' : '30-Day'} Escrow Volume
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', marginTop: 6, fontFamily: 'DM Mono, monospace' }}>
-                {displayVolumeXrp.toLocaleString('en-US')} <span style={{ fontSize: 14, color: 'var(--accent)' }}>XRP</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#10b981', marginTop: 4, fontWeight: 600 }}>
-                {xrpUsd ? `≈ $${(displayVolumeXrp * xrpUsd).toLocaleString('en-US', { maximumFractionDigits: 0 })} USD` : 'Settled via XRPL Escrow'} · +18.4% vs prev
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px' }}>
-              <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Escrow Settlement Rate</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#10b981', marginTop: 6, fontFamily: 'DM Mono, monospace' }}>99.8%</div>
-              <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>
-                {totalSalesCount} on-chain <code style={{ fontSize: 11 }}>EscrowFinish</code> · 0 unresolved disputes
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px' }}>
-              <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avg. Trade Size &amp; Peak</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', marginTop: 6, fontFamily: 'DM Mono, monospace' }}>
-                {avgTradeXrp} <span style={{ fontSize: 14, color: 'var(--text2)' }}>XRP</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#f59e0b', marginTop: 4, fontWeight: 600 }}>
-                Peak day: {peakDayXrp} XRP · Instant / fast delivery
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px' }}>
-              <div style={{ fontSize: 11.5, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Store Traffic &amp; Loyalty</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', marginTop: 6, fontFamily: 'DM Mono, monospace' }}>
-                {storeViews30d.toLocaleString('en-US')} <span style={{ fontSize: 13, color: 'var(--text2)', fontFamily: 'inherit' }}>views</span>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--accent)', marginTop: 4, fontWeight: 600 }}>
-                🔄 {repeatBuyerPct}% repeat buyers this month
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive SVG Sales Volume Chart Card */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px', boxShadow: '0 10px 28px -12px rgba(10,35,66,0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: 0 }}>On-Chain Escrow Sales Volume (XRP)</h2>
-                  <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, padding: '2px 7px', borderRadius: 5 }}>PRO ANALYTICS</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4, marginBottom: 0 }}>
-                  Verified daily XRP volume settled through non-custodial XRPL escrow for @{handle}.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 6, background: 'var(--surface2)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
-                {[
-                  { k: '7d', l: '7 Days' },
-                  { k: '30d', l: '30 Days' },
-                  { k: 'all', l: 'All Time' },
-                ].map((r) => (
-                  <button
-                    key={r.k}
-                    type="button"
-                    onClick={() => setChartRange(r.k)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: 7,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      border: 'none',
-                      background: chartRange === r.k ? 'var(--accent)' : 'transparent',
-                      color: chartRange === r.k ? '#fff' : 'var(--text2)',
-                    }}>
-                    {r.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ position: 'relative', width: '100%', height: 200, background: 'var(--bg)', borderRadius: 12, padding: '10px 8px', border: '1px solid var(--border)' }}>
-              <svg viewBox={`0 0 ${CW} ${CH}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}>
-                <defs>
-                  <linearGradient id="proStoreVolGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.34" />
-                    <stop offset="65%" stopColor="#2080F5" stopOpacity="0.12" />
-                    <stop offset="100%" stopColor="#2080F5" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                {/* Horizontal grid lines */}
-                {[0.2, 0.5, 0.8].map((g, idx) => (
-                  <line key={idx} x1={PADX} x2={CW - PADX} y1={ Math.round(CH * g) } y2={ Math.round(CH * g) } stroke="var(--border)" strokeDasharray="4 4" strokeWidth="1" />
-                ))}
-                <path d={areaPath} fill="url(#proStoreVolGrad)" />
-                <path d={linePath} fill="none" stroke="#10b981" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-                {svgCoords.map(([x, y, val], idx) => (
-                  <g key={idx}>
-                    <circle cx={x} cy={y} r={chartRange === '7d' ? 4.5 : 3} fill="#10b981" stroke="var(--surface)" strokeWidth="1.5">
-                      <title>{`Day ${idx + 1}: ${val} XRP`}</title>
-                    </circle>
-                  </g>
-                ))}
-              </svg>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Mono, monospace', flexWrap: 'wrap', gap: 8 }}>
-              <span>SOURCE: XRPL MAINNET ESCROW LEDGER</span>
-              <span style={{ color: '#10b981', fontWeight: 700 }}>● 100% VERIFIED ON-CHAIN SETTLEMENTS</span>
-            </div>
-          </div>
-
-          {/* Category Breakdown + Recent Verified Settlements */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 22px' }}>
-              <h3 style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--text)', marginBottom: 14 }}>Category Mix &amp; Specialization</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {catBreakdown.map((c, idx) => (
-                  <div key={idx}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-                      <span>{c.label}</span>
-                      <span style={{ fontFamily: 'DM Mono, monospace', color: 'var(--accent)' }}>{c.pct}%</span>
-                    </div>
-                    <div style={{ height: 9, borderRadius: 999, background: 'var(--bg)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                      <div style={{ width: `${c.pct}%`, height: '100%', background: idx === 0 ? 'linear-gradient(90deg, #2080F5, #10b981)' : 'linear-gradient(90deg, #f59e0b, #2080F5)', borderRadius: 999 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 22px' }}>
-              <h3 style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--text)', marginBottom: 14 }}>Recent Verified Escrow Settlements</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {recentSettlements.map((tx) => (
-                  <div key={tx.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '9px 12px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tx.title}</div>
-                      <div style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: 'var(--text3)', marginTop: 2 }}>
-                        TX {tx.txShort} · <span style={{ color: '#10b981' }}>tesSUCCESS</span> · {tx.ago}
-                      </div>
-                    </div>
-                    <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13.5, fontWeight: 800, color: '#10b981', whiteSpace: 'nowrap' }}>
-                      +{tx.amountXrp} XRP
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: VERIFIED BUYER REVIEWS */}
+      {/* TAB 2: VERIFIED BUYER REVIEWS */}
       {storeTab === 'reviews' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
