@@ -87,6 +87,9 @@ export default function ProfilePage() {
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
             <span style={{fontSize:20,fontWeight:700,color:'var(--text)'}}>{user.username}</span>
+            {(user.seller_is_pro || (user.pro_until && new Date(user.pro_until) > new Date()) || user.store_handle) && (
+              <span className="xh-pro" style={{fontSize:10,fontFamily:'DM Mono,monospace',fontWeight:800,letterSpacing:'0.04em',padding:'2px 7px',borderRadius:5}}>PRO</span>
+            )}
             {user.is_verified && <span style={{fontSize:11,color:'#34d399',background:'rgba(16,185,129,0.1)',padding:'2px 8px',borderRadius:20}}>✓ Verified</span>}
           </div>
           <div style={{fontSize:12,color:'var(--text3)',fontFamily:'monospace',marginBottom:8,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.wallet_address}</div>

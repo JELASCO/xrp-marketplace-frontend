@@ -458,8 +458,8 @@ export default function ListingDetailPage({ params }) {
               <div className="info">
                 <div className="nm">
                   {listing.username || 'unknown'}
-                  {listing.seller_is_pro && <span className="ver">✓ PRO</span>}
-                  {listing.is_verified && !listing.seller_is_pro && <span className="verif" title="Verified seller">✓</span>}
+                  {listing.seller_is_pro && <span className="ver xh-pro" style={{ fontFamily: 'var(--xh-mono)', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5, letterSpacing: '0.04em' }}>PRO</span>}
+                  {listing.is_verified && <span className="verif" title="Verified seller">✓</span>}
                 </div>
                 <div className="st">
                   {Number(listing.reputation_score) > 0

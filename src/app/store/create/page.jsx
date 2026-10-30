@@ -342,7 +342,7 @@ export default function CreateStorePage() {
                 <div style={hintStyle}>One sentence under your store name. Max 160 characters.</div>
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={labelStyle}>Live Store Announcement Bar <span style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, marginLeft: 6 }}>★ PRO</span></label>
+                <label style={labelStyle}>Live Store Announcement Bar <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, marginLeft: 6, padding: '2px 6px', borderRadius: 5 }}>PRO</span></label>
                 <input style={inputStyle} type="text" maxLength={240} placeholder="e.g. 🟢 Online now — instant delivery within 10 minutes!" value={announcement} onChange={(e) => setAnnouncement(e.target.value)} />
                 <div style={hintStyle}>Pinned at the very top of your store page to broadcast live status or promotions.</div>
               </div>
@@ -351,7 +351,7 @@ export default function CreateStorePage() {
                 <textarea style={{ ...inputStyle, minHeight: 96, resize: 'vertical', lineHeight: 1.5 }} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="Tell buyers about your store, sourcing, and turnaround." />
               </div>
               <div>
-                <label style={labelStyle}>Verified Social &amp; Community Links <span style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, marginLeft: 6 }}>★ PRO</span></label>
+                <label style={labelStyle}>Verified Social &amp; Community Links <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, marginLeft: 6, padding: '2px 6px', borderRadius: 5 }}>PRO</span></label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <input style={inputStyle} type="url" placeholder="Discord invite URL (https://discord.gg/...)" value={socials.discord} onChange={(e) => setSocials(s => ({ ...s, discord: e.target.value }))} />
                   <input style={inputStyle} type="url" placeholder="X / Twitter URL (https://x.com/...)" value={socials.twitter} onChange={(e) => setSocials(s => ({ ...s, twitter: e.target.value }))} />
@@ -362,7 +362,7 @@ export default function CreateStorePage() {
               </div>
 
               <div style={{ marginTop: 18 }}>
-                <label style={labelStyle}>Store Spotlight · Pinned Showcase (up to 3 items) <span style={{ color: '#f59e0b', fontSize: 11, fontWeight: 700, marginLeft: 6 }}>★ PRO</span></label>
+                <label style={labelStyle}>Store Spotlight · Pinned Showcase (up to 3 items) <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, marginLeft: 6, padding: '2px 6px', borderRadius: 5 }}>PRO</span></label>
                 {myListings.length === 0 ? (
                   <div style={{ fontSize: 12.5, color: C.muted, background: C.bgSoft, border: `1px dashed ${C.lineStrong}`, borderRadius: 10, padding: '12px 14px' }}>
                     You don&apos;t have any active listings yet. Once you publish listings, you can pin up to 3 items to the top of your storefront here.
@@ -468,7 +468,7 @@ export default function CreateStorePage() {
                 </div>
               )}
               <div style={{ aspectRatio: '3 / 1', background: bannerUrl ? ('center/cover no-repeat url(' + bannerUrl + ')') : 'linear-gradient(135deg, #1e3a8a 0%, var(--xh-accent) 100%)', position: 'relative' }} aria-hidden="true">
-                <span style={{ position: 'absolute', top: 10, right: 10, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, letterSpacing: '0.05em' }}>
+                <span className="xh-pro" style={{ position: 'absolute', top: 10, right: 10, fontFamily: 'DM Mono, monospace', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, letterSpacing: '0.05em' }}>
                   ★ VERIFIED PRO STORE
                 </span>
               </div>
@@ -476,7 +476,7 @@ export default function CreateStorePage() {
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: logoUrl ? ('center/cover no-repeat url(' + logoUrl + ')') : C.blue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, border: `3px solid #f59e0b`, marginTop: -28 }} aria-hidden="true">{logoUrl ? '' : initials}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, color: C.ink, flexWrap: 'wrap' }}>
                   {displayName}
-                  <span style={{ fontSize: 10, fontWeight: 800, background: 'rgba(245,158,11,0.16)', color: '#d97706', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 5, padding: '2px 6px' }}>★ PRO</span>
+                  <span className="xh-pro" style={{ fontSize: 9.5, fontFamily: 'DM Mono, monospace', fontWeight: 800, borderRadius: 5, padding: '2px 6px' }}>PRO</span>
                   <span style={{ color: C.blue, display: 'inline-flex' }} aria-label="Verified seller">
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 1l1.6 1.4 2.1-.3.5 2 1.8 1.1-.9 1.9.5 2.1-2 .8-.9 1.9-2-.5-1.7 1.3-1.7-1.3-2 .5-.9-1.9-2-.8.5-2.1L0 5.2l1.8-1.1.5-2 2.1.3z" /><polyline points="5 8 7 10 11 6" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>

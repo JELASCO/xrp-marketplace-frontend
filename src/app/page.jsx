@@ -422,7 +422,7 @@ export default function HomePage() {
                   <span className="xh-mono" style={{fontSize:10,fontWeight:700,letterSpacing:'0.05em',background:'rgba(10,22,40,0.72)',backdropFilter:'blur(6px)',color:'#e2e8f0',padding:'3px 8px',borderRadius:6,border:'1px solid rgba(255,255,255,0.14)'}}>
                     @{st.handle}
                   </span>
-                  <span className="xh-mono" style={{fontSize:9.5,fontWeight:800,letterSpacing:'0.06em',background:'linear-gradient(135deg,#f59e0b,#d97706)',color:'#fff',padding:'3px 8px',borderRadius:6,boxShadow:'0 2px 8px rgba(245,158,11,0.35)'}}>
+                  <span className="xh-mono xh-pro" style={{fontSize:9.5,fontWeight:800,letterSpacing:'0.06em',padding:'3px 8px',borderRadius:6,boxShadow:'0 2px 8px rgba(245,158,11,0.35)'}}>
                     ★ PRO STORE
                   </span>
                 </div>

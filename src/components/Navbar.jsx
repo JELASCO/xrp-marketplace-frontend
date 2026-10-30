@@ -158,6 +158,9 @@ export default function Navbar() {
                   {user.username?.slice(0,2).toUpperCase()}
                 </div>
                 <span style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{user.username}</span>
+                {((user.proUntil && new Date(user.proUntil).getTime() > Date.now()) || user.role === 'admin') && (
+                  <span className="xh-pro" style={{fontSize:9.5,fontFamily:'DM Mono,monospace',fontWeight:800,letterSpacing:'0.04em',padding:'2px 6px',borderRadius:5}}>PRO</span>
+                )}
               </button>
               {showMenu && (
                 <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:175,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 0',boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
