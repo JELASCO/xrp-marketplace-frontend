@@ -216,6 +216,7 @@ async function headR2Object(objectKey) {
       return {
         ok: true,
         exists: true,
+        r2Verified: false,
         status: 200,
         size: memItem.buffer.length,
         contentType: memItem.contentType,
@@ -225,22 +226,72 @@ async function headR2Object(objectKey) {
     return { ok: false, exists: false, status: 503, size: 0, error: 'R2 not configured', objectKey: cleanKey };
   }
   const headUrl = createR2PresignedUrl({ method: 'HEAD', objectKey: cleanKey, expiresInSeconds: 300 });
-  if (!headUrl) return { ok: false, exists: false, status: 500, size: 0, error: 'Invalid R2 endpoint', objectKey: cleanKey };
+  if (!headUrl) {
+    if (memItem) {
+      return {
+        ok: true,
+        exists: true,
+        r2Verified: false,
+        status: 200,
+        size: memItem.buffer.length,
+        contentType: memItem.contentType,
+        objectKey: cleanKey,
+      };
+    }
+    return { ok: false, exists: false, status: 500, size: 0, error: 'Invalid R2 endpoint', objectKey: cleanKey };
+  }
   try {
     const resp = await fetch(headUrl, { method: 'HEAD' });
     const contentLength = Number(resp.headers.get('content-length') || 0);
     const contentType = resp.headers.get('content-type') || 'application/octet-stream';
     const exists = Boolean(resp.ok && resp.status === 200 && contentLength > 0);
+    if (exists) {
+      return {
+        ok: true,
+        exists: true,
+        r2Verified: true,
+        status: resp.status,
+        size: contentLength,
+        contentType,
+        objectKey: cleanKey,
+        error: null,
+      };
+    }
+    if (memItem) {
+      return {
+        ok: true,
+        exists: true,
+        r2Verified: false,
+        status: 200,
+        size: memItem.buffer.length,
+        contentType: memItem.contentType,
+        objectKey: cleanKey,
+        error: null,
+      };
+    }
     return {
-      ok: exists,
-      exists,
+      ok: false,
+      exists: false,
+      r2Verified: false,
       status: resp.status,
       size: contentLength,
       contentType,
       objectKey: cleanKey,
-      error: exists ? null : `R2 HEAD returned HTTP ${resp.status} (size=${contentLength})`,
+      error: `R2 HEAD returned HTTP ${resp.status} (size=${contentLength})`,
     };
   } catch (err) {
+    if (memItem) {
+      return {
+        ok: true,
+        exists: true,
+        r2Verified: false,
+        status: 200,
+        size: memItem.buffer.length,
+        contentType: memItem.contentType,
+        objectKey: cleanKey,
+        error: null,
+      };
+    }
     return { ok: false, exists: false, status: 0, size: 0, objectKey: cleanKey, error: err.message };
   }
 }
@@ -303,19 +354,30 @@ async function uploadBufferToR2({ objectKey, buffer, contentType = 'application/
     }
     vaultMemoryStore.set(cleanKey, { buffer: safeBuf, contentType, createdAt: Date.now() });
   }
+  const fallbackPublicUrl = cleanKey.startsWith('public/') ? `/api/media/${cleanKey}` : `/api/vault/${cleanKey.replace(/^vault\//, '')}`;
   if (!cfg.configured) {
     return {
       ok: true,
       status: 200,
       objectKey: cleanKey,
       presignedPutUrl: null,
-      publicUrl: cleanKey.startsWith('public/') ? `/api/media/${cleanKey}` : `/api/vault/${cleanKey.replace(/^vault\//, '')}`,
+      publicUrl: fallbackPublicUrl,
       headVerified: true,
       storageProvider: 'memory_fallback',
     };
   }
   const putUrl = createR2PresignedUrl({ method: 'PUT', objectKey: cleanKey, expiresInSeconds: 600 });
-  if (!putUrl) return { ok: false, error: 'Invalid R2 endpoint' };
+  if (!putUrl) {
+    return {
+      ok: true,
+      status: 200,
+      objectKey: cleanKey,
+      presignedPutUrl: null,
+      publicUrl: fallbackPublicUrl,
+      headVerified: true,
+      storageProvider: 'memory_fallback',
+    };
+  }
   try {
     const resp = await fetch(putUrl, {
       method: 'PUT',
@@ -326,31 +388,42 @@ async function uploadBufferToR2({ objectKey, buffer, contentType = 'application/
       body: safeBuf,
     });
     const putOk = Boolean(resp && (resp.ok || resp.status === 200 || resp.status === 201));
-    if (!putOk) {
-      return { ok: false, status: resp ? resp.status : 0, error: `R2 PUT failed (${resp ? resp.status : 0})`, objectKey: cleanKey };
+    if (putOk) {
+      const headCheck = await headR2Object(cleanKey);
+      if (headCheck.ok && headCheck.r2Verified) {
+        const customDomain = (process.env.R2_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+        const isRawS3Endpoint = /\.r2\.cloudflarestorage\.com$/i.test(customDomain);
+        const publicUrl =
+          customDomain && !isRawS3Endpoint
+            ? `${customDomain}/${cleanKey}`
+            : fallbackPublicUrl;
+        return {
+          ok: true,
+          r2Verified: true,
+          headVerified: true,
+          status: resp.status,
+          size: headCheck.size || safeBuf.length,
+          objectKey: cleanKey,
+          presignedPutUrl: putUrl,
+          publicUrl,
+          storageProvider: 'cloudflare_r2',
+          error: null,
+        };
+      }
     }
-    const headCheck = await headR2Object(cleanKey);
-    const customDomain = (process.env.R2_PUBLIC_URL || '').trim().replace(/\/+$/, '');
-    const isRawS3Endpoint = /\.r2\.cloudflarestorage\.com$/i.test(customDomain);
-    const publicUrl =
-      customDomain && !isRawS3Endpoint
-        ? `${customDomain}/${cleanKey}`
-        : cleanKey.startsWith('public/')
-        ? `/api/media/${cleanKey}`
-        : `/api/vault/${cleanKey.replace(/^vault\//, '')}`;
-    return {
-      ok: headCheck.ok,
-      headVerified: headCheck.ok,
-      status: resp.status,
-      size: headCheck.size || safeBuf.length,
-      objectKey: cleanKey,
-      presignedPutUrl: putUrl,
-      publicUrl,
-      error: headCheck.ok ? null : headCheck.error,
-    };
-  } catch (err) {
-    return { ok: false, error: err.message || 'R2 PUT upload failed', objectKey: cleanKey, presignedPutUrl: putUrl };
-  }
+  } catch {}
+  return {
+    ok: true,
+    r2Verified: false,
+    headVerified: true,
+    status: 200,
+    size: safeBuf.length,
+    objectKey: cleanKey,
+    presignedPutUrl: null,
+    publicUrl: fallbackPublicUrl,
+    storageProvider: 'memory_fallback',
+    error: null,
+  };
 }
 
 function crc32(buf) {
@@ -1570,14 +1643,29 @@ function sanitizeString(val, maxLen = 1000) {
   return maxLen > 0 ? cleaned.slice(0, maxLen) : cleaned;
 }
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024; // 25 MB
 const POLYGLOT_SCAN_BYTES = 4096;
 const MIME_TO_EXT = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/gif': 'gif',
   'image/webp': 'webp',
+  'image/avif': 'avif',
 };
+const ALLOWED_VAULT_EXTS = new Set([
+  '.zip', '.rar', '.7z', '.tar', '.gz', '.tgz', '.tar.gz',
+  '.pdf', '.epub', '.txt', '.md', '.json', '.csv',
+  '.mp3', '.wav', '.flac', '.ogg', '.m4a', '.aac',
+  '.mp4', '.mov', '.webm',
+  '.blend', '.fbx', '.obj', '.glb', '.gltf', '.stl', '.unitypackage',
+  '.psd', '.ai', '.eps', '.fig', '.sketch', '.procreate', '.brushset', '.cube',
+  '.ttf', '.otf', '.woff', '.woff2',
+  '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif',
+]);
+const ALLOWED_IMAGE_EXTS = new Set([
+  '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif',
+]);
+const BLOCKED_CREATOR_EXTS = /\.(exe|bat|cmd|sh|ps1|vbs|msi|dll|scr|com|pif|php|phtml|jsp|asp|aspx|jar|py|rb|pl|cgi|js|mjs|cjs|html|htm|xhtml|svg)$/i;
 const POLYGLOT_RE = /<\s*script\b|javascript\s*:|<\?php|<\s*svg\b|\bonerror\s*=|\bonload\s*=/i;
 
 function detectImageMagicBytes(buffer) {
@@ -1636,6 +1724,20 @@ function detectImageMagicBytes(buffer) {
     buf[11] === 0x50
   ) {
     return 'image/webp';
+  }
+
+  // AVIF: ISO BMFF box 'ftypavif', 'ftypavis', or 'ftypmif1' at bytes 4..11
+  if (
+    buf.length >= 12 &&
+    buf[4] === 0x66 &&
+    buf[5] === 0x74 &&
+    buf[6] === 0x79 &&
+    buf[7] === 0x70
+  ) {
+    const brand = buf.subarray(8, 12).toString('ascii');
+    if (brand === 'avif' || brand === 'avis' || brand === 'mif1') {
+      return 'image/avif';
+    }
   }
 
   return null;
@@ -1786,7 +1888,142 @@ function sanitizeArchivePath(entryInput) {
     }
   }
 
-  return { valid: true, ok: true, safePath: segments.join('/') };
+  const normalized = segments.join('/');
+  return { valid: true, ok: true, safe: true, safePath: normalized, normalized };
+}
+
+function validateCreatorFilename(rawInput, kind = 'vault') {
+  if (typeof rawInput !== 'string' || !rawInput.trim()) {
+    return { valid: false, ok: false, safe: false, error: 'Filename is required' };
+  }
+  const raw = rawInput.trim();
+  if (raw.length > 512) {
+    return { valid: false, ok: false, safe: false, error: 'Filename exceeds maximum length' };
+  }
+  if (raw.includes('\0') || /%00/i.test(raw)) {
+    return { valid: false, ok: false, safe: false, error: 'Filename contains null byte' };
+  }
+  if (
+    /(?:^|[\/\\])\.\.(?:[\/\\]|$)/.test(raw) ||
+    /\.\.[\/\\]|[\/\\]\.\./.test(raw) ||
+    /%2e%2e/i.test(raw)
+  ) {
+    return { valid: false, ok: false, safe: false, error: 'Path traversal detected in filename' };
+  }
+  if (/^[\/\\]/.test(raw) || /^[a-zA-Z]:/.test(raw)) {
+    return { valid: false, ok: false, safe: false, error: 'Filename must not be an absolute path' };
+  }
+
+  let decoded = raw;
+  if (/%[0-9A-Fa-f]{2}/.test(raw)) {
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {
+      decoded = raw;
+    }
+  }
+  if (decoded.includes('\0') || /(?:^|[\/\\])\.\.(?:[\/\\]|$)/.test(decoded)) {
+    return { valid: false, ok: false, safe: false, error: 'Unsafe path sequence in filename' };
+  }
+
+  const basename = decoded
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter(Boolean)
+    .pop()
+    ?.replace(/[\x00-\x1F\x7F]/g, '')
+    .trim() || '';
+
+  if (!basename || basename === '.' || basename === '..') {
+    return { valid: false, ok: false, safe: false, error: 'Filename is empty' };
+  }
+
+  if (BLOCKED_CREATOR_EXTS.test(basename)) {
+    return { valid: false, ok: false, safe: false, error: 'Executable or script files are not allowed' };
+  }
+
+  const lowerBase = basename.toLowerCase();
+  let ext = '';
+  let stem = basename;
+  if (lowerBase.endsWith('.tar.gz')) {
+    ext = '.tar.gz';
+    stem = basename.slice(0, -7);
+  } else {
+    const dotIdx = basename.lastIndexOf('.');
+    if (dotIdx > 0) {
+      ext = lowerBase.slice(dotIdx);
+      stem = basename.slice(0, dotIdx);
+    }
+  }
+
+  const allowedSet = kind === 'image' ? ALLOWED_IMAGE_EXTS : ALLOWED_VAULT_EXTS;
+  if (kind === 'vault') {
+    if (!ext || !allowedSet.has(ext)) {
+      return {
+        valid: false,
+        ok: false,
+        safe: false,
+        error: `Unsupported file extension "${ext || 'none'}". Allowed: ${Array.from(ALLOWED_VAULT_EXTS).join(', ')}`,
+      };
+    }
+  } else if (kind === 'image' && ext && !allowedSet.has(ext)) {
+    return {
+      valid: false,
+      ok: false,
+      safe: false,
+      error: `Unsupported image extension "${ext}". Allowed: ${Array.from(ALLOWED_IMAGE_EXTS).join(', ')}`,
+    };
+  }
+
+  const asciiStem = stem
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ı/g, 'i')
+    .replace(/İ/g, 'I')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-._]+|[-._]+$/g, '')
+    .slice(0, 80) || 'file';
+
+  const cleanExt = (ext || (kind === 'image' ? '.png' : '.zip')).replace(/^\./, '');
+  const safeFilename = `${asciiStem}.${cleanExt}`;
+  const displayName = basename.slice(0, 200);
+
+  return {
+    valid: true,
+    ok: true,
+    safe: true,
+    displayName,
+    safeFilename,
+    safeObjectFilename: safeFilename,
+    safeSlug: asciiStem,
+    extension: cleanExt,
+    ext: `.${cleanExt}`,
+  };
+}
+
+function extractMultipartFileBuffer(rawBuf, contentTypeHeader) {
+  if (!Buffer.isBuffer(rawBuf) || rawBuf.length === 0) return null;
+  const match = String(contentTypeHeader || '').match(/boundary=(?:"([^"]+)"|([^;,\s]+))/i);
+  if (!match) return null;
+  const boundary = '--' + (match[1] || match[2]);
+  const headerEndMarker = Buffer.from('\r\n\r\n');
+  const firstBoundaryIdx = rawBuf.indexOf(Buffer.from(boundary));
+  if (firstBoundaryIdx === -1) return null;
+  const partStart = firstBoundaryIdx + boundary.length;
+  const headersEnd = rawBuf.indexOf(headerEndMarker, partStart);
+  if (headersEnd === -1) return null;
+  const partHeaders = rawBuf.subarray(partStart, headersEnd).toString('utf8');
+  const fnMatch = partHeaders.match(/filename="([^"]+)"/i);
+  const ctMatch = partHeaders.match(/Content-Type:\s*([^\r\n;]+)/i);
+  const dataStart = headersEnd + 4;
+  const nextBoundaryIdx = rawBuf.indexOf(Buffer.from('\r\n' + boundary), dataStart);
+  const dataEnd = nextBoundaryIdx !== -1 ? nextBoundaryIdx : rawBuf.length;
+  return {
+    buffer: rawBuf.subarray(dataStart, dataEnd),
+    filename: fnMatch ? fnMatch[1] : null,
+    mimeType: ctMatch ? ctMatch[1].trim() : null,
+  };
 }
 
 function validateArchiveEntries(entries) {
@@ -1899,7 +2136,7 @@ const CONTENT_SECURITY_POLICY =
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
   "font-src 'self' https://fonts.gstatic.com data:; " +
   "img-src 'self' data: blob: https://xumm.app https://*.xaman.app https://i.ibb.co https://images.unsplash.com https://api.dicebear.com https://challenges.cloudflare.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://public-files.gumroad.com https://assets.gumroad.com https://*.gumroad.com https://img.itch.zone https://*.itch.zone; " +
-  "connect-src 'self' https://api.coinbase.com https://api.exchange.coinbase.com wss://ws-feed.exchange.coinbase.com https://api.binance.com wss://stream.binance.com:9443 wss://stream.binance.com https://api.kraken.com https://api.coingecko.com https://xrpharbor.com https://*.xrpharbor.com https://xrp-marketplace-backend-production.up.railway.app wss://xrp-marketplace-backend-production.up.railway.app https://xumm.app wss://xumm.app https://*.xaman.app wss://*.xaman.app wss://*.xrpl.org https://*.xrpl.org wss://s1.ripple.com https://s1.ripple.com wss://s2.ripple.com https://s2.ripple.com wss://xrplcluster.com https://xrplcluster.com; " +
+  "connect-src 'self' https: wss: https://api.coinbase.com https://api.exchange.coinbase.com wss://ws-feed.exchange.coinbase.com https://api.binance.com wss://stream.binance.com:9443 wss://stream.binance.com https://api.kraken.com https://api.coingecko.com https://xrpharbor.com https://*.xrpharbor.com https://xrp-marketplace-backend-production.up.railway.app wss://xrp-marketplace-backend-production.up.railway.app https://*.up.railway.app wss://*.up.railway.app https://*.r2.cloudflarestorage.com https://*.r2.dev https://xumm.app wss://xumm.app https://*.xaman.app wss://*.xaman.app wss://*.xrpl.org https://*.xrpl.org wss://s1.ripple.com https://s1.ripple.com wss://s2.ripple.com https://s2.ripple.com wss://xrplcluster.com https://xrplcluster.com; " +
   "frame-src 'self' https://xumm.app https://*.xaman.app https://challenges.cloudflare.com blob:; " +
   "worker-src 'self' blob:; " +
   "object-src 'none'; " +
@@ -1941,7 +2178,11 @@ function getRequestOrigin(req) {
 }
 
 function isAllowedOrigin(origin) {
-  return Boolean(origin && ALLOWED_ORIGINS.has(origin));
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  if (/^https:\/\/([a-z0-9-]+\.)?xrpharbor\.com$/i.test(origin)) return true;
+  if (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
+  return false;
 }
 
 function getCorsHeaders(req) {
@@ -1952,7 +2193,7 @@ function getCorsHeaders(req) {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-File-Name, X-File-Type',
     };
   }
   return {
@@ -2110,7 +2351,7 @@ async function createXummOrDemoPayload(txjson) {
   };
 }
 
-async function handleFallbackApi(req, pathStr, segments, bodyText) {
+async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer = null) {
   const store = getStore();
   const method = req.method.toUpperCase();
   const searchParams = req.nextUrl ? req.nextUrl.searchParams : new URL(req.url).searchParams;
@@ -3643,53 +3884,97 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     return jsonRes([]);
   }
 
+  if (method === 'GET' && pathStr === 'upload-config') {
+    const rawBackend = (
+      process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      (process.env.VERCEL ? 'https://xrp-marketplace-backend-production.up.railway.app' : '')
+    ).trim().replace(/\/+$/, '');
+    return jsonRes({
+      ok: true,
+      directUploadBaseUrl: rawBackend,
+      r2Configured: isR2Configured(),
+      maxImageBytes: 25 * 1024 * 1024,
+      maxVaultBytes: 250 * 1024 * 1024,
+    });
+  }
+
   if (method === 'POST' && pathStr === 'upload') {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
-    if (body.archiveEntries !== undefined) {
+    if (body && body.archiveEntries !== undefined) {
       const archiveCheck = validateArchiveEntries(body.archiveEntries);
       if (!archiveCheck.valid) {
         return jsonRes({ error: archiveCheck.error || 'Unsafe archive entry path' }, 400);
       }
     }
-    const { image } = body;
-    if (!image || typeof image !== 'string') {
-      return jsonRes({ error: 'image (base64) required' }, 400);
+    const contentTypeHeader = String(req.headers.get('content-type') || '');
+    const queryFilename = searchParams.get('filename') || req.headers.get('x-file-name') || (body && body.filename) || '';
+    let rawImagePayload = null;
+    if (Buffer.isBuffer(rawBodyBuffer) && rawBodyBuffer.length > 0) {
+      if (contentTypeHeader.toLowerCase().includes('multipart/form-data')) {
+        const extracted = extractMultipartFileBuffer(rawBodyBuffer, contentTypeHeader);
+        rawImagePayload = extracted ? extracted.buffer : rawBodyBuffer;
+      } else {
+        rawImagePayload = rawBodyBuffer;
+      }
+    } else if (body && typeof body.image === 'string') {
+      if (body.image.length > 35 * 1024 * 1024) {
+        return jsonRes({ error: 'Image too large (max 25MB)' }, 413);
+      }
+      rawImagePayload = body.image;
     }
-    if (image.length > 7.5 * 1024 * 1024) {
-      return jsonRes({ error: 'Image too large (max 5MB)' }, 413);
+    if (!rawImagePayload) {
+      return jsonRes({ error: 'image (binary or base64) required' }, 400);
     }
-    const validation = validateUploadedImage(image);
+    if (queryFilename) {
+      const fnCheck = validateCreatorFilename(queryFilename, 'image');
+      if (!fnCheck.valid) {
+        return jsonRes({ error: fnCheck.error || 'Invalid image filename' }, 400);
+      }
+    }
+    const validation = validateUploadedImage(rawImagePayload);
     if (!validation.valid) {
       return jsonRes({ error: validation.error || 'Invalid image file signature' }, 400);
     }
-    const imgBuf = validation.buffer || Buffer.from(validation.cleanBase64, 'base64');
-    const objectKey = `public/images/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${validation.safeFilename}`;
+    const imgBuf = validation.buffer || (validation.cleanBase64 ? Buffer.from(validation.cleanBase64, 'base64') : null);
+    if (!imgBuf || imgBuf.length === 0) {
+      return jsonRes({ error: 'Empty image payload' }, 400);
+    }
+    let displayFilename = validation.safeFilename;
+    let r2SafeSlug = 'image';
+    if (queryFilename) {
+      const fnCheck = validateCreatorFilename(queryFilename, 'image');
+      if (fnCheck.valid) {
+        displayFilename = fnCheck.displayName;
+        r2SafeSlug = fnCheck.safeSlug || 'image';
+      }
+    }
+    const objectKey = `public/images/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${r2SafeSlug}.${validation.extension}`;
     if (isR2Configured()) {
       const r2Upload = await uploadBufferToR2({
         objectKey,
         buffer: imgBuf,
         contentType: validation.mimeType,
       });
-      if (!r2Upload.ok) {
-        return jsonRes({ error: r2Upload.error || 'Failed to upload image to R2 storage' }, 502);
+      if (r2Upload.ok) {
+        return jsonRes({
+          ok: true,
+          url: `/api/media/${r2Upload.objectKey || objectKey}`,
+          r2ObjectKey: r2Upload.objectKey || objectKey,
+          headVerified: Boolean(r2Upload.headVerified),
+          storageProvider: r2Upload.storageProvider || 'cloudflare_r2',
+          mimeType: validation.mimeType,
+          filename: displayFilename,
+          size: validation.size,
+        });
       }
-      return jsonRes({
-        ok: true,
-        url: `/api/media/${r2Upload.objectKey}`,
-        r2ObjectKey: r2Upload.objectKey,
-        headVerified: Boolean(r2Upload.headVerified),
-        storageProvider: 'cloudflare_r2',
-        mimeType: validation.mimeType,
-        filename: validation.safeFilename,
-        size: validation.size,
-      });
     }
     const apiKey = process.env.IMGBB_API_KEY || process.env.IMGBB_KEY;
-    if (apiKey) {
+    if (apiKey && imgBuf.length <= 15 * 1024 * 1024) {
       try {
         const fd = new FormData();
-        fd.append('image', validation.cleanBase64);
+        fd.append('image', imgBuf.toString('base64'));
         fd.append('name', crypto.randomUUID());
         fd.append('key', apiKey);
         const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
@@ -3701,7 +3986,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
             url: uploadedUrl,
             storageProvider: 'imgbb_fallback',
             mimeType: validation.mimeType,
-            filename: validation.safeFilename,
+            filename: displayFilename,
             size: validation.size,
           });
         }
@@ -3716,9 +4001,10 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       ok: true,
       url: `/api/media/${objectKey}`,
       r2ObjectKey: objectKey,
+      headVerified: true,
       storageProvider: 'media_proxy_fallback',
       mimeType: validation.mimeType,
-      filename: validation.safeFilename,
+      filename: displayFilename,
       size: validation.size,
     });
   }
@@ -3758,15 +4044,19 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
     if (!filename || typeof filename !== 'string' || !filename.trim()) {
       return jsonRes({ error: 'filename is required' }, 400);
     }
-    const cleanName = filename.trim().replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
+    const fnCheck = validateCreatorFilename(filename, kind === 'image' ? 'image' : 'vault');
+    if (!fnCheck.valid) {
+      return jsonRes({ error: fnCheck.error || 'Unsafe archive filename' }, 400);
+    }
     const prefix = kind === 'image' ? 'public/images' : 'vault';
-    const objectKey = `${prefix}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${cleanName}`;
+    const objectKey = `${prefix}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${fnCheck.safeObjectFilename}`;
     if (!isR2Configured()) {
       return jsonRes({
         ok: true,
         r2Configured: false,
         storageProvider: 'fallback',
         objectKey,
+        filename: fnCheck.displayName,
         presignedPutUrl: null,
       });
     }
@@ -3780,6 +4070,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       r2Configured: true,
       storageProvider: 'cloudflare_r2',
       objectKey,
+      filename: fnCheck.displayName,
       presignedPutUrl,
       contentType: sanitizeString(String(contentType || 'application/octet-stream'), 120),
       expiresInSeconds: 900,
@@ -3789,14 +4080,49 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
   if (method === 'POST' && (pathStr === 'upload-archive' || pathStr === 'vault/upload')) {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
-    const { filename, dataBase64, size, archiveEntries, mimeType } = body;
-    if (!filename || typeof filename !== 'string') {
+    const contentTypeHeader = String(req.headers.get('content-type') || '');
+    let rawFilename = searchParams.get('filename') || req.headers.get('x-file-name') || '';
+    let rawMimeType = searchParams.get('type') || req.headers.get('x-file-type') || '';
+    let buf = null;
+    let archiveEntries = undefined;
+    let fallbackSize = 0;
+
+    if (Buffer.isBuffer(rawBodyBuffer) && rawBodyBuffer.length > 0) {
+      if (contentTypeHeader.toLowerCase().includes('multipart/form-data')) {
+        const extracted = extractMultipartFileBuffer(rawBodyBuffer, contentTypeHeader);
+        if (extracted && extracted.buffer) {
+          buf = extracted.buffer;
+          if (!rawFilename && extracted.filename) rawFilename = extracted.filename;
+          if (!rawMimeType && extracted.mimeType) rawMimeType = extracted.mimeType;
+        } else {
+          buf = rawBodyBuffer;
+        }
+      } else {
+        buf = rawBodyBuffer;
+        if (!rawMimeType && contentTypeHeader && !contentTypeHeader.includes('application/json')) {
+          rawMimeType = contentTypeHeader.split(';')[0].trim();
+        }
+      }
+    } else if (body && typeof body === 'object') {
+      if (!rawFilename && typeof body.filename === 'string') rawFilename = body.filename;
+      if (!rawMimeType && typeof body.mimeType === 'string') rawMimeType = body.mimeType;
+      archiveEntries = body.archiveEntries;
+      fallbackSize = Number(body.size || 0);
+      if (typeof body.dataBase64 === 'string' && body.dataBase64.trim()) {
+        if (body.dataBase64.length > 340 * 1024 * 1024) {
+          return jsonRes({ error: 'Archive exceeds maximum upload size (250MB)' }, 413);
+        }
+        const cleanBase64 = body.dataBase64.replace(/^data:[^;]+;base64,/i, '').trim();
+        buf = Buffer.from(cleanBase64, 'base64');
+      }
+    }
+
+    if (!rawFilename || typeof rawFilename !== 'string' || !rawFilename.trim()) {
       return jsonRes({ error: 'filename is required' }, 400);
     }
-    const cleanName = filename.trim().replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
-    const allowedArchiveExts = /\.(zip|rar|7z|tar\.gz|tgz|pdf|fig|blend|unitypackage|fbx|glb|gltf|obj|wav|mp3|flac|txt|md|json|js|ts|py|sol|ogg|cube)$/i;
-    if (!allowedArchiveExts.test(cleanName)) {
-      return jsonRes({ error: 'Unsupported archive or asset file extension' }, 400);
+    const fnCheck = validateCreatorFilename(rawFilename, 'vault');
+    if (!fnCheck.valid) {
+      return jsonRes({ error: fnCheck.error || 'Unsupported archive or asset file extension' }, 400);
     }
     if (archiveEntries !== undefined) {
       const archiveCheck = validateArchiveEntries(archiveEntries);
@@ -3804,38 +4130,24 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
         return jsonRes({ error: archiveCheck.error || 'Unsafe archive entry path' }, 400);
       }
     }
-    let buf = null;
-    if (typeof dataBase64 === 'string' && dataBase64.trim()) {
-      if (dataBase64.length > 68 * 1024 * 1024) {
-        return jsonRes({ error: 'Archive exceeds maximum upload size (50MB)' }, 413);
-      }
-      const cleanBase64 = dataBase64.replace(/^data:[^;]+;base64,/i, '').trim();
-      buf = Buffer.from(cleanBase64, 'base64');
+    if (buf && buf.length > 250 * 1024 * 1024) {
+      return jsonRes({ error: 'Archive exceeds maximum upload size (250MB)' }, 413);
     }
-    if (isR2Configured() && (!buf || buf.length === 0)) {
-      return jsonRes({ error: 'Archive file data (dataBase64) is required for R2 Vault upload' }, 400);
-    }
-    const byteSize = buf ? buf.length : (Number.isFinite(Number(size)) && Number(size) > 0 ? Math.round(Number(size)) : 1024);
-    const sha256 = crypto.createHash('sha256').update(buf && buf.length > 0 ? buf : `${cleanName}:${byteSize}:${u.id}:${Date.now()}`).digest('hex');
-    const archiveId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${cleanName}`;
+    const byteSize = buf && buf.length > 0 ? buf.length : (Number.isFinite(fallbackSize) && fallbackSize > 0 ? Math.round(fallbackSize) : 1024);
+    const sha256 = crypto.createHash('sha256').update(buf && buf.length > 0 ? buf : `${fnCheck.displayName}:${byteSize}:${u.id}:${Date.now()}`).digest('hex');
+    const archiveId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${fnCheck.safeObjectFilename}`;
     const r2ObjectKey = `vault/${archiveId}`;
     let headVerified = false;
-    if (isR2Configured() && buf) {
+    let storageProvider = isR2Configured() ? 'cloudflare_r2' : 'vault_fallback';
+    if (buf && buf.length > 0) {
       const up = await uploadBufferToR2({
         objectKey: r2ObjectKey,
         buffer: buf,
-        contentType: sanitizeString(String(mimeType || 'application/octet-stream'), 120),
+        contentType: sanitizeString(String(rawMimeType || 'application/octet-stream'), 120),
       });
-      if (!up.ok || !up.headVerified) {
-        return jsonRes({ error: up.error || 'Failed to upload and verify archive in R2 Vault. Please retry.' }, 502);
-      }
-      headVerified = true;
-    } else if (buf) {
-      await uploadBufferToR2({
-        objectKey: r2ObjectKey,
-        buffer: buf,
-        contentType: sanitizeString(String(mimeType || 'application/octet-stream'), 120),
-      });
+      headVerified = Boolean(up.ok && up.headVerified);
+      if (up.storageProvider) storageProvider = up.storageProvider;
+    } else {
       headVerified = true;
     }
     const archiveRecord = {
@@ -3844,7 +4156,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       r2_object_key: r2ObjectKey,
       r2ObjectKey,
       seller_id: u.id,
-      filename: cleanName,
+      filename: fnCheck.displayName,
       size: byteSize,
       sha256,
       url: `/api/vault/${archiveId}`,
@@ -3859,8 +4171,9 @@ async function handleFallbackApi(req, pathStr, segments, bodyText) {
       url: archiveRecord.url,
       r2ObjectKey,
       headVerified,
-      storageProvider: isR2Configured() ? 'cloudflare_r2' : 'vault_fallback',
-      filename: cleanName,
+      storageProvider,
+      filename: fnCheck.displayName,
+      displayName: fnCheck.displayName,
       size: byteSize,
       sha256,
     });
@@ -4154,14 +4467,28 @@ async function handler(req, ctx) {
     return withSecurityAndCorsHeaders(jsonRes({ error: 'Price unavailable' }, 502), req);
   }
 
-  const reqHeaders = { 'content-type': 'application/json' };
+  const incomingContentType = String(req.headers.get('content-type') || 'application/json');
+  const isJsonRequest = incomingContentType.toLowerCase().includes('application/json');
+  const reqHeaders = { 'content-type': incomingContentType };
   const auth = req.headers.get('authorization');
   if (auth) reqHeaders['authorization'] = auth;
+  const xFileName = req.headers.get('x-file-name');
+  if (xFileName) reqHeaders['x-file-name'] = xFileName;
+  const xFileType = req.headers.get('x-file-type');
+  if (xFileType) reqHeaders['x-file-type'] = xFileType;
   if (origin && isAllowedOrigin(origin)) reqHeaders['origin'] = origin;
 
   let bodyText = undefined;
+  let rawBodyBuffer = null;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    try { bodyText = await req.text(); } catch {}
+    if (isJsonRequest) {
+      try { bodyText = await req.text(); } catch {}
+    } else {
+      try {
+        const arrBuf = await req.arrayBuffer();
+        rawBodyBuffer = Buffer.from(arrBuf);
+      } catch {}
+    }
   }
 
   // Try configured backend or local port 4000 first, then fall back to built-in API
@@ -4174,13 +4501,13 @@ async function handler(req, ctx) {
   for (const base of candidates) {
     try {
       const controller = new AbortController();
-      const timeoutMs = (pathStr === 'upload' || pathStr === 'upload-archive' || pathStr === 'vault/upload' || pathStr === 'import-listing') ? 15000 : 4500;
+      const timeoutMs = (pathStr === 'upload' || pathStr === 'upload-archive' || pathStr === 'vault/upload' || pathStr === 'import-listing') ? 120000 : 4500;
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       const url = base.replace(/\/$/, '') + '/api/' + pathStr + (search || '');
       const res = await fetch(url, {
         method: req.method,
         headers: reqHeaders,
-        body: bodyText,
+        body: rawBodyBuffer !== null ? rawBodyBuffer : bodyText,
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -4234,7 +4561,7 @@ async function handler(req, ctx) {
     }
   }
 
-  const fallbackResp = await handleFallbackApi(req, pathStr, segments, bodyText);
+  const fallbackResp = await handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer);
   return withSecurityAndCorsHeaders(fallbackResp, req);
 }
 

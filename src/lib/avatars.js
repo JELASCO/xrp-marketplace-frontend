@@ -1,3 +1,5 @@
+import { uploadCreatorFile } from './uploadClient';
+
 // Curated Web3, Cyber, Bot, Pixel-Art & Animated Live Avatars + PRO Frame Styles
 
 function svgToDataUri(svg) {
@@ -277,13 +279,24 @@ export async function uploadAvatarOrLogoFile(file, isPro = false) {
     throw new Error('Animated .GIF profile pictures & store logos are an exclusive PRO membership perk!');
   }
 
-  const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
-  if (!allowed.includes(mime) && !/\.(png|jpe?g|webp|gif)$/i.test(file.name || '')) {
-    throw new Error('Unsupported format. Please choose a PNG, JPG, WEBP, or animated GIF file.');
+  const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif', 'image/avif'];
+  if (!allowed.includes(mime) && !/\.(png|jpe?g|webp|gif|avif)$/i.test(file.name || '')) {
+    throw new Error('Unsupported format. Please choose a PNG, JPG, WEBP, AVIF, or animated GIF file.');
   }
 
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error('Image is too large (max 5 MB).');
+  if (file.size > 25 * 1024 * 1024) {
+    throw new Error('Image is too large (max 25 MB).');
+  }
+
+  try {
+    const data = await uploadCreatorFile(file, { kind: 'image' });
+    if (data && data.url && (String(data.url).startsWith('/api/media/') || (!data.demoMode && !String(data.url).includes('/demo/')))) {
+      return data.url;
+    }
+  } catch (err) {
+    if (file.size > 650 * 1024) {
+      throw err;
+    }
   }
 
   const dataUrl = await new Promise((resolve, reject) => {
@@ -292,24 +305,6 @@ export async function uploadAvatarOrLogoFile(file, isPro = false) {
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsDataURL(file);
   });
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem('xrpmarket_token') : null;
-  try {
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ image: dataUrl, filename: file.name }),
-    });
-    const data = await res.json().catch(() => null);
-    if (res.ok && data && data.url && (String(data.url).startsWith('/api/media/') || (!data.demoMode && !String(data.url).includes('/demo/')))) {
-      return data.url;
-    }
-  } catch {
-    // Fallback to inline data URI below if under 650 KB
-  }
 
   if (file.size <= 650 * 1024) {
     return dataUrl;

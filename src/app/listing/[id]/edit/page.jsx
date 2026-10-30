@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuthStore } from '../../../../lib/store';
 import { api } from '../../../../lib/api';
 import { sanitizeImageUrl, sanitizeExternalUrl } from '../../../../lib/sanitizeUrl';
+import { uploadCreatorFile, VAULT_ACCEPT_ATTR } from '../../../../lib/uploadClient';
 
 const TITLE_MAX = 120;
 const DESC_MAX = 2000;
@@ -213,6 +214,8 @@ export default function EditListingPage() {
   const [digitalArchiveSha256, setDigitalArchiveSha256] = useState('');
   const [r2ObjectKey, setR2ObjectKey] = useState('');
   const [uploadingArchive, setUploadingArchive] = useState(false);
+  const [archiveProgress, setArchiveProgress] = useState(0);
+  const archiveAbortRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -285,44 +288,38 @@ export default function EditListingPage() {
   async function handleArchiveUpload(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
+    if (file.size > 250 * 1024 * 1024) {
+      setError('Archive/file must be under 250MB (or use External Download URL for larger files)');
+      if (archiveRef.current) archiveRef.current.value = '';
+      return;
+    }
     setUploadingArchive(true);
+    setArchiveProgress(1);
     setError('');
     try {
-      const localSha = await computeSha256Hex(file);
-      const base64 = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(String(fr.result || '').split(',')[1] || '');
-        fr.onerror = () => rej(new Error('Could not read file'));
-        fr.readAsDataURL(file);
+      const localShaPromise = computeSha256Hex(file);
+      const d = await uploadCreatorFile(file, {
+        kind: 'vault',
+        onProgress: (pct) => setArchiveProgress(pct),
+        onAbortRef: archiveAbortRef,
       });
-      const token = localStorage.getItem('xrpmarket_token');
-      const r = await fetch('/api/vault/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({
-          filename: file.name,
-          fileName: file.name,
-          size: file.size,
-          fileSize: file.size,
-          dataBase64: base64,
-          fileBase64: base64,
-          mimeType: file.type || 'application/octet-stream',
-          sha256: localSha,
-        }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.ok || !d.url) {
+      if (!d || !d.ok || !d.url) {
         throw new Error((d && d.error) || 'Archive upload failed — file could not be verified in R2 Vault');
       }
+      const localSha = await localShaPromise;
       setDigitalArchiveUrl(d.url);
-      setDigitalArchiveName(d.filename || file.name);
+      setDigitalArchiveName(d.displayName || d.filename || file.name);
       setDigitalArchiveSha256(d.sha256 || localSha || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
       setR2ObjectKey(d.r2ObjectKey || '');
       setIsDigital(true);
     } catch (err) {
-      setError(err.message || 'Archive upload failed');
+      if (!err || !err.isAborted) {
+        setError((err && err.message) || 'Archive upload failed');
+      }
     } finally {
       setUploadingArchive(false);
+      setArchiveProgress(0);
+      archiveAbortRef.current = null;
       if (archiveRef.current) archiveRef.current.value = '';
     }
   }
@@ -604,12 +601,22 @@ export default function EditListingPage() {
                 </div>
 
                 <div className="xh-field">
-                  <label>Encrypted Archive / File Upload <span className="opt">.ZIP, .PDF, .GLB, .BLEND, .WAV</span></label>
-                  <input ref={archiveRef} type="file" style={{ display: 'none' }} onChange={handleArchiveUpload} />
+                  <label>Encrypted Archive / File Upload <span className="opt">.ZIP, .PDF, .MP3, .WAV, .GLB, .BLEND, .PSD, .FIG</span></label>
+                  <input ref={archiveRef} type="file" accept={VAULT_ACCEPT_ATTR} style={{ display: 'none' }} onChange={handleArchiveUpload} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <button type="button" onClick={() => archiveRef.current && archiveRef.current.click()} disabled={uploadingArchive} className="xh-btn xh-btn-ghost" style={{ padding: '8px 14px', fontSize: 13 }}>
-                      {uploadingArchive ? '⏳ Encrypting…' : '📦 Upload / Replace Asset Archive'}
+                      {uploadingArchive ? `⏳ Uploading ${archiveProgress}%…` : '📦 Upload / Replace Asset Archive'}
                     </button>
+                    {uploadingArchive && archiveAbortRef.current && (
+                      <button
+                        type="button"
+                        onClick={() => archiveAbortRef.current && archiveAbortRef.current()}
+                        className="xh-btn xh-btn-ghost"
+                        style={{ padding: '6px 10px', fontSize: 12, color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)' }}
+                      >
+                        ✕ Cancel
+                      </button>
+                    )}
                     {digitalArchiveName && (
                       <span style={{ fontSize: 12, fontFamily: 'var(--xh-mono)', color: '#059669', fontWeight: 700 }}>
                         ✓ {digitalArchiveName} ({digitalArchiveSha256 ? digitalArchiveSha256.slice(0, 10) + '…' : 'SHA-256 Verified'})

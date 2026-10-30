@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../lib/store';
 import { sanitizeImageUrl } from '../../../lib/sanitizeUrl';
+import { uploadCreatorFile, VAULT_ACCEPT_ATTR, IMAGE_ACCEPT_ATTR } from '../../../lib/uploadClient';
 
 const CATS = [
   { key:'graphics',  label:'3D, Shaders & Design',   emoji:'🎨' },
@@ -61,22 +62,9 @@ const DELIVERY_OPTS = [
 const TITLE_MAX = 120;
 const DESC_MAX  = 5000;
 
-async function uploadToImgbb(file) {
-  if (file.size > 5 * 1024 * 1024) throw new Error('Image must be under 5MB');
-  const base64 = await new Promise((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => res(fr.result.split(',')[1]);
-    fr.onerror = () => rej(new Error('Could not read file'));
-    fr.readAsDataURL(file);
-  });
-  const token = localStorage.getItem('xrpmarket_token');
-  const r = await fetch('/api/upload', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ image: base64, filename: file.name }),
-  });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.url) throw new Error((d && d.error) || 'Upload failed');
+async function uploadToImgbb(file, onProgress, onAbortRef) {
+  const d = await uploadCreatorFile(file, { kind: 'image', onProgress, onAbortRef });
+  if (!d || !d.url) throw new Error((d && d.error) || 'Image upload failed');
   return d.url;
 }
 
@@ -298,7 +286,11 @@ export default function NewListingPage() {
   const [tagInput, setTagInput] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [uploading,setUploading]= useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadingArchive, setUploadingArchive] = useState(false);
+  const [archiveProgress, setArchiveProgress] = useState(0);
+  const imageAbortRef = useRef(null);
+  const archiveAbortRef = useRef(null);
   const [error,    setError]    = useState('');
   const [xrpUsd,   setXrpUsd]   = useState(2.25);
   const [rlusdOk,  setRlusdOk]  = useState(true);
@@ -442,74 +434,83 @@ export default function NewListingPage() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     const remaining = maxImages - form.images.length;
-    if (remaining <= 0) { setError(`You can upload up to ${maxImages} images${!isPro ? ' (Upgrade to Pro for up to 6 images)' : ''}`); return; }
-    const toUpload = files.slice(0, remaining);
-    for (const file of toUpload) {
-      if (file.size > 5 * 1024 * 1024) { setError('Each image must be under 5MB'); continue; }
+    if (remaining <= 0) {
+      setError(`You can upload up to ${maxImages} images${!isPro ? ' (Upgrade to Pro for up to 6 images)' : ''}`);
+      if (fileRef.current) fileRef.current.value = '';
+      return;
     }
+    const toUpload = files.slice(0, remaining);
     setUploading(true);
+    setUploadProgress(1);
     setError('');
     try {
-      for (const file of toUpload) {
-        if (file.size > 5 * 1024 * 1024) continue;
-        const url = await uploadToImgbb(file);
+      for (let i = 0; i < toUpload.length; i++) {
+        const file = toUpload[i];
+        if (file.size > 25 * 1024 * 1024) {
+          throw new Error(`"${file.name}" exceeds the 25MB image limit`);
+        }
+        const url = await uploadToImgbb(
+          file,
+          (pct) => {
+            const overall = Math.round(((i + pct / 100) / toUpload.length) * 100);
+            setUploadProgress(Math.max(1, Math.min(100, overall)));
+          },
+          imageAbortRef
+        );
         setForm(f => ({ ...f, images: [...f.images, url] }));
       }
-    } catch(err) {
-      setError('Image upload failed. Try again or use fewer images.');
-    } finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+    } catch (err) {
+      if (!err || !err.isAborted) {
+        setError((err && err.message) || 'Image upload failed. Try again or use a different image.');
+      }
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      imageAbortRef.current = null;
+      if (fileRef.current) fileRef.current.value = '';
+    }
   }
 
   async function handleArchiveUpload(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      setError('Archive file must be under 50MB (or use External Download URL for larger files)');
+    if (file.size > 250 * 1024 * 1024) {
+      setError('Archive/file must be under 250MB (or use External Download URL for larger files)');
+      if (archiveRef.current) archiveRef.current.value = '';
       return;
     }
     setUploadingArchive(true);
+    setArchiveProgress(1);
     setError('');
     try {
-      const localSha = await computeSha256Hex(file);
-      const base64 = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(String(fr.result || '').split(',')[1] || '');
-        fr.onerror = () => rej(new Error('Could not read file'));
-        fr.readAsDataURL(file);
+      const localShaPromise = computeSha256Hex(file);
+      const d = await uploadCreatorFile(file, {
+        kind: 'vault',
+        onProgress: (pct) => setArchiveProgress(pct),
+        onAbortRef: archiveAbortRef,
       });
-      const token = localStorage.getItem('xrpmarket_token');
-      const r = await fetch('/api/vault/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({
-          filename: file.name,
-          fileName: file.name,
-          size: file.size,
-          fileSize: file.size,
-          dataBase64: base64,
-          fileBase64: base64,
-          mimeType: file.type || 'application/octet-stream',
-          sha256: localSha,
-        }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.ok || !d.url) {
+      if (!d || !d.ok || !d.url) {
         throw new Error((d && d.error) || 'Archive upload failed — file could not be verified in R2 Vault');
       }
+      const localSha = await localShaPromise;
       const sha = d.sha256 || localSha || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
       setForm(f => ({
         ...f,
         isDigital: true,
         digitalArchiveUrl: d.url,
-        digitalArchiveName: d.filename || file.name,
+        digitalArchiveName: d.displayName || d.filename || file.name,
         digitalArchiveSize: d.size || file.size,
         digitalArchiveSha256: sha,
         r2ObjectKey: d.r2ObjectKey || '',
       }));
     } catch (err) {
-      setError(err.message || 'Archive upload failed');
+      if (!err || !err.isAborted) {
+        setError((err && err.message) || 'Archive upload failed');
+      }
     } finally {
       setUploadingArchive(false);
+      setArchiveProgress(0);
+      archiveAbortRef.current = null;
       if (archiveRef.current) archiveRef.current.value = '';
     }
   }
@@ -716,14 +717,26 @@ export default function NewListingPage() {
                 <button type="button" className="xh-tile add" onClick={() => fileRef.current && fileRef.current.click()} disabled={uploading}>
                   <div className="col">
                     <span className="plus">{uploading ? '⏳' : '+'}</span>
-                    <span className="lbl">{uploading ? 'UPLOADING' : 'ADD'}</span>
+                    <span className="lbl">{uploading ? `UPLOADING ${uploadProgress}%` : 'ADD'}</span>
                   </div>
                 </button>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
+            {uploading && imageAbortRef.current && (
+              <div style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => imageAbortRef.current && imageAbortRef.current()}
+                  className="xh-btn xh-btn-ghost"
+                  style={{ padding: '4px 10px', fontSize: 11.5 }}
+                >
+                  ✕ Cancel image upload
+                </button>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept={IMAGE_ACCEPT_ATTR} multiple style={{ display: 'none' }} onChange={handleFileChange} />
             <div className="xh-media-note">
-              PNG · JPG · WEBP · max 5MB each · {isPro ? (
+              PNG · JPG · WEBP · GIF · AVIF · max 25MB each (auto-optimized) · {isPro ? (
                 <span style={{ color: '#b45309', fontWeight: 600 }}>★ Pro active: up to 6 images &amp; Unlimited active listings</span>
               ) : (
                 <span>Standard plan: up to 3 images &amp; 30 active listings · <Link href="/pro" style={{ color: 'var(--xh-accent)', fontWeight: 600 }}>Upgrade to ★ Pro for 6 images &amp; Unlimited listings →</Link></span>
@@ -851,11 +864,11 @@ export default function NewListingPage() {
 
                 {/* Encrypted Archive File Upload */}
                 <div className="xh-field" style={{ marginBottom: 4 }}>
-                  <label>Encrypted Archive / File Upload <span className="opt">.ZIP, .PDF, .GLB, .BLEND, .WAV</span></label>
+                  <label>Encrypted Archive / File Upload <span className="opt">.ZIP, .PDF, .MP3, .WAV, .GLB, .BLEND, .PSD, .FIG</span></label>
                   <input
                     ref={archiveRef}
                     type="file"
-                    accept=".zip,.pdf,.glb,.gltf,.blend,.wav,.mp3,.fbx,.obj,.unitypackage,.rar,.7z"
+                    accept={VAULT_ACCEPT_ATTR}
                     style={{ display: 'none' }}
                     onChange={handleArchiveUpload}
                   />
@@ -867,8 +880,20 @@ export default function NewListingPage() {
                       className="xh-btn xh-btn-ghost"
                       style={{ padding: '9px 16px', fontSize: 13 }}
                     >
-                      {uploadingArchive ? '⏳ Encrypting & Hashing…' : '📦 Upload Asset Archive (.ZIP / .PDF / .BLEND / .GLB)'}
+                      {uploadingArchive
+                        ? `⏳ Uploading ${archiveProgress}%…`
+                        : '📦 Upload Asset Archive (.ZIP / .PDF / .MP3 / .BLEND / .GLB)'}
                     </button>
+                    {uploadingArchive && archiveAbortRef.current && (
+                      <button
+                        type="button"
+                        onClick={() => archiveAbortRef.current && archiveAbortRef.current()}
+                        className="xh-btn xh-btn-ghost"
+                        style={{ padding: '7px 12px', fontSize: 12, color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)' }}
+                      >
+                        ✕ Cancel
+                      </button>
+                    )}
                     {form.digitalArchiveName && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 8, padding: '6px 12px', fontSize: 12 }}>
                         <span style={{ fontWeight: 700, color: 'var(--xh-text)' }}>{form.digitalArchiveName}</span>
