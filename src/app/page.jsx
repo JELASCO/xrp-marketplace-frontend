@@ -570,17 +570,21 @@ export default function HomePage() {
             {bg:'rgba(21,114,232,.09)',fg:'var(--xh-accent)',t:'On-chain escrow',p:'Every trade locked in the XRP Ledger’s native escrow. No intermediary holding funds — verifiable on-chain forever.',ic:'lock'},
             {bg:'rgba(16,185,129,.1)',fg:'#10b981',t:'Instant settlement',p:'XRP settles in 3–5 seconds for a fraction of a cent. No card chargebacks, no fourteen-day holds.',ic:'bolt'},
             {bg:'rgba(245,158,11,.12)',fg:'#d97706',t:'0% fee — keep 100%',p:'Zero sales commission, no payment-processor cuts. Most platforms stack 13–20% in fees — here sellers keep 100%.',ic:'coin'},
-            {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP settles the same everywhere — no conversion fees, no regional account limits.',ic:'globe'}
+            {bg:'rgba(239,68,68,.09)',fg:'#ef4444',t:'Borderless by default',p:'XRP settles the same everywhere — no conversion fees, no regional account limits.',ic:'globe'},
+            {bg:'rgba(139,92,246,.11)',fg:'#8b5cf6',t:'Encrypted asset vault',p:'Files stored in private R2 vault storage with instant post-escrow delivery and SHA-256 buyer download verification.',ic:'vault'},
+            {bg:'rgba(20,184,166,.11)',fg:'#0d9488',t:'1-click creator migration & Pro docks',p:'Import existing products from Gumroad or itch.io in seconds, price in USD or XRP, and launch a verified Pro storefront.',ic:'dock'}
           ].map(w => (
-            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:22,minWidth:0}}>
-              <div style={{width:44,height:44,borderRadius:12,display:'grid',placeItems:'center',marginBottom:14,background:w.bg,color:w.fg}}>
+            <div key={w.t} style={{background:'var(--xh-surface)',border:'1px solid var(--xh-border)',borderRadius:14,boxShadow:'0 1px 2px rgba(10,35,66,.06),0 9px 24px -8px rgba(10,35,66,.17)',padding:22,minWidth:0,height:'100%',display:'flex',flexDirection:'column'}}>
+              <div style={{width:44,height:44,borderRadius:12,display:'grid',placeItems:'center',marginBottom:14,background:w.bg,color:w.fg,flexShrink:0}}>
                 {w.ic==='lock' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>}
                 {w.ic==='bolt' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3 4.5 13.5H11l-1 7.5 8.5-10.5H12z"/></svg>}
                 {w.ic==='coin' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="6.5" rx="7" ry="3.2"/><path d="M5 6.5v5.5c0 1.8 3.1 3.2 7 3.2s7-1.4 7-3.2V6.5"/><path d="M5 12v5.5c0 1.8 3.1 3.2 7 3.2s7-1.4 7-3.2V12"/></svg>}
                 {w.ic==='globe' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.8"/><path d="M3.4 12h17.2M12 3.2c2.4 2.4 2.4 15.2 0 17.6M12 3.2c-2.4 2.4-2.4 15.2 0 17.6"/></svg>}
+                {w.ic==='vault' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5.2c0 4 2.9 7.2 7 8.8 4.1-1.6 7-4.8 7-8.8V6z"/><path d="m9.3 12 1.9 1.9L15 10"/></svg>}
+                {w.ic==='dock' && <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-6 9 6v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21V12h6v9"/></svg>}
               </div>
               <h3 style={{fontSize:15.5,fontWeight:650,marginBottom:7,color:'var(--xh-text)'}}>{w.t}</h3>
-              <p style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.55}}>{w.p}</p>
+              <p style={{fontSize:13,color:'var(--xh-text2)',lineHeight:1.55,margin:0}}>{w.p}</p>
             </div>
           ))}
         </div>
