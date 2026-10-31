@@ -114,6 +114,11 @@ function fmtDate(d) {
   try { const dt = new Date(d); return dt.toLocaleDateString('en-US') + ' ' + dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); } catch { return d; }
 }
 
+function fmtAddr(a) {
+  if (!a || typeof a !== 'string') return '—';
+  return a.length > 12 ? a.slice(0, 6) + '…' + a.slice(-4) : a;
+}
+
 const XRPL_NETWORK = (process.env.NEXT_PUBLIC_XRPL_NETWORK || '').toLowerCase();
 const XRPL_NODE_ENV = process.env.NEXT_PUBLIC_XRPL_NODE || '';
 const XRPL_IS_MAINNET = XRPL_NETWORK === 'mainnet';
@@ -141,7 +146,7 @@ function SettingItem({label, value, hint, pill, pillColor, envKey, icon}) {
   );
 }
 
-export default function AdminPage() {
+export default function AdminPage({ initialTab = 'dashboard' } = {}) {
   const user = useAuthStore(s=>s.user);
   const hydrated = useAuthStore(s=>s.hydrated);
   const [theme, setTheme] = useState('light');
@@ -153,7 +158,7 @@ export default function AdminPage() {
     if(typeof document!=='undefined') document.documentElement.setAttribute('data-theme', theme);
   },[theme]);
 
-  const [tab, setTab] = useState('dashboard');
+  const [tab, setTab] = useState(initialTab || 'dashboard');
   const [period, setPeriod] = useState('7d');
   const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
@@ -186,6 +191,7 @@ export default function AdminPage() {
       const t = sp.get('tab');
       if (t === 'escrows' || t === 'disputes') setTab('escrows');
       else if (t && TABS.some(x => x.key === t)) setTab(t);
+      else if (window.location.pathname.endsWith('/admin/orders')) setTab('orders');
     } catch {}
   }, []);
 
@@ -649,7 +655,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <Section title={'All platform orders ('+completedOrders.length+')'} action={<span style={{fontSize:11.5,color:'var(--xh-text3)'}}>Live escrow &amp; order ledger</span>}>
+          <Section title={'All platform orders ('+completedOrders.length+')'} action={<button type='button' className='xh-btn-sm' onClick={loadAllAdminData}>↻ Refresh Orders</button>}>
             {completedOrders.length===0 ? <Empty icon='🛒' text='No orders recorded yet'/> : (
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
                 {completedOrders.map(o=>(
@@ -664,14 +670,14 @@ export default function AdminPage() {
                           {o.buyer_downloaded_at && <Pill color='green'>Downloaded</Pill>}
                         </div>
                         <div style={{fontSize:11,color:'var(--xh-text3)',marginTop:2}}>
-                          {o.buyer_username
-                            ? `Order #${String(o.id).slice(0,8)} · buyer: ${o.buyer_username} (${fmtAddr(o.buyer_wallet_address)}) → seller: ${o.seller_username||'seller'} (${fmtAddr(o.seller_wallet_address)}) · ${fmtDate(o.updated_at||o.created_at)}`
+                          {o.buyer_username || o.buyer_wallet_address
+                            ? `Order #${String(o.id).slice(0,8)} · buyer: ${o.buyer_username||'buyer'} (${fmtAddr(o.buyer_wallet_address)}) → seller: ${o.seller_username||'seller'} (${fmtAddr(o.seller_wallet_address)})${o.escrow_tx_hash ? ' · tx: ' + fmtAddr(o.escrow_tx_hash) : ''} · ${fmtDate(o.updated_at||o.created_at)}`
                             : `seller: ${o.username||'anon'} · ${o.category||'digital'} · ${o.quantity_sold||1} unit(s) sold · ${fmtDate(o.updated_at||o.created_at)}`}
                         </div>
                       </div>
                     </div>
                     <div style={{textAlign:'right',minWidth:90}}>
-                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:14}}>{(parseFloat(o.total_xrp ?? (parseFloat(o.price_xrp)*(o.quantity_sold||1))) || 0).toFixed(0)} XRP</div>
+                      <div style={{fontWeight:700,color:'var(--xh-text)',fontSize:14}}>{(parseFloat(o.total_xrp ?? (parseFloat(o.price_xrp)*(o.quantity_sold||1))) || 0).toFixed(2)} XRP</div>
                       <div style={{fontSize:10.5,color:'var(--xh-text3)',marginTop:2}}>
                         {o.status === 'disputed' ? (
                           <button type='button' className='xh-btn-sm' style={{padding:'2px 8px',fontSize:10.5}} onClick={()=>setTab('escrows')}>Arbitrate →</button>

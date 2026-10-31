@@ -3491,7 +3491,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       return jsonRes({
         isDigital: true,
         unlocked: true,
-        content: listing.digital_content || ('XRPHARBOR-DELIVERY-' + order.id.slice(0, 8).toUpperCase()),
+        content: (listing.digital_content && !/^XRPHARBOR-DELIVERY(-CODE)?-[A-Z0-9-]+$/i.test(String(listing.digital_content).trim())) ? String(listing.digital_content).trim() : null,
         link: listing.digital_archive_url || listing.digital_link || null,
         filename: listing.digital_archive_name || null,
         fileSize: listing.digital_archive_size || null,
@@ -3612,7 +3612,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
         fileSize: resolvedFileSize,
         sha256,
         version: listing.version || 'v1.0.0',
-        content: listing.digital_content || null,
+        content: (listing.digital_content && !/^XRPHARBOR-DELIVERY(-CODE)?-[A-Z0-9-]+$/i.test(String(listing.digital_content).trim())) ? String(listing.digital_content).trim() : null,
         downloadedAt,
         logEntry,
         totalDownloads: order.download_logs.length,
@@ -5001,9 +5001,28 @@ async function handler(req, ctx) {
         // Check if upstream returned "Application not found" or unhandled route 404
         if (
           res.status === 404 &&
-          (respText.includes('Application not found') || respText.includes('Cannot GET') || respText.includes('Cannot POST'))
+          (respText.includes('Application not found') ||
+            respText.includes('Cannot GET') ||
+            respText.includes('Cannot POST') ||
+            pathStr.startsWith('admin/') ||
+            pathStr === 'stores' ||
+            pathStr.startsWith('pro/'))
         ) {
           continue;
+        }
+        if (res.status === 200 && /^orders\/[^/]+\/(delivery|download)$/i.test(pathStr)) {
+          try {
+            const parsed = JSON.parse(respText);
+            if (parsed && typeof parsed === 'object') {
+              if (typeof parsed.content === 'string' && /^XRPHARBOR-DELIVERY(-CODE)?-[A-Z0-9-]+$/i.test(parsed.content.trim())) {
+                parsed.content = null;
+              }
+              if (typeof parsed.digitalContent === 'string' && /^XRPHARBOR-DELIVERY(-CODE)?-[A-Z0-9-]+$/i.test(parsed.digitalContent.trim())) {
+                parsed.digitalContent = null;
+              }
+              respText = JSON.stringify(parsed);
+            }
+          } catch {}
         }
         if (res.status === 200 && (pathStr === 'auth/me' || pathStr === 'auth/verify')) {
           try {

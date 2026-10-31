@@ -24,6 +24,7 @@ const STEPS = ['Awaiting escrow', 'In escrow', 'Delivered', 'Completed'];
 const STEP_IDX = { pending:0, awaiting_payment:0, awaiting_escrow:0, escrow_locked:1, delivered:2, completed:3 };
 const XRPL_TX = 'https://livenet.xrpl.org/transactions/';
 const shortHash = (h) => h ? h.slice(0,8) + '…' + h.slice(-6) : '';
+const isRealCreatorNote = (val) => Boolean(val && typeof val === 'string' && val.trim() && !/^XRPHARBOR-DELIVERY(-CODE)?-[A-Z0-9-]+$/i.test(val.trim()));
 const CHECKOUT_MODE = (process.env.NEXT_PUBLIC_CHECKOUT_MODE || 'v2').toLowerCase();
 const isLegacyCheckout = CHECKOUT_MODE === 'legacy';
 
@@ -504,6 +505,9 @@ export default function OrdersPage() {
       const ts = d.downloadedAt || new Date().toISOString();
       const sha = d.sha256 || order.digital_archive_sha256 || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
       const fileName = d.filename || d.fileName || order.digital_archive_name || `${(order.listing_title || 'creator-asset').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.zip`;
+      const cleanNote = isRealCreatorNote(d.content)
+        ? d.content.trim()
+        : (delivery[order.id] && isRealCreatorNote(delivery[order.id].content) ? delivery[order.id].content.trim() : null);
       setDownloadLog(prev => ({
         ...prev,
         [order.id]: {
@@ -511,18 +515,18 @@ export default function OrdersPage() {
           sha256: sha,
           fileName,
           archiveUrl: d.downloadUrl || d.archiveUrl || order.digital_archive_url,
-          content: d.content || (delivery[order.id] && delivery[order.id].content),
+          content: cleanNote,
           link: d.link || (delivery[order.id] && delivery[order.id].link),
         },
       }));
-      if (d.content || d.link || d.ok) {
+      if (cleanNote || d.link || d.ok) {
         setDelivery(prev => ({
           ...prev,
           [order.id]: {
             ...(prev[order.id] || {}),
             isDigital: true,
             unlocked: true,
-            content: d.content || (prev[order.id] && prev[order.id].content),
+            content: cleanNote,
             link: d.link || (prev[order.id] && prev[order.id].link),
           },
         }));
@@ -1092,7 +1096,7 @@ export default function OrdersPage() {
                           <span>{new Date((downloadLog[order.id] && downloadLog[order.id].downloadedAt) || order.downloaded_at || order.buyer_downloaded_at).toLocaleString()}</span>
                         </div>
                       )}
-                      {delivery[order.id] && delivery[order.id].unlocked && delivery[order.id].content && (
+                      {delivery[order.id] && delivery[order.id].unlocked && isRealCreatorNote(delivery[order.id].content) && (
                         <div style={{marginTop:10}}>
                           <div style={{fontSize:10.5,color:'var(--text3)',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.04em',fontWeight:700}}>License / Creator Notes</div>
                           <div style={{display:'flex',gap:8,alignItems:'stretch'}}>

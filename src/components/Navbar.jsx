@@ -134,7 +134,7 @@ export default function Navbar() {
               XRP<span style={{color:'#2080F5'}}>Harbor</span>
             </span>
           </Link>
-          {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:420,position:'relative',minWidth:0}}>
+          {pathname !== '/' && (<form onSubmit={handleSearch} className="xrp-search" style={{flex:1,maxWidth:420,position:'relative',minWidth:200}}>
             <input className="input" style={{paddingLeft:32,fontSize:13,height:36,background:'var(--surface)',border:'1px solid var(--border2)',color:'var(--text)',borderRadius:8}}
               placeholder="Search the harbor…" value={search} onChange={e=>setSearch(e.target.value)}/>
             <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',width:14,height:14}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -144,9 +144,9 @@ export default function Navbar() {
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[
               {href:'/listings',label:'Marketplace'},
-              {href:'/stores',label:'Stores'},
-              {href:'/pro',label:'Pro'},
-              ...(user ? [{href:'/dashboard',label:'Dashboard'}] : []),
+              ...(user
+                ? [{href:'/dashboard',label:'Dashboard'}]
+                : [{href:'/stores',label:'Stores'}, {href:'/pro',label:'Pro'}]),
               {href:'/listings/new',label:'+ List an item',accent:true},
               ...(user ? [{href:'/orders',label:'Library / Purchases'}] : []),
             ].map(l=>(
@@ -210,18 +210,15 @@ export default function Navbar() {
               </button>
               {showMenu && (
                 <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',width:'min(196px, calc(100vw - 24px))',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 0',boxShadow:'0 18px 44px -12px rgba(2,10,18,.5)',zIndex:100}}>
-                  {!isPro && (
-                    <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#2080F5',fontWeight:600,textDecoration:'none'}}>Upgrade to Pro</Link>
-                  )}
+                  <Link href="/pro" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,color:'#2080F5',fontWeight:600,textDecoration:'none'}}>{isPro ? 'XRPHarbor Pro' : 'Upgrade to Pro'}</Link>
                   {isAdmin && (
                     <Link href="/admin" onClick={()=>setShowMenu(false)} style={{display:'block',padding:'9px 16px',fontSize:13,fontWeight:700,color:'#f59e0b',textDecoration:'none'}}>Admin Panel</Link>
                   )}
-                  {(!isPro || isAdmin) && (
-                    <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
-                  )}
+                  <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>
                   {[
                     {href:'/dashboard',label:'Dashboard'},
                     {href:'/orders',label:'Library / Purchases'},
+                    {href:'/stores',label:'Stores'},
                     storeHandle
                       ? {href:'/store/'+storeHandle,label:'My Store'}
                       : {href:'/store/create',label:'Create store'},

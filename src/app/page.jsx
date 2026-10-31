@@ -645,6 +645,7 @@ export default function HomePage() {
             <div style={{fontSize:12,fontWeight:600,textTransform:'uppercase',color:'var(--xh-text3, #6b7280)',marginBottom:12,letterSpacing:'0.04em'}}>Marketplace</div>
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               <Link href="/listings" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Browse</Link>
+              <Link href="/stores" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>Stores</Link>
               <Link href="/listings/new" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>List item</Link>
               <Link href="/pro" style={{color:'var(--xh-text2, #374151)',textDecoration:'none'}}>XRPHarbor Pro</Link>
             </div>
