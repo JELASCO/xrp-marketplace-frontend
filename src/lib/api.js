@@ -83,8 +83,12 @@ export const api = {
     pricing: () => request('/upgrades/pricing'),
     payload: (kind, listingId) => request('/upgrades/payload', { method: 'POST', body: { kind, listingId } }),
     verify: (paymentId) => request(`/upgrades/${paymentId}/verify`, { method: 'POST' }),
-    foundingStatus: () => request('/upgrades/founding-status'),
-    claimFounding: () => request('/upgrades/claim-founding', { method: 'POST' }),
+    foundingStatus: () => request('/pro/founding-status'),
+    claimFounding: () => request('/pro/claim-founding', { method: 'POST' }),
+  },
+  pro: {
+    foundingStatus: () => request('/pro/founding-status'),
+    claimFounding: () => request('/pro/claim-founding', { method: 'POST' }),
   },
   uploadArchive: (payload) => request('/upload-archive', { method: 'POST', body: payload }),
   favorites: {

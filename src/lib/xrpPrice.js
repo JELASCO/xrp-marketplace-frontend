@@ -1,13 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-// Shared real-time XRP/USD price engine (Coinbase + Binance WebSockets + 3s HTTP polling)
-// Keeps the Navbar badge and Homepage ticker synchronized tick-by-tick.
+// Calm 30-second XRP/USD price engine (updates only when price changes by >= $0.0005)
 let state = { price: null, change: null, dir: null };
 let last = null;
 let ref = null;
 let started = false;
-let dirTimer = null;
 const subs = new Set();
 
 function emit() {
@@ -18,14 +16,8 @@ function emit() {
 
 function applySpotPrice(p, explicitChange) {
   if (typeof p !== 'number' || isNaN(p) || p <= 0) return;
-  let dir = state.dir;
-  if (last != null && Math.abs(p - last) >= 0.00001) {
-    dir = p > last ? 'up' : 'down';
-    if (dirTimer) clearTimeout(dirTimer);
-    dirTimer = setTimeout(function () {
-      state = { price: state.price, change: state.change, dir: null };
-      emit();
-    }, 1600);
+  if (last != null && Math.abs(p - last) < 0.0005) {
+    return;
   }
   last = p;
   let change = state.change;
@@ -34,7 +26,7 @@ function applySpotPrice(p, explicitChange) {
   } else if (ref && ref > 0) {
     change = ((p - ref) / ref) * 100;
   }
-  state = { price: p, change: change, dir: dir };
+  state = { price: p, change: change, dir: null };
   emit();
 }
 
@@ -85,77 +77,11 @@ function fetchSpot() {
     });
 }
 
-function connectLiveWebSockets() {
-  if (typeof window === 'undefined' || typeof WebSocket === 'undefined') return;
-
-  // Stream 1: Coinbase Exchange real-time ticker
-  function openCoinbaseWs() {
-    let ws = null;
-    try {
-      ws = new WebSocket('wss://ws-feed.exchange.coinbase.com');
-      ws.onopen = function () {
-        try {
-          ws.send(JSON.stringify({
-            type: 'subscribe',
-            product_ids: ['XRP-USD'],
-            channels: ['ticker'],
-          }));
-        } catch (e) {}
-      };
-      ws.onmessage = function (evt) {
-        try {
-          const msg = JSON.parse(evt.data);
-          if (msg && msg.type === 'ticker' && msg.price) {
-            const p = parseFloat(msg.price);
-            if (msg.open_24h) {
-              const op = parseFloat(msg.open_24h);
-              if (!isNaN(op) && op > 0) ref = op;
-            }
-            applySpotPrice(p);
-          }
-        } catch (e) {}
-      };
-      ws.onclose = function () {
-        setTimeout(openCoinbaseWs, 4000);
-      };
-      ws.onerror = function () {
-        try { ws.close(); } catch (e) {}
-      };
-    } catch (e) {}
-  }
-
-  // Stream 2: Binance real-time trade stream (high-frequency sub-second ticks where reachable)
-  function openBinanceWs() {
-    let bws = null;
-    try {
-      bws = new WebSocket('wss://stream.binance.com:9443/ws/xrpusdt@trade');
-      bws.onmessage = function (evt) {
-        try {
-          const msg = JSON.parse(evt.data);
-          if (msg && msg.p) {
-            applySpotPrice(parseFloat(msg.p));
-          }
-        } catch (e) {}
-      };
-      bws.onclose = function () {
-        setTimeout(openBinanceWs, 8000);
-      };
-      bws.onerror = function () {
-        try { bws.close(); } catch (e) {}
-      };
-    } catch (e) {}
-  }
-
-  openCoinbaseWs();
-  openBinanceWs();
-}
-
 function start() {
   if (started || typeof window === 'undefined') return;
   started = true;
   fetchSpot();
-  connectLiveWebSockets();
-  setInterval(fetchSpot, 3000);
+  setInterval(fetchSpot, 30000);
 }
 
 export function subscribeXrp(fn) {

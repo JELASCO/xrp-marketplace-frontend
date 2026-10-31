@@ -2593,7 +2593,11 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       notification_prefs: u.notification_prefs || {},
       socials: u.socials || (u.notification_prefs && u.notification_prefs.socials) || {},
       founding_creator: Boolean(u.founding_creator || (u.notification_prefs && u.notification_prefs.founding_creator)),
+      is_pro: Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.is_pro || isAdminUser),
+      isPro: Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.is_pro || isAdminUser),
       proUntil: u.pro_until || null,
+      pro_until: u.pro_until || null,
+      pro_expires_at: u.pro_until || null,
       store_handle: u.store_handle || null,
     });
   }
@@ -2923,47 +2927,70 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
     });
   }
 
-  if (method === 'GET' && pathStr === 'upgrades/founding-status') {
-    const claimed = Math.min(50, Math.max(0, Number(store.founding_creators_claimed || 14)));
+  if (method === 'GET' && (pathStr === 'upgrades/founding-status' || pathStr === 'pro/founding-status')) {
+    const u = ensureAuthUser(store, req);
+    const total = 100;
+    const claimed = Math.min(total, Math.max(0, Number(store.founding_creators_claimed || 14)));
+    const remaining = Math.max(0, total - claimed);
+    const alreadyClaimed = Boolean(u && (u.founding_creator || (u.notification_prefs && u.notification_prefs.founding_creator)));
     return jsonRes({
       claimed,
-      total: 50,
-      remaining: Math.max(0, 50 - claimed),
-      proDaysGranted: 90,
+      claimedSlots: claimed,
+      total,
+      totalSlots: total,
+      remaining,
+      remainingSlots: remaining,
+      proDaysGranted: 30,
+      alreadyClaimed,
     });
   }
 
-  if (method === 'POST' && pathStr === 'upgrades/claim-founding') {
+  if (method === 'POST' && (pathStr === 'upgrades/claim-founding' || pathStr === 'pro/claim-founding')) {
     const u = ensureAuthUser(store, req);
-    if (!u) return jsonRes({ error: 'Please sign in with your Xaman wallet first to claim a Founding Creator spot.' }, 401);
+    if (!u) return jsonRes({ error: 'Please sign in with your Xaman wallet first to claim a Founding 100 Creator spot.' }, 401);
+    const total = 100;
+    const currentClaimed = Math.min(total, Math.max(0, Number(store.founding_creators_claimed || 14)));
     if (u.founding_creator || (u.notification_prefs && u.notification_prefs.founding_creator)) {
       return jsonRes({
         ok: true,
         alreadyClaimed: true,
+        is_pro: true,
         proUntil: u.pro_until,
-        claimed: store.founding_creators_claimed || 14,
-        total: 50,
-        remaining: Math.max(0, 50 - (store.founding_creators_claimed || 14)),
+        pro_expires_at: u.pro_until,
+        claimed: currentClaimed,
+        claimedSlots: currentClaimed,
+        total,
+        totalSlots: total,
+        remaining: Math.max(0, total - currentClaimed),
+        remainingSlots: Math.max(0, total - currentClaimed),
+        message: '🎉 Founding 100 Creator Pro is already active on your account!',
       });
     }
-    const claimed = Number(store.founding_creators_claimed || 14);
-    if (claimed >= 50) {
-      return jsonRes({ error: 'All 50 Founding Creator spots have been claimed.' }, 400);
+    if (currentClaimed >= total) {
+      return jsonRes({ error: 'All 100 Founding Creator spots have been claimed.' }, 400);
     }
-    store.founding_creators_claimed = claimed + 1;
+    store.founding_creators_claimed = currentClaimed + 1;
     const baseMs = u.pro_until && new Date(u.pro_until).getTime() > Date.now() ? new Date(u.pro_until).getTime() : Date.now();
-    u.pro_until = new Date(baseMs + 90 * 86400 * 1000).toISOString();
+    u.pro_until = new Date(baseMs + 30 * 86400 * 1000).toISOString();
+    u.pro_expires_at = u.pro_until;
+    u.is_pro = true;
     u.founding_creator = true;
     u.is_verified = true;
     u.notification_prefs = { ...(u.notification_prefs || {}), founding_creator: true, avatar_frame: 'gold' };
     return jsonRes({
       ok: true,
       alreadyClaimed: false,
+      is_pro: true,
       proUntil: u.pro_until,
+      pro_expires_at: u.pro_until,
       claimed: store.founding_creators_claimed,
-      total: 50,
-      remaining: Math.max(0, 50 - store.founding_creators_claimed),
+      claimedSlots: store.founding_creators_claimed,
+      total,
+      totalSlots: total,
+      remaining: Math.max(0, total - store.founding_creators_claimed),
+      remainingSlots: Math.max(0, total - store.founding_creators_claimed),
       badge: 'Founding Creator',
+      message: '🎉 Founding 100 Creators Pro activated! You now have 30 days of free XRPHarbor Pro.',
     });
   }
 
@@ -4055,10 +4082,11 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
   if (segments[0] === 'stores') {
     if (segments.length === 1 && method === 'GET') {
       const stores = store.users
-        .filter(u => u.store_handle && u.store && ((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.role === 'admin'))
+        .filter(u => u.store_handle && u.store)
         .map(u => {
           const activeListingsCount = store.listings.filter(l => l.seller_id === u.id && l.status === 'active').length;
           const stats = getEffectiveUserStats(store, u);
+          const isPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.is_pro || u.role === 'admin');
           return {
             handle: u.store_handle,
             store: u.store,
@@ -4066,12 +4094,13 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
             seller: {
               id: u.id,
               username: u.username,
+              bio: u.bio || '',
               avatar_url: u.avatar_url || null,
               reputation_score: stats.reputationScore,
               reviewCount: stats.reviewCount,
               total_sales: stats.totalSales,
-              is_verified: Boolean(u.is_verified),
-              seller_is_pro: true,
+              is_verified: Boolean(u.is_verified || isPro),
+              seller_is_pro: isPro,
             },
           };
         });

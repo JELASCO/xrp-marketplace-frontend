@@ -144,21 +144,23 @@ export default function Navbar() {
           <div className="xrp-nav-links" style={{display:'flex',alignItems:'center',gap:6,marginLeft:'auto'}}>
             {[
               {href:'/listings',label:'Marketplace'},
-              {href:'/#stores',label:'Stores'},
+              {href:'/stores',label:'Stores'},
               {href:'/pro',label:'Pro'},
+              ...(user ? [{href:'/dashboard',label:'Dashboard'}] : []),
               {href:'/listings/new',label:'+ List an item',accent:true},
+              ...(user ? [{href:'/orders',label:'Library / Purchases'}] : []),
             ].map(l=>(
-              <Link key={l.href} href={l.href} style={l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)',whiteSpace:'nowrap'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 14px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent',whiteSpace:'nowrap'}}
+              <Link key={l.href} href={l.href} style={l.accent ? {fontSize:13,fontWeight:700,color:'#2080F5',padding:'7px 14px',borderRadius:999,textDecoration:'none',transition:'all 0.15s',border:'1px solid rgba(32,128,245,0.35)',background:'rgba(32,128,245,0.10)',whiteSpace:'nowrap'} : {fontSize:13,fontWeight:500,color:'var(--text2)',padding:'8px 12px',borderRadius:8,textDecoration:'none',transition:'all 0.15s',border:'1px solid transparent',background:'transparent',whiteSpace:'nowrap'}}
                 onMouseEnter={e=>{ if(l.accent){ e.currentTarget.style.background='#2080F5'; e.currentTarget.style.color='#fff'; } else { e.currentTarget.style.color='var(--text)';e.currentTarget.style.background='var(--surface2)'; } }}
                 onMouseLeave={e=>{ if(l.accent){ e.currentTarget.style.background='rgba(32,128,245,0.10)'; e.currentTarget.style.color='#2080F5'; } else { e.currentTarget.style.color='var(--text2)';e.currentTarget.style.background='transparent'; } }}>
                 {l.label}
               </Link>
             ))}
           </div>
-          <div className="xrp-price" style={{fontSize:12,fontFamily:'DM Mono,monospace',color:'var(--text2)',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:6,padding:'5px 10px',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
-            <span style={{width:6,height:6,borderRadius:'50%',background: xrpPrice ? '#22c55e' : 'var(--text3)',boxShadow: xrpPrice ? '0 0 6px #22c55e' : 'none',display:'inline-block',flexShrink:0}} title="Live XRP/USD Price" />
+          <div className="xrp-price" style={{fontSize:12,fontFamily:'DM Mono,monospace',fontVariantNumeric:'tabular-nums',color:'var(--text2)',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:6,padding:'5px 10px',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
+            <span style={{width:6,height:6,borderRadius:'50%',background: xrpPrice ? '#22c55e' : 'var(--text3)',display:'inline-block',flexShrink:0}} title="Live XRP/USD Price (30s refresh)" />
             <span>XRP</span>
-            <span style={{color: priceDir==='up' ? '#16A34A' : priceDir==='down' ? '#ef4444' : 'var(--text)', fontWeight:600, transition:'color 0.25s'}}>{xrpPrice ? '$' + xrpPrice.toFixed(4) : '—'}{priceDir==='up' ? ' ▲' : priceDir==='down' ? ' ▼' : ''}</span>
+            <span style={{color:'var(--text)',fontWeight:600,fontVariantNumeric:'tabular-nums'}}>{xrpPrice ? '$' + xrpPrice.toFixed(4) : '—'}</span>
           </div>
           <button onClick={toggleTheme} aria-label="Toggle theme" className="xrp-theme-btn"
             style={{display:'flex',alignItems:'center',justifyContent:'center',width:34,height:34,background:'transparent',border:'1px solid var(--border2)',borderRadius:'50%',cursor:'pointer',color:'var(--text2)',flexShrink:0,padding:0}}>
@@ -276,7 +278,7 @@ export default function Navbar() {
           <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)', padding: '10px 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
             {[
               { href: '/listings', label: '🛍️ Marketplace' },
-              { href: '/#stores', label: '🏬 Stores' },
+              { href: '/stores', label: '🏬 Stores' },
               { href: '/listings/new', label: '➕ List an Item' },
               { href: '/orders', label: '📦 Library / Purchases' },
               ...(user ? [{ href: '/dashboard', label: '📊 Dashboard' }] : []),

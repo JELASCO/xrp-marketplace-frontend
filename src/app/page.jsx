@@ -388,7 +388,10 @@ export default function HomePage() {
       })()}
 
       {/* FOUNDING CREATOR LAUNCH CAMPAIGN BANNER */}
-      <div style={{background:'linear-gradient(135deg, #0b1b33 0%, #1e3a8a 60%, #b45309 100%)',border:'1.5px solid rgba(245,158,11,0.55)',borderRadius:16,padding:'18px 20px',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap',boxShadow:'0 12px 30px -12px rgba(11,27,51,0.35)',minWidth:0}}>
+      <div
+        onClick={() => { window.location.href = '/pro?claim=founding100'; }}
+        style={{background:'linear-gradient(135deg, #0b1b33 0%, #1e3a8a 60%, #b45309 100%)',border:'1.5px solid rgba(245,158,11,0.55)',borderRadius:16,padding:'18px 20px',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap',boxShadow:'0 12px 30px -12px rgba(11,27,51,0.35)',minWidth:0,cursor:'pointer'}}
+      >
         <div style={{display:'flex',alignItems:'flex-start',gap:12,flex:'1 1 240px',minWidth:0}}>
           <span style={{fontSize:26,lineHeight:1,flexShrink:0}}>🚀</span>
           <div style={{minWidth:0}}>
@@ -398,7 +401,11 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <Link href="/pro" style={{background:'#f59e0b',color:'#0b1b33',padding:'10px 18px',borderRadius:10,fontSize:13.5,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap',boxShadow:'0 4px 12px rgba(245,158,11,0.35)'}}>
+        <Link
+          href="/pro?claim=founding100"
+          onClick={(e) => e.stopPropagation()}
+          style={{background:'#f59e0b',color:'#0b1b33',padding:'10px 18px',borderRadius:10,fontSize:13.5,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap',boxShadow:'0 4px 12px rgba(245,158,11,0.35)'}}
+        >
           Claim Free Pro →
         </Link>
       </div>
@@ -414,45 +421,50 @@ export default function HomePage() {
             <h2 className="xh-display" style={{fontSize:26,fontWeight:700,color:'var(--xh-text)',letterSpacing:'-0.02em',lineHeight:1.15}}>The harbor&rsquo;s verified Pro storefronts</h2>
             <p style={{fontSize:14,color:'var(--xh-text2)',marginTop:6,maxWidth:560}}>Custom branded docks operated by verified Pro members — featuring live announcements, pinned spotlights, and instant XRPL escrow.</p>
           </div>
-          <Link href="/pro" style={{fontSize:13.5,fontWeight:600,color:'var(--xh-accent)',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>Open your Pro Store <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
+          <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
+            <Link href="/stores" style={{fontSize:13.5,fontWeight:600,color:'var(--xh-text2)',textDecoration:'none',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:5}}>
+              Browse all stores →
+            </Link>
+            <Link href="/pro" style={{fontSize:13.5,fontWeight:600,color:'var(--xh-accent)',textDecoration:'none',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>Open your Pro Store <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></Link>
+          </div>
         </div>
         <div className="xh-stores-grid">
           {(proStores.length > 0 ? proStores : [
             {
-              handle: 'dockmaster',
-              name: 'Dockmaster Digital Vault',
-              tagline: 'CS2 · Valorant · Pokemon TCG · Instant Escrow Delivery',
-              announcement: '⚡ Flash Sale: Instant auto-delivery active 24/7 on all digital vaults!',
+              handle: 'aether-forge',
+              name: 'AetherForge 3D & Shaders',
+              tagline: 'Production-ready Blender 4.2 shaders, Godot/Unity VFX & indie game asset packs',
+              announcement: '🟢 v2.4 Cyberpunk Shader Pack is live — enter code HARBOR10 at checkout for an instant 10% creator discount!',
               accentColor: '#3b82f6',
-              bannerUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1400&q=80',
-              sellerUsername: 'dockmaster',
-              sellerRating: 4.9,
-              sellerTotalSales: 32,
+              bannerUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80',
+              sellerUsername: 'aether_forge',
+              sellerRating: 4.95,
+              sellerTotalSales: 84,
               activeListingsCount: 3
             },
             {
-              handle: 'keyport',
-              name: 'Keyport Software Pier',
-              tagline: 'Verified Software Licenses, Cloud Credits & Developer Tools',
-              announcement: '🔒 Every license ships with an official vendor-verified receipt.',
+              handle: 'prism-ui',
+              name: 'Prism UI & Design Systems',
+              tagline: 'Figma design systems, 3D glassmorphic icon kits & AI visual prompt libraries',
+              announcement: '⚡ Instant Vault Delivery — use code PRISM15 or HARBOR10 at checkout for up to 15% off any design system!',
               accentColor: '#10b981',
-              bannerUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1400&q=80',
-              sellerUsername: 'keyport',
-              sellerRating: 4.95,
-              sellerTotalSales: 128,
-              activeListingsCount: 1
+              bannerUrl: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&w=1400&q=80',
+              sellerUsername: 'prism_ui',
+              sellerRating: 4.98,
+              sellerTotalSales: 164,
+              activeListingsCount: 3
             },
             {
-              handle: 'captain-lex',
-              name: 'Captain Lex Armory',
-              tagline: 'High-Tier CS2 Knives, Gloves & Rare Steam Collectibles',
-              announcement: '💎 Accepting XRP & RLUSD Escrow on all Factory New knives.',
+              handle: 'xrpl-labs',
+              name: 'XRPL Labs & Boilerplates',
+              tagline: 'Production Next.js + XRPL SaaS starter kits, TypeScript SDKs & DEX engines',
+              announcement: '🔥 Next.js 15 + Xaman SaaS Starter v2.1 released — 0% buyer fee & instant source archive download!',
               accentColor: '#6366f1',
-              bannerUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80',
-              sellerUsername: 'captain_lex',
-              sellerRating: 4.8,
-              sellerTotalSales: 76,
-              activeListingsCount: 1
+              bannerUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1400&q=80',
+              sellerUsername: 'xrpl_labs',
+              sellerRating: 4.92,
+              sellerTotalSales: 96,
+              activeListingsCount: 2
             }
           ]).map(st => {
             const sObj = st.store || st;
