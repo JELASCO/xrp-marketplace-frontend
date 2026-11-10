@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { useXrpPrice } from '../../lib/xrpPrice';
+import EmailNotificationSettingsCard from '../../components/EmailNotificationSettingsCard';
 
 const ST = {
   pending:{l:'Pending',c:'var(--text2)',b:'var(--border)'},
@@ -713,6 +714,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <EmailNotificationSettingsCard />
 
       <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
         <Link href="/listings/new" style={{flex:1,minWidth:140,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13.5,fontWeight:700,padding:'12px 14px',border:'1px solid #60a5fa',borderRadius:11,color:'#fff',textDecoration:'none',background:'#2080F5',boxShadow:'0 4px 14px rgba(32,128,245,0.3)'}}>+ List an item</Link>

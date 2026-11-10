@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../lib/store';
 import { sanitizeImageUrl } from '../../lib/sanitizeUrl';
+import EmailNotificationSettingsCard from '../../components/EmailNotificationSettingsCard';
 import {
   CURATED_AVATARS,
   PRO_LIVE_AVATARS,
@@ -447,6 +448,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Verified Order Email Notification Settings */}
+      <EmailNotificationSettingsCard style={{ borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: 'none' }} />
 
       {/* Notification Preferences */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 20 }}>

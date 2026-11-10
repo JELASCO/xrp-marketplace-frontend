@@ -18,11 +18,16 @@ async function request(path, options = {}) {
   try { data = await res.json(); } catch (e) { /* non-JSON response */ }
   if (!res.ok) {
     const errMsg = (data && (data.error || data.message)) || null;
-    if (res.status === 401) throw new Error(errMsg || 'Please sign in to continue.');
-    if (res.status === 403) throw new Error(errMsg || 'You do not have permission to do that.');
-    if (res.status === 404) throw new Error(errMsg && !/application not found/i.test(errMsg) ? errMsg : 'Requested resource was not found.');
-    if (res.status >= 500) throw new Error(errMsg || 'Something went wrong on our end. Please try again in a moment.');
-    throw new Error(errMsg || 'Request failed. Please try again.');
+    let message = errMsg || 'Request failed. Please try again.';
+    if (res.status === 401) message = errMsg || 'Please sign in to continue.';
+    else if (res.status === 403) message = errMsg || 'You do not have permission to do that.';
+    else if (res.status === 404) message = errMsg && !/application not found/i.test(errMsg) ? errMsg : 'Requested resource was not found.';
+    else if (res.status === 429) message = errMsg || 'Too many requests. Please wait a moment and try again.';
+    else if (res.status >= 500) message = errMsg || 'Something went wrong on our end. Please try again in a moment.';
+    const err = new Error(message);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
   return data;
 }
@@ -70,7 +75,12 @@ export const api = {
   users: { get: (id) => request(`/users/${id}`), listings: (id) => request(`/users/${id}/listings`), reviews: (id) => request(`/users/${id}/reviews`), myStats: () => request('/me/stats'), update: (d) => request('/users/me', { method: 'PATCH', body: d }) },
   notifications: {
     list: () => request('/notifications'),
-    markAllRead: () => request('/notifications/read', { method: 'POST' })
+    markAllRead: () => request('/notifications/read', { method: 'POST' }),
+    settings: () => request('/notifications/settings'),
+    saveEmail: (email) => request('/notifications/email', { method: 'POST', body: { email } }),
+    verifyEmail: (code) => request('/notifications/verify', { method: 'POST', body: { code } }),
+    updatePreferences: (prefs) => request('/notifications/preferences', { method: 'PATCH', body: prefs }),
+    removeEmail: () => request('/notifications/email', { method: 'DELETE' }),
   },
   admin: { stats: () => request('/admin/stats'), disputes: (status) => request('/admin/disputes' + (status ? `?status=${encodeURIComponent(status)}` : '')), inspectVault: (id) => request(`/admin/orders/${id}/inspect-vault`), resolveDispute: (id,d) => request(`/disputes/${id}/resolve`, { method: 'POST', body: d }), banUser: (id,b) => request(`/admin/users/${id}/ban`, { method: 'PATCH', body: { banned: b } }), removeListing: (id) => request(`/admin/listings/${id}/remove`, { method: 'PATCH' }),
     users: () => request('/admin/users'),
