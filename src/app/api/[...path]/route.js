@@ -1,5 +1,15 @@
 import crypto from 'crypto';
 import os from 'os';
+import { sendVerificationOtpEmail } from '../../../lib/emailService.js';
+import {
+  dispatchOrderLifecycleEmails,
+  maskEmail,
+  hashOtpCode,
+  verifyOtpHashConstantTime,
+  validateAndNormalizeEmail,
+  checkEmailOtpRateLimit,
+  resetEmailOtpRateLimits,
+} from '../../../lib/orderNotificationDispatcher.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -1174,6 +1184,13 @@ function getStore() {
               website: 'https://xrpharbor.com',
             },
           },
+          notification_email: null,
+          email_verified: false,
+          email_verification_code_hash: null,
+          email_verification_expires_at: null,
+          email_verification_attempts: 0,
+          notify_on_sale: true,
+          notify_on_purchase: true,
           store: {
             name: 'AetherForge 3D & Shaders',
             tagline: 'Production-ready Blender 4.2 shaders, Godot/Unity VFX & indie game asset packs',
@@ -1224,6 +1241,13 @@ function getStore() {
               website: 'https://xrpharbor.com',
             },
           },
+          notification_email: null,
+          email_verified: false,
+          email_verification_code_hash: null,
+          email_verification_expires_at: null,
+          email_verification_attempts: 0,
+          notify_on_sale: true,
+          notify_on_purchase: true,
           store: {
             name: 'Prism UI & Design Systems',
             tagline: 'Figma design systems, 3D glassmorphic icon kits & AI visual prompt libraries',
@@ -1274,6 +1298,13 @@ function getStore() {
               twitter: 'https://x.com/xrpharbor',
             },
           },
+          notification_email: null,
+          email_verified: false,
+          email_verification_code_hash: null,
+          email_verification_expires_at: null,
+          email_verification_attempts: 0,
+          notify_on_sale: true,
+          notify_on_purchase: true,
           store: {
             name: 'XRPL Labs & Boilerplates',
             tagline: 'Production Next.js + XRPL SaaS starter kits, TypeScript SDKs & DEX engines',
@@ -1567,6 +1598,8 @@ function getStore() {
           status: 'disputed',
           buyer_downloaded_at: null,
           download_logs: [],
+          notification_sent_buyer: false,
+          notification_sent_seller: false,
           created_at: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
           updated_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
         },
@@ -1586,6 +1619,7 @@ function getStore() {
       ],
       favorites: [],
       notifications: [],
+      email_notification_logs: [],
       offers: [],
       upgrade_payments: [],
       usedTxHashes: new Set(),
@@ -2205,12 +2239,96 @@ function validateListingPayload(body, partial = false) {
   return { valid: true };
 }
 
+const ALWAYS_SECRET_PII_FIELDS = [
+  'email_verification_code_hash',
+  'emailVerificationCodeHash',
+  'email_verification_attempts',
+  'emailVerificationAttempts',
+  'email_verification_expires_at',
+  'emailVerificationExpiresAt',
+  'buyer_email',
+  'seller_email',
+  'buyerEmail',
+  'sellerEmail',
+  'email',
+  'notification_email',
+  'notificationEmail',
+  'email_verified',
+  'emailVerified',
+  'notify_on_sale',
+  'notifyOnSale',
+  'notify_on_purchase',
+  'notifyOnPurchase',
+];
+
+const PUBLIC_FORBIDDEN_PII_FIELDS = [
+  ...ALWAYS_SECRET_PII_FIELDS,
+  'notification_prefs',
+  'notificationPrefs',
+];
+
+function stripUserPii(userObj, { isSelf = false } = {}) {
+  if (!userObj || typeof userObj !== 'object') return userObj;
+  if (Array.isArray(userObj)) {
+    return userObj.map(item => stripUserPii(item, { isSelf }));
+  }
+  const cleaned = { ...userObj };
+  for (const field of ALWAYS_SECRET_PII_FIELDS) {
+    delete cleaned[field];
+  }
+  if (!isSelf) {
+    const prefs = cleaned.notification_prefs || cleaned.notificationPrefs;
+    if (prefs && typeof prefs === 'object') {
+      if (cleaned.socials === undefined && prefs.socials !== undefined) {
+        cleaned.socials = prefs.socials;
+      }
+      if (cleaned.avatar_frame === undefined && prefs.avatar_frame !== undefined) {
+        cleaned.avatar_frame = prefs.avatar_frame;
+      }
+      if (cleaned.founding_creator === undefined && prefs.founding_creator !== undefined) {
+        cleaned.founding_creator = Boolean(prefs.founding_creator);
+      }
+    }
+    for (const field of PUBLIC_FORBIDDEN_PII_FIELDS) {
+      delete cleaned[field];
+    }
+    if (cleaned.seller && typeof cleaned.seller === 'object') {
+      cleaned.seller = stripUserPii(cleaned.seller, { isSelf: false });
+    }
+    if (cleaned.user && typeof cleaned.user === 'object') {
+      cleaned.user = stripUserPii(cleaned.user, { isSelf: false });
+    }
+  }
+  return cleaned;
+}
+
+function stripOrderPii(orderObj) {
+  if (!orderObj || typeof orderObj !== 'object') return orderObj;
+  if (Array.isArray(orderObj)) {
+    return orderObj.map(item => stripOrderPii(item));
+  }
+  const cleaned = { ...orderObj };
+  for (const field of PUBLIC_FORBIDDEN_PII_FIELDS) {
+    delete cleaned[field];
+  }
+  if (cleaned.buyer && typeof cleaned.buyer === 'object') {
+    cleaned.buyer = stripUserPii(cleaned.buyer, { isSelf: false });
+  }
+  if (cleaned.seller && typeof cleaned.seller === 'object') {
+    cleaned.seller = stripUserPii(cleaned.seller, { isSelf: false });
+  }
+  if (cleaned.listing && typeof cleaned.listing === 'object') {
+    cleaned.listing = stripUserPii(cleaned.listing, { isSelf: false });
+  }
+  return cleaned;
+}
+
 function enrichListing(store, l, viewerUser = null) {
   if (!l) return null;
   const u = store.users.find(x => x.id === l.seller_id) || {};
   const isPro = Boolean(u.pro_until && new Date(u.pro_until).getTime() > Date.now());
   const { reputationScore } = getEffectiveUserStats(store, u);
-  const copy = {
+  const copy = stripUserPii({
     ...l,
     username: u.username || 'seller',
     reputation_score: reputationScore,
@@ -2218,7 +2336,7 @@ function enrichListing(store, l, viewerUser = null) {
     wallet_address: u.wallet_address || '',
     store_handle: u.store_handle || null,
     seller_is_pro: isPro,
-  };
+  }, { isSelf: false });
   if (Array.isArray(copy.images)) {
     copy.images = copy.images.map(img => (typeof img === 'string' ? rewriteR2ImageUrl(img) : img));
   }
@@ -2354,6 +2472,13 @@ function ensureAuthUser(store, req) {
       store: null,
       store_handle: null,
       socials: {},
+      notification_email: null,
+      email_verified: false,
+      email_verification_code_hash: null,
+      email_verification_expires_at: null,
+      email_verification_attempts: 0,
+      notify_on_sale: true,
+      notify_on_purchase: true,
       created_at: nowIso(),
     };
     store.users.push(u);
@@ -2364,6 +2489,23 @@ function ensureAuthUser(store, req) {
     u.isAdmin = true;
   }
   return u;
+}
+
+function requireAuth(req, store = getStore()) {
+  return ensureAuthUser(store, req);
+}
+
+function getClientIpFromReq(req) {
+  if (!req || !req.headers) return 'unknown';
+  const xff = typeof req.headers.get === 'function' ? req.headers.get('x-forwarded-for') : req.headers['x-forwarded-for'];
+  if (typeof xff === 'string' && xff.trim()) {
+    return xff.split(',')[0].trim();
+  }
+  const realIp = typeof req.headers.get === 'function' ? req.headers.get('x-real-ip') : req.headers['x-real-ip'];
+  if (typeof realIp === 'string' && realIp.trim()) {
+    return realIp.trim();
+  }
+  return req.ip || 'unknown';
 }
 
 const SIGNIN_UUID_TTL_MS = 5 * 60 * 1000; // 5-minute expiration window
@@ -2543,6 +2685,13 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
         store: null,
         store_handle: null,
         socials: {},
+        notification_email: null,
+        email_verified: false,
+        email_verification_code_hash: null,
+        email_verification_expires_at: null,
+        email_verification_attempts: 0,
+        notify_on_sale: true,
+        notify_on_purchase: true,
         created_at: nowIso(),
       };
       store.users.push(u);
@@ -2574,7 +2723,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
     const isAdminUser = u.role === 'admin' || isWalletAdmin(u.wallet_address);
     if (isAdminUser) u.role = 'admin';
     const stats = getEffectiveUserStats(store, u);
-    return jsonRes({
+    return jsonRes(stripUserPii({
       id: u.id,
       username: u.username,
       walletAddress: u.wallet_address,
@@ -2591,6 +2740,14 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       is_verified: Boolean(u.is_verified),
       avatar_url: u.avatar_url || null,
       notification_prefs: u.notification_prefs || {},
+      notification_email: u.notification_email || null,
+      notificationEmail: u.notification_email || null,
+      email_verified: Boolean(u.email_verified),
+      emailVerified: Boolean(u.email_verified),
+      notify_on_sale: u.notify_on_sale !== undefined ? Boolean(u.notify_on_sale) : true,
+      notifyOnSale: u.notify_on_sale !== undefined ? Boolean(u.notify_on_sale) : true,
+      notify_on_purchase: u.notify_on_purchase !== undefined ? Boolean(u.notify_on_purchase) : true,
+      notifyOnPurchase: u.notify_on_purchase !== undefined ? Boolean(u.notify_on_purchase) : true,
       socials: u.socials || (u.notification_prefs && u.notification_prefs.socials) || {},
       founding_creator: Boolean(u.founding_creator || (u.notification_prefs && u.notification_prefs.founding_creator)),
       is_pro: Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.is_pro || isAdminUser),
@@ -2599,7 +2756,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       pro_until: u.pro_until || null,
       pro_expires_at: u.pro_until || null,
       store_handle: u.store_handle || null,
-    });
+    }, { isSelf: true }));
   }
 
   // Admin routes
@@ -2624,6 +2781,13 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
           store: null,
           store_handle: null,
           socials: {},
+          notification_email: null,
+          email_verified: false,
+          email_verification_code_hash: null,
+          email_verification_expires_at: null,
+          email_verification_attempts: 0,
+          notify_on_sale: true,
+          notify_on_purchase: true,
           created_at: new Date(Date.now() - 120 * 86400 * 1000).toISOString(),
         });
       }
@@ -3445,19 +3609,23 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       finish_after: finishAfterIso,
       download_logs: [],
       buyer_downloaded_at: null,
+      notification_sent_buyer: false,
+      notification_sent_seller: false,
       status: 'pending',
       created_at: nowIso(),
       updated_at: nowIso(),
     };
     store.orders.unshift(order);
-    return jsonRes(order, 201);
+    return jsonRes(stripOrderPii(order), 201);
   }
 
   if (method === 'GET' && pathStr === 'orders/mine') {
     const u = ensureAuthUser(store, req);
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
     const role = searchParams.get('role') === 'seller' ? 'seller' : 'buyer';
-    const rows = store.orders.filter(o => (role === 'seller' ? o.seller_id === u.id : o.buyer_id === u.id));
+    const rows = store.orders
+      .filter(o => (role === 'seller' ? o.seller_id === u.id : o.buyer_id === u.id))
+      .map(o => stripOrderPii(o));
     return jsonRes(rows);
   }
 
@@ -3475,20 +3643,20 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
 
     if (segments.length === 2 && method === 'GET') {
       if (!isBuyer && !isSeller && !isAdmin) return jsonRes({ error: 'Forbidden' }, 403);
-      return jsonRes(order);
+      return jsonRes(stripOrderPii(order));
     }
 
     if (segments[2] === 'delivery' && method === 'GET') {
       if (!isBuyer && !isAdmin) return jsonRes({ error: 'Only the buyer can access delivery' }, 403);
       if (!['escrow_locked', 'delivered', 'completed'].includes(order.status) || !order.escrow_tx_hash) {
-        return jsonRes({
+        return jsonRes(stripOrderPii({
           isDigital: true,
           unlocked: false,
           status: order.status,
           message: 'Delivery unlocks once payment is locked in XRPL Escrow.',
-        });
+        }));
       }
-      return jsonRes({
+      return jsonRes(stripOrderPii({
         isDigital: true,
         unlocked: true,
         content: (listing.digital_content && !/^XRPHARBOR-DELIVERY(-CODE)?-[A-Z0-9-]+$/i.test(String(listing.digital_content).trim())) ? String(listing.digital_content).trim() : null,
@@ -3501,7 +3669,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
         finishAfter: order.finish_after || null,
         buyerDownloadedAt: order.buyer_downloaded_at || null,
         downloadLogs: Array.isArray(order.download_logs) ? order.download_logs : [],
-      });
+      }));
     }
 
     if (segments[2] === 'download' && (method === 'GET' || method === 'POST')) {
@@ -3639,6 +3807,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       order.updated_at = nowIso();
       const sellerUser = store.users.find(x => x.id === order.seller_id);
       if (sellerUser) sellerUser.total_sales = Number(sellerUser.total_sales || 0) + 1;
+      await dispatchOrderLifecycleEmails(store, order.id, 'completed', order.finish_tx_hash).catch(() => {});
       return jsonRes({
         ok: true,
         status: 'completed',
@@ -3707,20 +3876,33 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
         order.completed_at = nowIso();
         order.updated_at = nowIso();
         store.activity.unshift({ kind: 'released', xrp: order.total_xrp, at: nowIso() });
+        await dispatchOrderLifecycleEmails(store, order.id, 'completed', order.finish_tx_hash).catch(() => {});
+      } else if (order.status === 'escrow_locked' && order.escrow_tx_hash) {
+        await dispatchOrderLifecycleEmails(store, order.id, 'escrow_locked', order.escrow_tx_hash).catch(() => {});
       }
-      return jsonRes({
+      return jsonRes(stripOrderPii({
         status: order.status,
         escrow_sequence: order.escrow_sequence,
         escrow_tx_hash: order.escrow_tx_hash,
         finish_tx_hash: order.finish_tx_hash,
         synced: true,
-      });
+      }));
     }
 
     if (segments[2] === 'escrow' && segments[3] === 'confirm' && method === 'POST') {
       if (!isBuyer) return jsonRes({ error: 'Forbidden' }, 403);
       if (['completed', 'refunded', 'disputed', 'cancelled'].includes(order.status)) {
         return jsonRes({ error: 'Order already ' + order.status }, 400);
+      }
+      if (body && (body.escrowTxHash || body.txHash) && ['pending', 'awaiting_payment', 'awaiting_escrow'].includes(order.status)) {
+        const providedHash = String(body.escrowTxHash || body.txHash).trim();
+        order.status = 'escrow_locked';
+        order.escrow_tx_hash = /^[A-Fa-f0-9]{64}$/.test(providedHash)
+          ? providedHash
+          : ('E' + crypto.randomBytes(31).toString('hex').toUpperCase());
+        order.escrow_sequence = Number(body.sequence || body.escrowSequence) || order.escrow_sequence || 100001;
+        order.updated_at = nowIso();
+        await dispatchOrderLifecycleEmails(store, order.id, 'escrow_locked', order.escrow_tx_hash).catch(() => {});
       }
       order.escrow_confirm_pending = true;
       const payload = await createXummOrDemoPayload({
@@ -3788,6 +3970,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
         order.escrow_sequence = Number(sequence) || order.escrow_sequence || Math.floor(100000 + Math.random() * 900000);
         order.updated_at = nowIso();
         store.activity.unshift({ kind: 'created', xrp: order.total_xrp, at: nowIso() });
+        await dispatchOrderLifecycleEmails(store, order.id, 'escrow_locked', cleanHash).catch(() => {});
       } else if (resolvedTxType === 'EscrowCancel') {
         order.status = 'refunded';
         order.cancel_tx_hash = cleanHash;
@@ -3800,6 +3983,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
         const sellerUser = store.users.find(x => x.id === order.seller_id);
         if (sellerUser) sellerUser.total_sales = Number(sellerUser.total_sales || 0) + 1;
         store.activity.unshift({ kind: 'released', xrp: order.total_xrp, at: nowIso() });
+        await dispatchOrderLifecycleEmails(store, order.id, 'completed', cleanHash).catch(() => {});
       }
       return jsonRes({
         ok: true,
@@ -3987,6 +4171,8 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       finish_tx_hash: null,
       cancel_tx_hash: null,
       escrow_finish_after: null,
+      notification_sent_buyer: false,
+      notification_sent_seller: false,
       status: 'awaiting_payment',
       created_at: nowIso(),
       updated_at: nowIso(),
@@ -4029,6 +4215,215 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
     if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
     store.notifications.forEach(n => { if (n.user_id === u.id) n.is_read = true; });
     return jsonRes({ ok: true });
+  }
+
+  // Hardened Email Notification Settings Endpoints
+  if (method === 'GET' && pathStr === 'notifications/settings') {
+    const u = requireAuth(req, store);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const email = u.notification_email || null;
+    const emailVerified = Boolean(email && u.email_verified === true);
+    const expiresAt = u.email_verification_expires_at ? new Date(u.email_verification_expires_at).toISOString() : null;
+    const pendingVerification = Boolean(
+      email &&
+      !emailVerified &&
+      u.email_verification_code_hash &&
+      expiresAt &&
+      new Date(expiresAt).getTime() > Date.now()
+    );
+    return jsonRes({
+      email,
+      maskedEmail: email ? maskEmail(email) : null,
+      emailVerified,
+      pendingVerification,
+      expiresAt: pendingVerification ? expiresAt : null,
+      notifyOnSale: u.notify_on_sale !== false,
+      notifyOnPurchase: u.notify_on_purchase !== false,
+    });
+  }
+
+  if (method === 'POST' && pathStr === 'notifications/email') {
+    const u = requireAuth(req, store);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const validation = validateAndNormalizeEmail(body && body.email);
+    if (!validation.valid) {
+      return jsonRes({ error: validation.error }, 400);
+    }
+    const normalizedEmail = validation.email;
+    const clientIp = getClientIpFromReq(req);
+    const rateCheck = checkEmailOtpRateLimit(u.id, clientIp);
+    if (!rateCheck.allowed) {
+      return jsonRes({
+        error: 'Too many verification code requests. Please wait 15 minutes before requesting another code.',
+        retryAfterSeconds: rateCheck.retryAfterSeconds,
+      }, 429);
+    }
+
+    const otpCode = String(crypto.randomInt(100000, 1000000));
+    const codeHash = hashOtpCode(u.id, normalizedEmail, otpCode);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+    u.notification_email = normalizedEmail;
+    u.email_verified = false;
+    u.email_verification_code_hash = codeHash;
+    u.email_verification_expires_at = expiresAt;
+    u.email_verification_attempts = 0;
+    if (u.notify_on_sale === undefined) u.notify_on_sale = true;
+    if (u.notify_on_purchase === undefined) u.notify_on_purchase = true;
+
+    try {
+      await sendVerificationOtpEmail({
+        to: normalizedEmail,
+        code: otpCode,
+        walletAddress: u.wallet_address,
+        expiresMinutes: 15,
+      });
+    } catch (emailErr) {
+      console.warn('[Notifications] Non-fatal OTP email send error:', emailErr.message);
+    }
+
+    return jsonRes({
+      ok: true,
+      email: normalizedEmail,
+      maskedEmail: maskEmail(normalizedEmail),
+      emailVerified: false,
+      pendingVerification: true,
+      expiresAt,
+      notifyOnSale: u.notify_on_sale !== false,
+      notifyOnPurchase: u.notify_on_purchase !== false,
+    });
+  }
+
+  if (method === 'POST' && pathStr === 'notifications/verify') {
+    const u = requireAuth(req, store);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const code = typeof (body && body.code) === 'string' ? body.code.trim() : String((body && body.code) ?? '').trim();
+    if (!/^\d{6}$/.test(code)) {
+      return jsonRes({ error: 'Verification code must be a 6-digit number.' }, 400);
+    }
+
+    if (!u.notification_email) {
+      return jsonRes({ error: 'No pending verification code found. Please request a new code.' }, 400);
+    }
+
+    const currentAttempts = Number(u.email_verification_attempts || 0);
+    if (currentAttempts >= 5) {
+      u.email_verification_code_hash = null;
+      u.email_verification_expires_at = null;
+      return jsonRes({
+        error: 'Too many failed verification attempts. This code has been invalidated — please request a new code.',
+        lockedOut: true,
+        attemptsRemaining: 0,
+      }, 429);
+    }
+
+    if (!u.email_verification_code_hash || !u.email_verification_expires_at) {
+      return jsonRes({ error: 'No pending verification code found. Please request a new code.' }, 400);
+    }
+
+    const expiresMs = new Date(u.email_verification_expires_at).getTime();
+    if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
+      u.email_verification_code_hash = null;
+      u.email_verification_expires_at = null;
+      return jsonRes({
+        error: 'Verification code has expired. Please request a new code.',
+        expired: true,
+      }, 400);
+    }
+
+    const computedHash = hashOtpCode(u.id, u.notification_email, code);
+    const isMatch = verifyOtpHashConstantTime(computedHash, u.email_verification_code_hash);
+    if (!isMatch) {
+      const newAttempts = currentAttempts + 1;
+      u.email_verification_attempts = newAttempts;
+      if (newAttempts >= 5) {
+        u.email_verification_code_hash = null;
+        u.email_verification_expires_at = null;
+        return jsonRes({
+          error: 'Too many failed verification attempts. This code has been invalidated — please request a new code.',
+          lockedOut: true,
+          attemptsRemaining: 0,
+        }, 429);
+      }
+      return jsonRes({
+        error: 'Invalid verification code.',
+        attemptsRemaining: 5 - newAttempts,
+      }, 400);
+    }
+
+    u.email_verified = true;
+    u.email_verification_code_hash = null;
+    u.email_verification_expires_at = null;
+    u.email_verification_attempts = 0;
+
+    return jsonRes({
+      ok: true,
+      email: u.notification_email,
+      maskedEmail: maskEmail(u.notification_email),
+      emailVerified: true,
+      pendingVerification: false,
+      notifyOnSale: u.notify_on_sale !== false,
+      notifyOnPurchase: u.notify_on_purchase !== false,
+    });
+  }
+
+  if (method === 'PATCH' && pathStr === 'notifications/preferences') {
+    const u = requireAuth(req, store);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    const { notifyOnSale, notifyOnPurchase } = body || {};
+    if (notifyOnSale !== undefined && typeof notifyOnSale !== 'boolean') {
+      return jsonRes({ error: 'notifyOnSale must be a boolean' }, 400);
+    }
+    if (notifyOnPurchase !== undefined && typeof notifyOnPurchase !== 'boolean') {
+      return jsonRes({ error: 'notifyOnPurchase must be a boolean' }, 400);
+    }
+    if (notifyOnSale === undefined && notifyOnPurchase === undefined) {
+      return jsonRes({ error: 'At least one preference (notifyOnSale or notifyOnPurchase) must be provided' }, 400);
+    }
+    if (typeof notifyOnSale === 'boolean') u.notify_on_sale = notifyOnSale;
+    if (typeof notifyOnPurchase === 'boolean') u.notify_on_purchase = notifyOnPurchase;
+
+    const email = u.notification_email || null;
+    const emailVerified = Boolean(email && u.email_verified === true);
+    const expiresAt = u.email_verification_expires_at ? new Date(u.email_verification_expires_at).toISOString() : null;
+    const pendingVerification = Boolean(
+      email &&
+      !emailVerified &&
+      u.email_verification_code_hash &&
+      expiresAt &&
+      new Date(expiresAt).getTime() > Date.now()
+    );
+
+    return jsonRes({
+      ok: true,
+      email,
+      maskedEmail: email ? maskEmail(email) : null,
+      emailVerified,
+      pendingVerification,
+      notifyOnSale: u.notify_on_sale !== false,
+      notifyOnPurchase: u.notify_on_purchase !== false,
+    });
+  }
+
+  if (method === 'DELETE' && pathStr === 'notifications/email') {
+    const u = requireAuth(req, store);
+    if (!u) return jsonRes({ error: 'Unauthorized' }, 401);
+    u.notification_email = null;
+    u.email_verified = false;
+    u.email_verification_code_hash = null;
+    u.email_verification_expires_at = null;
+    u.email_verification_attempts = 0;
+    u.notify_on_sale = false;
+    u.notify_on_purchase = false;
+    return jsonRes({
+      ok: true,
+      email: null,
+      maskedEmail: null,
+      emailVerified: false,
+      pendingVerification: false,
+      notifyOnSale: false,
+      notifyOnPurchase: false,
+    });
   }
 
   if (method === 'GET' && pathStr === 'favorites') {
@@ -4089,9 +4484,9 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
           const isPro = Boolean((u.pro_until && new Date(u.pro_until).getTime() > Date.now()) || u.is_pro || u.role === 'admin');
           return {
             handle: u.store_handle,
-            store: u.store,
+            store: stripUserPii(u.store, { isSelf: false }),
             activeListingsCount,
-            seller: {
+            seller: stripUserPii({
               id: u.id,
               username: u.username,
               bio: u.bio || '',
@@ -4101,7 +4496,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
               total_sales: stats.totalSales,
               is_verified: Boolean(u.is_verified || isPro),
               seller_is_pro: isPro,
-            },
+            }, { isSelf: false }),
           };
         });
       return jsonRes(stores);
@@ -4225,14 +4620,14 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       const viewerFollowing = Boolean(viewer && followers.includes(viewer.id));
       const stats = getEffectiveUserStats(store, u);
       return jsonRes({
-        seller: {
+        seller: stripUserPii({
           ...u,
           reputation_score: stats.reputationScore,
           avgRating: stats.reputationScore,
           reviewCount: stats.reviewCount,
           seller_is_pro: sellerIsPro,
-        },
-        store: { ...u.store, viewerFollowing },
+        }, { isSelf: false }),
+        store: stripUserPii({ ...u.store, viewerFollowing }, { isSelf: false }),
         handle: u.store_handle,
         listings,
       });
@@ -4287,14 +4682,18 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
       if (body.avatar_frame && ['gold', 'cyber', 'plasma', 'diamond', 'none'].includes(body.avatar_frame)) {
         u.notification_prefs = { ...(u.notification_prefs || {}), avatar_frame: isPro ? body.avatar_frame : 'none' };
       }
+      if (body.notify_on_sale !== undefined) u.notify_on_sale = Boolean(body.notify_on_sale);
+      if (body.notifyOnSale !== undefined) u.notify_on_sale = Boolean(body.notifyOnSale);
+      if (body.notify_on_purchase !== undefined) u.notify_on_purchase = Boolean(body.notify_on_purchase);
+      if (body.notifyOnPurchase !== undefined) u.notify_on_purchase = Boolean(body.notifyOnPurchase);
       const stats = getEffectiveUserStats(store, u);
-      return jsonRes({
+      return jsonRes(stripUserPii({
         ...u,
         reputation_score: stats.reputationScore,
         avgRating: stats.reputationScore,
         reviewCount: stats.reviewCount,
         socials: u.socials || (u.notification_prefs && u.notification_prefs.socials) || {},
-      });
+      }, { isSelf: true }));
     }
     if (!isValidUuid(segments[1])) return jsonRes({ error: 'Invalid user ID' }, 400);
     const target = store.users.find(x => x.id === segments[1]);
@@ -4316,7 +4715,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
     if (target) {
       const isPro = Boolean((target.pro_until && new Date(target.pro_until).getTime() > Date.now()) || target.store_handle);
       const stats = getEffectiveUserStats(store, target);
-      return jsonRes({
+      return jsonRes(stripUserPii({
         ...target,
         reputation_score: stats.reputationScore,
         avgRating: stats.reputationScore,
@@ -4325,7 +4724,7 @@ async function handleFallbackApi(req, pathStr, segments, bodyText, rawBodyBuffer
         founding_creator: Boolean(target.founding_creator || (target.notification_prefs && target.notification_prefs.founding_creator)),
         seller_is_pro: isPro,
         avatar_frame: (target.notification_prefs && target.notification_prefs.avatar_frame) || (isPro ? 'gold' : 'none'),
-      });
+      }, { isSelf: false }));
     }
     return jsonRes({ error: 'User not found' }, 404);
   }
@@ -5004,6 +5403,9 @@ async function handler(req, ctx) {
           (respText.includes('Application not found') ||
             respText.includes('Cannot GET') ||
             respText.includes('Cannot POST') ||
+            respText.includes('Cannot PATCH') ||
+            respText.includes('Cannot DELETE') ||
+            pathStr.startsWith('notifications/') ||
             pathStr.startsWith('admin/') ||
             pathStr === 'stores' ||
             pathStr.startsWith('pro/'))
