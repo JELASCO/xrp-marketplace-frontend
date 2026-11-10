@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { runEmailNotificationSecurityTests } from './email-notifications.test.mjs';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -622,6 +623,22 @@ async function main() {
       'iframe sandbox attribute must NOT contain allow-same-origin'
     );
   });
+
+  // =========================================================================
+  // 10. Email Notification Security & Reliability Suite (Backend + Frontend)
+  // =========================================================================
+  console.log('\n[10] Email Notification Security & Reliability Suite');
+  await runTest(
+    'Passes all 5 Email Notification Security & Reliability Suites (Anti-Spam, OTP Security, Zero PII Leak, HTML Escaping, Fault Isolation & Idempotency)',
+    async () => {
+      const emailResults = await runEmailNotificationSecurityTests({ quiet: false });
+      assert.equal(emailResults.length, 5, 'Should execute all 5 email notification security suites');
+      assert.ok(
+        emailResults.every((r) => r.passed),
+        'All 5 email notification security suites must pass'
+      );
+    }
+  );
 
   console.log('\n================================================================');
   console.log(`  Security Tests Complete: ${passed} passed, ${failed} failed`);
